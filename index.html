@@ -585,7 +585,7 @@
   let allBookings=[], filteredBookings=[], currentPage=1, activeFilter='mind';
   const perPage=10;
   const loginModalOverlay=document.getElementById('sp-login-modal-overlay');
-  const loginIframe=document.getElementById('sp-login-iframe');
+  let loginIframe=document.getElementById('sp-login-iframe');
   const loginIframeWrap=document.getElementById('sp-login-iframe-wrap');
   const drawer=document.getElementById('sp-drawer');
   const drawerOverlay=document.getElementById('sp-drawer-overlay');
@@ -664,7 +664,28 @@
   });
 
   function handleBtnAction(){ if(isLoggedIn) openDrawer(); else openLoginModal(); }
-  function openLoginModal(){ loginModalOverlay.classList.add('open'); document.body.style.overflow='hidden'; if(!loginIframeLoaded){ loginIframeLoaded=true; loginIframe.src='https://jatekos.sportingo.hu/?modal=1'; loginIframe.onload=()=>loginIframeWrap.style.background='transparent'; } }
+  function openLoginModal(){
+    loginModalOverlay.classList.add('open');
+    document.body.style.overflow='hidden';
+    if(!loginIframeLoaded){
+      loginIframeLoaded=true;
+      loginIframeWrap.style.background='#f0f7fb';
+      loginIframe.src='https://jatekos.sportingo.hu/?modal=1';
+      loginIframe.onload=()=>loginIframeWrap.style.background='transparent';
+    }
+  }
+  function resetLoginIframe(){
+    // Teljesen új iframe DOM elem – a régi Supabase JS instance megsemmisül
+    const newIframe=document.createElement('iframe');
+    newIframe.id='sp-login-iframe';
+    newIframe.style.cssText='width:100%;height:460px;border:none;display:block;';
+    newIframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+    newIframe.src='about:blank';
+    loginIframeWrap.innerHTML='';
+    loginIframeWrap.appendChild(newIframe);
+    loginIframe=newIframe;
+    loginIframeLoaded=false;
+  }
   function closeLoginModal(){ loginModalOverlay.classList.remove('open'); document.body.style.overflow=''; }
   function openDrawer(){
     drawer.classList.add('open'); drawerOverlay.classList.add('open'); document.body.style.overflow='hidden';
@@ -788,10 +809,7 @@
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
     loggedOutExplicitly=true;
     isLoggedIn=false; sessionChecked=false; hasCachedSession=false; userEmail='';
-    // loginIframeLoaded=true marad, src-t logged_out=1 paraméterre állítjuk
-    // Így újranyitáskor a login képernyőt mutatja, nem initiál meglévő sessiont
-    loginIframeLoaded=true;
-    loginIframe.src='https://jatekos.sportingo.hu/?modal=1&logged_out=1';
+    resetLoginIframe();
     setLoggedOutUI();
     if(dName) dName.textContent='–'; if(dEmail) dEmail.textContent='–'; if(dAvatar) dAvatar.textContent='?';
     ['sp-stat-foglalasok','sp-stat-kedvencek','sp-stat-kovetkezo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='–'; });
