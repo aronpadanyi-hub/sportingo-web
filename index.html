@@ -615,27 +615,41 @@
     getIcons().forEach(i=>i.textContent='👤');
   }
 
-  // Ha sessionStorage-ban logout flag van: töröljük a cache-t és nem mutatunk bejelentkezett állapotot
+  // ── BRIDGE-FIRST AUTH INIT ──
+  // A cache csak optimista UI gyorsítótár – a bridge az igazság forrása.
+  // Ha a bridge loggedIn:false-t mond, az MINDIG felülírja a cache-t.
+
+  // 1. Azonnal törlünk ha korábban explicit logout volt
   if(sessionStorage.getItem('sp_logged_out')==='1'){
     localStorage.removeItem('sp_user');
     sessionStorage.removeItem('sp_logged_out');
   }
-  const cached=localStorage.getItem('sp_user');
-  if(cached){ try{ const u=JSON.parse(cached); if(u&&u.email){ hasCachedSession=true; isLoggedIn=true; userEmail=u.email.trim().toLowerCase(); setLoggedInUI(u.name||u.email.split('@')[0],u.email); } }catch(e){} }
-  if(!hasCachedSession&&hasButtons()){ setButtonsLoading(true); getLabels().forEach(l=>l.textContent='...'); }
-  setTimeout(function(){ if(!sessionChecked){ sessionChecked=true; setButtonsLoading(false); if(!hasCachedSession) getLabels().forEach(l=>l.textContent='Bejelentkezés'); } },1500);
 
-  // storage event: más tabban történt logout esetén azonnal frissít
+  // 2. Cache: optimista UI – mutatjuk, de NEM végleges amíg bridge nem megerősíti
+  const cached=localStorage.getItem('sp_user');
+  if(cached){
+    try{
+      const u=JSON.parse(cached);
+      if(u&&u.email){
+        hasCachedSession=true; isLoggedIn=true; userEmail=u.email.trim().toLowerCase();
+        setLoggedInUI(u.name||u.email.split('@')[0],u.email);
+      }
+    }catch(e){}
+  }
+
+  // 3. Bridge timeout: ha 2.5mp-en belül nem jön megerősítés, cache-t hisszük
+  //    Ha jön loggedIn:false → töröljük a cache-t (ez a kritikus eset)
+  let bridgeConfirmed=false;
+  const bridgeTimeout=setTimeout(function(){
+    if(!bridgeConfirmed){ sessionChecked=true; setButtonsLoading(false); }
+  }, 2500);
+
+  if(!hasCachedSession&&hasButtons()){ setButtonsLoading(true); getLabels().forEach(l=>l.textContent='...'); }
+
+  // 4. storage event: ugyanazon domain más tabján történt logout
   window.addEventListener('storage',function(e){
     if(e.key==='sp_user'&&e.newValue===null){
-      // sp_user törölve egy másik tabban → kijelentkeztetés itt is
       isLoggedIn=false; userEmail=''; hasCachedSession=false; loggedOutExplicitly=true;
-      setLoggedOutUI();
-    }
-    if(e.key==='sp_logout_broadcast'){
-      // bridge által triggerelt logout broadcast
-      isLoggedIn=false; userEmail=''; hasCachedSession=false; loggedOutExplicitly=true;
-      localStorage.removeItem('sp_user');
       setLoggedOutUI();
     }
   });
@@ -645,20 +659,32 @@
     const d=e.data; if(!d) return;
     const validTypes=['sp-login-success','sp-auth-state','sp-logout'];
     if(d.type&&!validTypes.includes(d.type)) return;
-    const loggedIn=d.loggedIn===true, email=d.email?d.email.trim().toLowerCase():'', name=d.name||(email?email.split('@')[0]:'');
+
+    bridgeConfirmed=true;
+    clearTimeout(bridgeTimeout);
     sessionChecked=true; setButtonsLoading(false);
+
+    const loggedIn=d.loggedIn===true;
+    const email=d.email?d.email.trim().toLowerCase():'';
+    const name=d.name||(email?email.split('@')[0]:'');
+
     if(loggedIn&&email){
-      if(loggedOutExplicitly) return; // explicit logout után bridge polling ne állítsa vissza
+      // Bridge megerősíti a bejelentkezett állapotot
+      if(loggedOutExplicitly) return;
       isLoggedIn=true; userEmail=email; hasCachedSession=true;
-      localStorage.setItem('sp_user',JSON.stringify({email:email.trim().toLowerCase(),name}));
+      localStorage.setItem('sp_user',JSON.stringify({email,name}));
       setLoggedInUI(name,email);
       if(loginModalOverlay.classList.contains('open')){ closeLoginModal(); setTimeout(openDrawer,300); }
-    } else if(d.type==='sp-logout'||(!loggedIn&&d.type==='sp-auth-state'&&hasCachedSession===false)){
-      isLoggedIn=false; userEmail=''; hasCachedSession=false; loggedOutExplicitly=true;
+    } else {
+      // Bridge azt mondja: NINCS bejelentkezett user – MINDIG felülírja a cache-t
+      isLoggedIn=false; userEmail=''; hasCachedSession=false;
       localStorage.removeItem('sp_user');
-      // sessionStorage-ba mentjük hogy logout történt – refresh után is érvényes
-      try{ sessionStorage.setItem('sp_logged_out','1'); }catch(e){}
       setLoggedOutUI();
+      // loggedOutExplicitly csak explicit logout esetén – hogy ne blokkolja az újabb bejelentkezést
+      if(d.type==='sp-logout'){
+        loggedOutExplicitly=true;
+        try{ sessionStorage.setItem('sp_logged_out','1'); }catch(e){}
+      }
     }
   });
 
