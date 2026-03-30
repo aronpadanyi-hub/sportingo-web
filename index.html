@@ -581,7 +581,7 @@
   loadHelyszinek();
 
   // ── AUTH ──
-  let sb=null, isLoggedIn=false, userEmail='', hasCachedSession=false, sessionChecked=false, loginIframeLoaded=false, loggedOutExplicitly=false, bridgeConfirmed=false;
+  let sb=null, isLoggedIn=false, userEmail='', sessionChecked=false, loginIframeLoaded=false, explicitLogout=false, bridgeConfirmed=false;
   let allBookings=[], filteredBookings=[], currentPage=1, activeFilter='mind';
   const perPage=10;
   const loginModalOverlay=document.getElementById('sp-login-modal-overlay');
@@ -616,40 +616,40 @@
   }
 
   // ── BRIDGE-FIRST AUTH INIT ──
-  // Szemantika: sp-login-success → mindig bejelentkeztet | sp-logout → mindig kijelentkeztet
-  //             sp-auth-state(false) → csak explicit logout esetén törli a cache-t (első betöltésnél ne)
+  // Két flag: bridgeConfirmed, explicitLogout
+  // sp-login-success → mindig bejelentkeztet | sp-logout → mindig töröl | sp-auth-state(false) → csak explicit logout esetén töröl
 
-  // 1. Explicit logout flag restore: sessionStorage tab-specifikus, de refresh után is megmarad
+  // 1. Explicit logout restore (sessionStorage refresh után is megmarad ugyanabban a tabban)
   if(sessionStorage.getItem('sp_logged_out')==='1'){
     localStorage.removeItem('sp_user');
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')||k.startsWith('supabase')) localStorage.removeItem(k); });
     sessionStorage.removeItem('sp_logged_out');
-    loggedOutExplicitly=true;
+    explicitLogout=true;
   }
 
-  // 2. Cache: optimista UI – mutatjuk, de NEM végleges amíg bridge nem megerősíti
+  // 2. Optimista UI cache-ből
   const cached=localStorage.getItem('sp_user');
   if(cached){
     try{
       const u=JSON.parse(cached);
       if(u&&u.email){
-        hasCachedSession=true; isLoggedIn=true; userEmail=u.email.trim().toLowerCase();
+        isLoggedIn=true; userEmail=u.email.trim().toLowerCase();
         setLoggedInUI(u.name||u.email.split('@')[0],u.email);
       }
-    }catch(e){}
+    }catch(ex){ localStorage.removeItem('sp_user'); }
   }
 
-  // 3. Bridge timeout: 2500ms után ha nem jön bridge válasz, cache-t fogadjuk el véglegesnek
-  const bridgeTimeout=setTimeout(function(){
+  // 3. Bridge timeout: 2500ms után ha nincs bridge válasz, cache állapotot fogadjuk el véglegesnek
+  const bridgeTimeout=setTimeout(()=>{
     if(!bridgeConfirmed){ sessionChecked=true; setButtonsLoading(false); }
   }, 2500);
 
-  if(!hasCachedSession&&hasButtons()){ setButtonsLoading(true); getLabels().forEach(l=>l.textContent='...'); }
+  if(!isLoggedIn&&hasButtons()){ setButtonsLoading(true); getLabels().forEach(l=>l.textContent='...'); }
 
-  // 4. storage event: ugyanazon domain más tabján törölt sp_user
+  // 4. Cross-tab: sp_user törlése más sportingo.hu tabban triggereli a storage eventet
   window.addEventListener('storage',function(e){
-    if(e.key==='sp_user'&&e.newValue===null){
-      isLoggedIn=false; userEmail=''; hasCachedSession=false; loggedOutExplicitly=true;
+    if(e.key==='sp_user'&&e.newValue===null&&isLoggedIn){
+      explicitLogout=true; isLoggedIn=false; userEmail='';
       setLoggedOutUI();
     }
   });
@@ -657,8 +657,7 @@
   window.addEventListener('message',function(e){
     if(!e.origin.includes('jatekos.sportingo.hu')) return;
     const d=e.data; if(!d||!d.type) return;
-    const validTypes=['sp-login-success','sp-auth-state','sp-logout'];
-    if(!validTypes.includes(d.type)) return;
+    if(!['sp-login-success','sp-auth-state','sp-logout'].includes(d.type)) return;
 
     bridgeConfirmed=true;
     clearTimeout(bridgeTimeout);
@@ -667,12 +666,12 @@
     const email=d.email?d.email.trim().toLowerCase():'';
     const name=d.name||(email?email.split('@')[0]:'');
 
-    // ── sp-login-success: friss, aktív bejelentkezés → mindig felülírja, flag reset
+    // sp-login-success: friss bejelentkezés → mindig elfogadja, flag reset
     if(d.type==='sp-login-success'){
-      loggedOutExplicitly=false;
-      try{ sessionStorage.removeItem('sp_logged_out'); }catch(e){}
+      explicitLogout=false;
+      try{ sessionStorage.removeItem('sp_logged_out'); }catch(ex){}
       if(email){
-        isLoggedIn=true; userEmail=email; hasCachedSession=true;
+        isLoggedIn=true; userEmail=email;
         localStorage.setItem('sp_user',JSON.stringify({email,name}));
         setLoggedInUI(name,email);
         if(loginModalOverlay.classList.contains('open')){ closeLoginModal(); setTimeout(openDrawer,300); }
@@ -680,30 +679,26 @@
       return;
     }
 
-    // ── sp-logout: explicit server-side logout → mindig töröl, flag beállít
+    // sp-logout: explicit kilépés → teljes cache törlés, flag beállít
     if(d.type==='sp-logout'){
-      isLoggedIn=false; userEmail=''; hasCachedSession=false;
+      explicitLogout=true;
+      isLoggedIn=false; userEmail='';
       localStorage.removeItem('sp_user');
       Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')||k.startsWith('supabase')) localStorage.removeItem(k); });
-      loggedOutExplicitly=true;
-      try{ sessionStorage.setItem('sp_logged_out','1'); }catch(e){}
+      try{ sessionStorage.setItem('sp_logged_out','1'); }catch(ex){}
       setLoggedOutUI();
       return;
     }
 
-    // ── sp-auth-state: polling állapot
+    // sp-auth-state: polling
     if(d.loggedIn===true&&email){
-      // Ha explicit logout volt → polling nem írja felül (csak sp-login-success teheti meg)
-      if(loggedOutExplicitly) return;
-      isLoggedIn=true; userEmail=email; hasCachedSession=true;
+      if(explicitLogout) return; // polling nem írja felül az explicit logout-ot
+      isLoggedIn=true; userEmail=email;
       localStorage.setItem('sp_user',JSON.stringify({email,name}));
       setLoggedInUI(name,email);
     } else {
-      // sp-auth-state + loggedIn:false
-      // CSAK explicit logout esetén töröljük a cache-t
-      // (első betöltéskor, session nélkül ne tévesen logout-oljuk a usert)
-      if(!loggedOutExplicitly) return;
-      isLoggedIn=false; userEmail=''; hasCachedSession=false;
+      if(!explicitLogout) return; // első betöltésnél ne logout-oljon tévesen
+      isLoggedIn=false; userEmail='';
       localStorage.removeItem('sp_user');
       setLoggedOutUI();
     }
@@ -727,7 +722,7 @@
 
   document.addEventListener('click',function(e){
     const btn=e.target.closest('.sportingo-auth-btn');
-    if(btn){ e.preventDefault(); e.stopPropagation(); if(!sessionChecked&&!hasCachedSession){ setButtonsOpacity('.6'); const wait=setInterval(()=>{ if(sessionChecked){clearInterval(wait);setButtonsOpacity('1');handleBtnAction();} },100); setTimeout(()=>{clearInterval(wait);setButtonsOpacity('1');handleBtnAction();},2000); return; } handleBtnAction(); return; }
+    if(btn){ e.preventDefault(); e.stopPropagation(); if(!sessionChecked&&!isLoggedIn){ setButtonsOpacity('.6'); const wait=setInterval(()=>{ if(sessionChecked){clearInterval(wait);setButtonsOpacity('1');handleBtnAction();} },100); setTimeout(()=>{clearInterval(wait);setButtonsOpacity('1');handleBtnAction();},2000); return; } handleBtnAction(); return; }
     if(e.target.matches('[data-sp-close-login]')){ e.preventDefault(); closeLoginModal(); return; }
     if(e.target===loginModalOverlay){ closeLoginModal(); return; }
     if(e.target.matches('[data-sp-close-drawer]')||e.target.closest('[data-sp-close-drawer]')){ closeDrawer(); return; }
@@ -744,7 +739,7 @@
       loginIframe.onload=function(){
         loginIframeWrap.style.background='transparent';
         // Ha logout után nyílik meg: sp-force-logout üzenet → jatekos-index showLogin()-t mutat
-        if(loggedOutExplicitly){
+        if(explicitLogout){
           try{
             loginIframe.contentWindow.postMessage(
               {type:'sp-force-logout'},
@@ -874,10 +869,10 @@
     logoutBtn.disabled=true;
 
     // Azonnali UI és state reset
-    loggedOutExplicitly=true;
-    isLoggedIn=false; sessionChecked=true; hasCachedSession=false; userEmail='';
+    explicitLogout=true;
+    isLoggedIn=false; sessionChecked=true; userEmail='';
     localStorage.removeItem('sp_user');
-    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
+    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')||k.startsWith('supabase')) localStorage.removeItem(k); });
     // sessionStorage flag: refresh vagy új tab után is logout állapot marad
     try{ sessionStorage.setItem('sp_logged_out','1'); }catch(e){}
     setLoggedOutUI();
