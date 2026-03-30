@@ -670,15 +670,26 @@
     if(!loginIframeLoaded){
       loginIframeLoaded=true;
       loginIframeWrap.style.background='#f0f7fb';
+      loginIframe.onload=function(){
+        loginIframeWrap.style.background='transparent';
+        // Ha logout után nyílik meg: sp-force-logout üzenet → jatekos-index showLogin()-t mutat
+        if(loggedOutExplicitly){
+          try{
+            loginIframe.contentWindow.postMessage(
+              {type:'sp-force-logout'},
+              'https://jatekos.sportingo.hu'
+            );
+          }catch(e){}
+        }
+      };
       loginIframe.src='https://jatekos.sportingo.hu/?modal=1';
-      loginIframe.onload=()=>loginIframeWrap.style.background='transparent';
     }
   }
   function resetLoginIframe(){
-    // Iframe src visszaállítása about:blank-re – Supabase session már törölve a bridge által
-    loginIframe.src='about:blank';
     loginIframeLoaded=false;
     loginIframeWrap.style.background='#f0f7fb';
+    // Src reset: az iframe újratöltődik, és az sp-force-logout üzenetet kapja
+    loginIframe.src='about:blank';
   }
   function closeLoginModal(){ loginModalOverlay.classList.remove('open'); document.body.style.overflow=''; }
   function openDrawer(){
