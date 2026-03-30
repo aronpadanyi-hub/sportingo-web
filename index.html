@@ -795,27 +795,41 @@
   });
 
   logoutBtn.addEventListener('click',async function(){
-    // 1. Auth-bridge iframe signOut (jatekos.sportingo.hu domain session)
-    const authIframe=document.getElementById('sportingo-auth-iframe');
-    if(authIframe&&authIframe.contentWindow){ try{ authIframe.contentWindow.postMessage({type:'sp-logout-request'},'https://jatekos.sportingo.hu'); }catch(e){} }
-    // 2. Login popup iframe értesítése (ha nyitva van)
-    if(loginIframe&&loginIframe.contentWindow&&loginIframe.src!=='about:blank'){
-      try{ loginIframe.contentWindow.postMessage({type:'sp-logout-request'},'https://jatekos.sportingo.hu'); }catch(e){}
-    }
-    // 3. Saját signOut
-    if(sb&&sb.auth){ try{ await sb.auth.signOut({scope:'global'}); }catch(e){} }
-    // 4. Cache törlés
+    logoutBtn.disabled=true;
+
+    // Azonnali UI és state reset
+    loggedOutExplicitly=true;
+    isLoggedIn=false; sessionChecked=true; hasCachedSession=false; userEmail='';
     localStorage.removeItem('sp_user');
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
-    loggedOutExplicitly=true;
-    isLoggedIn=false; sessionChecked=false; hasCachedSession=false; userEmail='';
-    resetLoginIframe();
     setLoggedOutUI();
     if(dName) dName.textContent='–'; if(dEmail) dEmail.textContent='–'; if(dAvatar) dAvatar.textContent='?';
     ['sp-stat-foglalasok','sp-stat-kedvencek','sp-stat-kovetkezo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='–'; });
     bookingList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs elérhető foglalás.</div>';
     kedvencekList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Nincs kedvenc pályád.</div>';
     closeDrawer();
+
+    // Bridge signOut: megvárjuk a jatekos.sportingo.hu domain session törlését
+    // Az iframe reset csak UTÁNA történik, hogy ne töltődjön be bejelentkezett állapot
+    const authIframe=document.getElementById('sportingo-auth-iframe');
+    await new Promise(function(resolve){
+      const timeout=setTimeout(resolve,3000);
+      function onLogoutConfirm(e){
+        if(!e.origin.includes('jatekos.sportingo.hu')) return;
+        if(e.data&&e.data.type==='sp-logout'){
+          window.removeEventListener('message',onLogoutConfirm);
+          clearTimeout(timeout);
+          resolve();
+        }
+      }
+      window.addEventListener('message',onLogoutConfirm);
+      if(authIframe&&authIframe.contentWindow){
+        try{ authIframe.contentWindow.postMessage({type:'sp-logout-request'},'https://jatekos.sportingo.hu'); }catch(e){}
+      }
+    });
+
+    resetLoginIframe();
+    logoutBtn.disabled=false;
   });
 
   function spEsc(s){ const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
