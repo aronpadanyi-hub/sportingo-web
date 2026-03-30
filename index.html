@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sportingo – Foglalj sportpályát online</title>
   <meta name="description" content="Sport- és élménypályák keresése és foglalása Magyarországon. Futball, tenisz, padel, squash.">
-  <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
+  <link rel="icon" href="https://sportingo.hu/wp-content/uploads/2026/03/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <style>
@@ -225,7 +225,7 @@
 <header id="sp-header">
   <div id="sp-header-inner">
     <a href="https://sportingo.hu" id="sp-logo" aria-label="Sportingo főoldal">
-      <img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" id="sp-logo-img">
+      <img src="https://sportingo.hu/wp-content/uploads/2026/03/logo.png" alt="Sportingo" id="sp-logo-img">
     </a>
     <nav id="sp-nav">
       <button class="sp-nav-link active" id="sp-nav-palya">Pályák</button>
@@ -339,7 +339,7 @@
   <div id="sp-login-modal">
     <div class="sp-modal-head">
       <div>
-        <div class="sp-modal-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo"></div>
+        <div class="sp-modal-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/logo_portal/logo_portal.png" alt="Sportingo"></div>
         <div class="sp-modal-subtitle">Játékos fiók</div>
       </div>
       <button type="button" class="sp-modal-close" data-sp-close-login>&#x2715;</button>
@@ -773,18 +773,16 @@
   });
 
   logoutBtn.addEventListener('click',async function(){
-    // 1. Bridge signOut
+    if(sb&&sb.auth){ try{ await sb.auth.signOut(); }catch(e){} }
     const authIframe=document.getElementById('sportingo-auth-iframe');
     if(authIframe&&authIframe.contentWindow){ try{ authIframe.contentWindow.postMessage({type:'sp-logout-request'},'https://jatekos.sportingo.hu'); }catch(e){} }
-    // 2. Saját Supabase signOut
-    if(sb&&sb.auth){ try{ await sb.auth.signOut({scope:'global'}); }catch(e){} }
-    // 3. Teljes cache törlés
-    localStorage.removeItem('sp_user');
-    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
-    // 4. Broadcast minden nyitott tabnak
-    try{ window.postMessage({type:'sp-logout',loggedIn:false},'*'); }catch(e){}
-    // 5. Hard reload
-    setTimeout(()=>{ location.reload(true); }, 150);
+    isLoggedIn=false; sessionChecked=false; hasCachedSession=false; userEmail=''; loginIframeLoaded=false;
+    loginIframe.src='about:blank'; localStorage.removeItem('sp_user'); setLoggedOutUI();
+    if(dName) dName.textContent='–'; if(dEmail) dEmail.textContent='–'; if(dAvatar) dAvatar.textContent='?';
+    ['sp-stat-foglalasok','sp-stat-kedvencek','sp-stat-kovetkezo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='–'; });
+    bookingList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs elérhető foglalás.</div>';
+    kedvencekList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Nincs kedvenc pályád.</div>';
+    closeDrawer();
   });
 
   function spEsc(s){ const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
