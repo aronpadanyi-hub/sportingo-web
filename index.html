@@ -581,7 +581,7 @@
   loadHelyszinek();
 
   // ── AUTH ──
-  let sb=null, isLoggedIn=false, userEmail='', hasCachedSession=false, sessionChecked=false, loginIframeLoaded=false;
+  let sb=null, isLoggedIn=false, userEmail='', hasCachedSession=false, sessionChecked=false, loginIframeLoaded=false, loggedOutExplicitly=false;
   let allBookings=[], filteredBookings=[], currentPage=1, activeFilter='mind';
   const perPage=10;
   const loginModalOverlay=document.getElementById('sp-login-modal-overlay');
@@ -628,6 +628,7 @@
     const loggedIn=d.loggedIn===true, email=d.email?d.email.trim().toLowerCase():'', name=d.name||(email?email.split('@')[0]:'');
     sessionChecked=true; setButtonsLoading(false);
     if(loggedIn&&email){
+      if(loggedOutExplicitly) return; // explicit logout után bridge polling ne állítsa vissza
       isLoggedIn=true; userEmail=email; hasCachedSession=true;
       localStorage.setItem('sp_user',JSON.stringify({email:email.trim().toLowerCase(),name}));
       setLoggedInUI(name,email);
@@ -785,6 +786,7 @@
     // 4. Cache törlés
     localStorage.removeItem('sp_user');
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
+    loggedOutExplicitly=true;
     isLoggedIn=false; sessionChecked=false; hasCachedSession=false; userEmail=''; loginIframeLoaded=false;
     loginIframe.src='about:blank'; setLoggedOutUI();
     if(dName) dName.textContent='–'; if(dEmail) dEmail.textContent='–'; if(dAvatar) dAvatar.textContent='?';
