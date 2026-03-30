@@ -787,8 +787,12 @@
     localStorage.removeItem('sp_user');
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
     loggedOutExplicitly=true;
-    isLoggedIn=false; sessionChecked=false; hasCachedSession=false; userEmail=''; loginIframeLoaded=false;
-    loginIframe.src='about:blank'; setLoggedOutUI();
+    isLoggedIn=false; sessionChecked=false; hasCachedSession=false; userEmail='';
+    // loginIframeLoaded=true marad, src-t logged_out=1 paraméterre állítjuk
+    // Így újranyitáskor a login képernyőt mutatja, nem initiál meglévő sessiont
+    loginIframeLoaded=true;
+    loginIframe.src='https://jatekos.sportingo.hu/?modal=1&logged_out=1';
+    setLoggedOutUI();
     if(dName) dName.textContent='–'; if(dEmail) dEmail.textContent='–'; if(dAvatar) dAvatar.textContent='?';
     ['sp-stat-foglalasok','sp-stat-kedvencek','sp-stat-kovetkezo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='–'; });
     bookingList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs elérhető foglalás.</div>';
