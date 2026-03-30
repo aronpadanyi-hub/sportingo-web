@@ -619,10 +619,11 @@
   // Két flag: bridgeConfirmed, explicitLogout
   // sp-login-success → mindig bejelentkeztet | sp-logout → mindig töröl | sp-auth-state(false) → csak explicit logout esetén töröl
 
-  // 1. Explicit logout restore (sessionStorage refresh után is megmarad ugyanabban a tabban)
-  if(sessionStorage.getItem('sp_logged_out')==='1'){
+  // 1. Explicit logout restore – localStorage-ban is tároljuk, hogy új tab se kerülje meg
+  if(localStorage.getItem('sp_logged_out')==='1'||sessionStorage.getItem('sp_logged_out')==='1'){
     localStorage.removeItem('sp_user');
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')||k.startsWith('supabase')) localStorage.removeItem(k); });
+    localStorage.removeItem('sp_logged_out');
     sessionStorage.removeItem('sp_logged_out');
     explicitLogout=true;
   }
@@ -669,7 +670,7 @@
     // sp-login-success: friss bejelentkezés → mindig elfogadja, flag reset
     if(d.type==='sp-login-success'){
       explicitLogout=false;
-      try{ sessionStorage.removeItem('sp_logged_out'); }catch(ex){}
+      try{ localStorage.removeItem('sp_logged_out'); sessionStorage.removeItem('sp_logged_out'); }catch(ex){}
       if(email){
         isLoggedIn=true; userEmail=email;
         localStorage.setItem('sp_user',JSON.stringify({email,name}));
@@ -685,7 +686,7 @@
       isLoggedIn=false; userEmail='';
       localStorage.removeItem('sp_user');
       Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')||k.startsWith('supabase')) localStorage.removeItem(k); });
-      try{ sessionStorage.setItem('sp_logged_out','1'); }catch(ex){}
+      try{ localStorage.setItem('sp_logged_out','1'); sessionStorage.setItem('sp_logged_out','1'); }catch(ex){}
       setLoggedOutUI();
       return;
     }
@@ -722,7 +723,7 @@
 
   document.addEventListener('click',function(e){
     const btn=e.target.closest('.sportingo-auth-btn');
-    if(btn){ e.preventDefault(); e.stopPropagation(); if(!sessionChecked&&!isLoggedIn){ setButtonsOpacity('.6'); const wait=setInterval(()=>{ if(sessionChecked){clearInterval(wait);setButtonsOpacity('1');handleBtnAction();} },100); setTimeout(()=>{clearInterval(wait);setButtonsOpacity('1');handleBtnAction();},2000); return; } handleBtnAction(); return; }
+    if(btn){ e.preventDefault(); e.stopPropagation(); handleBtnAction(); return; }
     if(e.target.matches('[data-sp-close-login]')){ e.preventDefault(); closeLoginModal(); return; }
     if(e.target===loginModalOverlay){ closeLoginModal(); return; }
     if(e.target.matches('[data-sp-close-drawer]')||e.target.closest('[data-sp-close-drawer]')){ closeDrawer(); return; }
@@ -873,8 +874,8 @@
     isLoggedIn=false; sessionChecked=true; userEmail='';
     localStorage.removeItem('sp_user');
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')||k.startsWith('supabase')) localStorage.removeItem(k); });
-    // sessionStorage flag: refresh vagy új tab után is logout állapot marad
-    try{ sessionStorage.setItem('sp_logged_out','1'); }catch(e){}
+    // localStorage + sessionStorage flag: új tab és refresh után is logout állapot marad
+    try{ localStorage.setItem('sp_logged_out','1'); sessionStorage.setItem('sp_logged_out','1'); }catch(e){}
     setLoggedOutUI();
     if(dName) dName.textContent='–'; if(dEmail) dEmail.textContent='–'; if(dAvatar) dAvatar.textContent='?';
     ['sp-stat-foglalasok','sp-stat-kedvencek','sp-stat-kovetkezo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='–'; });
