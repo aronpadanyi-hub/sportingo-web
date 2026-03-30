@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kapcsolat | Sportingo</title>
   <meta name="description" content="Vedd fel velünk a kapcsolatot – kérdés, javaslat, partnerség. A Sportingo csapata hamarosan válaszol.">
-  <link rel="icon" href="https://sportingo.hu/wp-content/uploads/2026/03/logo.png">
+  <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <style>
@@ -121,7 +121,7 @@
 
 <header id="sp-header">
   <div id="sp-header-inner">
-    <a href="https://sportingo.hu" id="sp-logo"><img src="https://sportingo.hu/wp-content/uploads/2026/03/logo.png" alt="Sportingo" id="sp-logo-img"></a>
+    <a href="https://sportingo.hu" id="sp-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" id="sp-logo-img"></a>
     <nav id="sp-nav">
       <a href="https://sportingo.hu" class="sp-nav-link">Pályák</a>
       <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-nav-link">Hogyan működik?</a>
@@ -168,7 +168,7 @@
       <div class="sp-contact-item-icon">📧</div>
       <div>
         <div class="sp-contact-item-title">Email</div>
-        <div class="sp-contact-item-val"><a href="mailto:admin@sportingo.hu">admin@sportingo.hu</a></div>
+        <div class="sp-contact-item-val"><a href="/cdn-cgi/l/email-protection#a7c6c3cacec9e7d4d7c8d5d3cec9c0c889cfd2"><span class="__cf_email__" data-cfemail="5031343d393e1023203f2224393e373f7e3825">[email&#160;protected]</span></a></div>
       </div>
     </div>
 
@@ -299,7 +299,7 @@
   <div style="margin-top:12px;">© 2026 Sportingo. Minden jog fenntartva.</div>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 async function spSendContact(){
   const nev = document.getElementById('sp-nev').value.trim();
   const email = document.getElementById('sp-email').value.trim();
@@ -342,14 +342,4 @@ async function spSendContact(){
       body: JSON.stringify({ to: 'admin@sportingo.hu', subject: `📩 Kapcsolati üzenet – ${temaLabel}`, html })
     });
     document.getElementById('sp-contact-form').style.display = 'none';
-    document.getElementById('sp-form-success').style.display = 'block';
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = '📨 Üzenet küldése';
-    errEl.textContent = 'Hiba történt, kérjük próbáld újra!';
-    errEl.style.display = 'block';
-  }
-}
-</script>
-</body>
-</html>
+    document.getElementById('sp-form-success').style.dis
