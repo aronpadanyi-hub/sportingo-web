@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kapcsolat | Sportingo</title>
+  <meta name="description" content="Vedd fel velünk a kapcsolatot – kérdés, javaslat, partnerség. A Sportingo csapata hamarosan válaszol.">
+  <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: #f5f9fc; color: #0a1628; padding-top: 68px; }
+    #sp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 9000; background: white; box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+    #sp-header-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    #sp-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+    #sp-logo-img { height: 38px; width: auto; display: block; }
+    #sp-nav { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+    .sp-nav-link { padding: 8px 14px; border-radius: 8px; font-size: .88rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; white-space: nowrap; }
+    .sp-nav-link:hover, .sp-nav-link.active { background: rgba(26,143,193,.08); color: #1a8fc1; }
+    #sp-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    #sp-socials { display: flex; gap: 6px; }
+    .sp-social-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a2e3b; text-decoration: none; transition: all .2s; background: rgba(0,0,0,.04); }
+    .sp-social-btn:hover { background: rgba(26,143,193,.1); color: #1a8fc1; }
+    .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; }
+    .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; }
+    #sp-hamburger { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; }
+    #sp-hamburger span { display: block; width: 22px; height: 2px; background: #1a2e3b; border-radius: 2px; transition: all .3s; transform-origin: center; }
+    #sp-hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    #sp-hamburger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    #sp-hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    #sp-mobile-menu { display: none; background: white; border-top: 1px solid #f0f7fb; overflow: hidden; max-height: 0; transition: max-height .35s cubic-bezier(.4,0,.2,1); }
+    #sp-mobile-menu.is-open { max-height: 400px; }
+    #sp-mobile-nav { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 2px; }
+    .sp-mobile-link { padding: 12px 16px; border-radius: 10px; font-size: .95rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; display: flex; align-items: center; gap: 10px; }
+    .sp-mobile-link:hover { background: #f0f7fb; color: #1a8fc1; }
+    .sp-hero { position: relative; overflow: hidden; padding: 100px 20px 120px;
+      background: radial-gradient(1200px 500px at 15% 20%, rgba(36,107,253,.18), transparent 60%),
+                  radial-gradient(900px 420px at 85% 25%, rgba(34,197,94,.14), transparent 55%),
+                  linear-gradient(180deg, #0b1220, #0f172a 55%, #111827); }
+    .sp-hero::before { content:""; position:absolute; width:520px; height:520px; border-radius:999px; filter:blur(60px); opacity:.3; top:-220px; left:-180px; background:rgba(36,107,253,.9); pointer-events:none; }
+    .sp-hero::after { content:""; position:absolute; width:520px; height:520px; border-radius:999px; filter:blur(60px); opacity:.3; bottom:-260px; right:-220px; background:rgba(34,197,94,.75); pointer-events:none; }
+    .sp-hero-inner { position:relative; max-width:600px; margin:0 auto; text-align:center; }
+    .sp-hero-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:20px; padding:6px 14px; font-size:.78rem; font-weight:700; color:rgba(255,255,255,.7); letter-spacing:.06em; text-transform:uppercase; margin-bottom:20px; }
+    .sp-hero h1 { font-family:'Syne',sans-serif; font-weight:800; letter-spacing:-.02em; line-height:1.1; color:#f8fafc; font-size:clamp(28px,4.5vw,52px); margin-bottom:16px; }
+    .sp-hero-accent { background:linear-gradient(90deg,#60a5fa,#22c55e); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .sp-hero p { color:rgba(255,255,255,.65); font-size:clamp(.9rem,1.5vw,1.05rem); line-height:1.7; }
+    .sp-contact-section { max-width: 960px; margin: 0 auto; padding: 80px 20px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 48px; align-items: start; }
+    .sp-contact-info-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; color:#0a1628; margin-bottom:8px; }
+    .sp-contact-info-sub { font-size:.88rem; color:#4a6070; line-height:1.7; margin-bottom:32px; }
+    .sp-contact-item { display:flex; align-items:flex-start; gap:14px; margin-bottom:20px; }
+    .sp-contact-item-icon { width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,rgba(26,143,193,.1),rgba(45,191,126,.1)); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+    .sp-contact-item-title { font-weight:700; font-size:.88rem; color:#0a1628; margin-bottom:3px; }
+    .sp-contact-item-val { font-size:.83rem; color:#4a6070; }
+    .sp-contact-item-val a { color:#1a8fc1; text-decoration:none; font-weight:600; }
+    .sp-contact-item-val a:hover { text-decoration:underline; }
+    .sp-social-row { display:flex; gap:10px; margin-top:28px; }
+    .sp-social-pill { display:flex; align-items:center; gap:8px; padding:9px 16px; background:white; border:1.5px solid #d4e8f0; border-radius:20px; font-size:.82rem; font-weight:700; color:#1a2e3b; text-decoration:none; transition:all .2s; }
+    .sp-social-pill:hover { border-color:#1a8fc1; color:#1a8fc1; transform:translateY(-1px); }
+    .sp-form-card { background:white; border:1.5px solid #d4e8f0; border-radius:20px; padding:32px; box-shadow:0 4px 24px rgba(10,22,40,.06); }
+    .sp-form-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; color:#0a1628; margin-bottom:20px; }
+    .sp-form-group { margin-bottom:16px; }
+    .sp-form-label { display:block; font-size:.78rem; font-weight:700; color:#6b8a9a; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+    .sp-form-input, .sp-form-select, .sp-form-textarea { width:100%; padding:11px 14px; border:1.5px solid #d4e8f0; border-radius:10px; font-family:'Plus Jakarta Sans',sans-serif; font-size:.88rem; color:#0a1628; background:#f9fbfc; outline:none; transition:all .2s; }
+    .sp-form-input:focus, .sp-form-select:focus, .sp-form-textarea:focus { border-color:#1a8fc1; background:white; box-shadow:0 0 0 3px rgba(26,143,193,.08); }
+    .sp-form-textarea { resize:vertical; min-height:110px; }
+    .sp-form-select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b8a9a' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
+    .sp-form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .sp-form-submit { width:100%; padding:13px; background:linear-gradient(135deg,#1a8fc1,#2dbf7e); color:white; border:none; border-radius:11px; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:.95rem; cursor:pointer; transition:all .2s; margin-top:4px; }
+    .sp-form-submit:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(26,143,193,.3); }
+    .sp-form-submit:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+    #sp-form-success { display:none; text-align:center; padding:24px; }
+    #sp-form-success .sp-success-icon { font-size:2.5rem; margin-bottom:12px; }
+    #sp-form-success h3 { font-family:'Syne',sans-serif; font-weight:800; color:#0a1628; margin-bottom:6px; }
+    #sp-form-success p { font-size:.85rem; color:#4a6070; }
+    .sp-faq-section { background:white; border-top:1.5px solid #d4e8f0; padding:60px 20px; }
+    .sp-faq-inner { max-width:720px; margin:0 auto; }
+    .sp-faq-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.5rem; color:#0a1628; margin-bottom:28px; }
+    .sp-faq-item { border-bottom:1.5px solid #f0f7fb; padding:18px 0; }
+    .sp-faq-q { font-weight:700; font-size:.92rem; color:#0a1628; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .sp-faq-arrow { font-size:.8rem; color:#1a8fc1; transition:transform .2s; flex-shrink:0; }
+    .sp-faq-item.open .sp-faq-arrow { transform:rotate(180deg); }
+    .sp-faq-a { font-size:.85rem; color:#4a6070; line-height:1.7; max-height:0; overflow:hidden; transition:max-height .3s ease, padding .3s; }
+    .sp-faq-item.open .sp-faq-a { max-height:200px; padding-top:10px; }
+    .sp-footer { background:#0b1220; color:rgba(255,255,255,.5); padding:40px 20px; text-align:center; font-size:.83rem; }
+    .sp-footer a { color:rgba(255,255,255,.6); text-decoration:none; margin:0 10px; }
+    .sp-footer a:hover { color:white; }
+    .sp-footer-logo { font-size:1.1rem; font-weight:900; letter-spacing:6px; text-transform:uppercase; color:white; margin-bottom:12px; }
+    .sp-footer-logo span { color:#1a8fc1; }
+    /* LOGIN MODAL */
+    #sp-login-modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,.55); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .25s; }
+    #sp-login-modal-overlay.open { opacity: 1; pointer-events: all; }
+    #sp-login-modal { background: white; border-radius: 20px; width: 420px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.25); overflow: hidden; }
+    .sp-modal-head { padding: 20px 20px 16px; display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1.5px solid #f0f7fb; }
+    .sp-modal-logo img { height: 36px; }
+    .sp-modal-subtitle { font-size: .78rem; color: #6b8a9a; font-weight: 600; margin-top: 4px; }
+    .sp-modal-close { background: #f0f7fb; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; color: #6b8a9a; transition: all .2s; flex-shrink: 0; }
+    .sp-modal-close:hover { background: #d4e8f0; color: #0a1628; }
+    #sp-login-iframe-wrap { flex: 1; background: #f0f7fb; }
+    #sp-login-iframe { width: 100%; height: 460px; border: none; display: block; }
+    .sp-modal-foot { padding: 12px 20px; border-top: 1.5px solid #f0f7fb; font-size: .78rem; color: #6b8a9a; text-align: center; }
+    .sp-modal-foot a { color: #1a8fc1; font-weight: 600; text-decoration: none; }
+    @media (max-width:900px) {
+      #sp-nav, #sp-socials { display:none; }
+      #sp-hamburger { display:flex; }
+      #sp-mobile-menu { display:block; }
+      .sp-contact-section { grid-template-columns:1fr; gap:32px; }
+    }
+    @media (max-width:600px) {
+      #sp-login-modal { border-radius: 16px 16px 0 0; max-height: 95vh; position: fixed; bottom: 0; width: 100%; }
+      #sp-login-modal-overlay { align-items: flex-end; }
+    }
+    @media (max-width:560px) {
+      .sp-form-row { grid-template-columns:1fr; }
+      .sp-form-card { padding:22px; }
+      body { padding-top:60px; }
+      #sp-header-inner { height:60px; }
+      #sp-logo-img { height:32px; }
+    }
+  </style>
+</head>
+<body>
+
+<header id="sp-header">
+  <div id="sp-header-inner">
+    <a href="https://sportingo.hu" id="sp-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" id="sp-logo-img"></a>
+    <nav id="sp-nav">
+      <a href="https://sportingo.hu" class="sp-nav-link">Pályák</a>
+      <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-nav-link">Hogyan működik?</a>
+      <a href="https://sportingo.hu/palyat-uzemeltetsz/" class="sp-nav-link">Pályát üzemeltetsz?</a>
+      <a href="https://sportingo.hu/kapcsolat/" class="sp-nav-link active">Kapcsolat</a>
+    </nav>
+    <div id="sp-header-right">
+      <div id="sp-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+      </div>
+      <button type="button" class="sportingo-auth-btn"><span>👤</span><span>Bejelentkezés</span></button>
+      <button id="sp-hamburger" onclick="this.classList.toggle('is-open');document.getElementById('sp-mobile-menu').classList.toggle('is-open');"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div id="sp-mobile-menu">
+    <nav id="sp-mobile-nav">
+      <a href="https://sportingo.hu" class="sp-mobile-link">⚽ Pályák</a>
+      <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-mobile-link">❓ Hogyan működik?</a>
+      <a href="https://sportingo.hu/palyat-uzemeltetsz/" class="sp-mobile-link">🏟 Pályát üzemeltetsz?</a>
+      <a href="https://sportingo.hu/kapcsolat/" class="sp-mobile-link">📬 Kapcsolat</a>
+    </nav>
+  </div>
+</header>
+
+<section class="sp-hero">
+  <div class="sp-hero-inner">
+    <div class="sp-hero-badge">📬 Elérhetőség</div>
+    <h1>Írj nekünk, <span class="sp-hero-accent">válaszolunk!</span></h1>
+    <p>Kérdésed van a foglalással, egy helyszínnel vagy a Sportingóval kapcsolatban? A csapatunk hamarosan visszajelzik.</p>
+  </div>
+</section>
+
+<section class="sp-contact-section">
+  <div>
+    <div class="sp-contact-info-title">Vedd fel velünk a kapcsolatot</div>
+    <p class="sp-contact-info-sub">Sportolóként vagy pályatulajdonosként egyaránt szívesen segítünk. Kérdés, javaslat, partnerség – bátran írj!</p>
+    <div class="sp-contact-item">
+      <div class="sp-contact-item-icon">📧</div>
+      <div>
+        <div class="sp-contact-item-title">Email</div>
+        <div class="sp-contact-item-val"><a href="mailto:admin@sportingo.hu">admin@sportingo.hu</a></div>
+      </div>
+    </div>
+    <div class="sp-contact-item">
+      <div class="sp-contact-item-icon">⚽</div>
+      <div>
+        <div class="sp-contact-item-title">Pályatulajdonosoknak</div>
+        <div class="sp-contact-item-val">Csatlakozáshoz, kérdésekhez írj emailt vagy töltsd ki az űrlapot.</div>
+      </div>
+    </div>
+    <div class="sp-contact-item">
+      <div class="sp-contact-item-icon">🕐</div>
+      <div>
+        <div class="sp-contact-item-title">Válaszidő</div>
+        <div class="sp-contact-item-val">Általában 24 órán belül válaszolunk.</div>
+      </div>
+    </div>
+    <div class="sp-social-row">
+      <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        Facebook
+      </a>
+      <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        Instagram
+      </a>
+    </div>
+  </div>
+
+  <div class="sp-form-card">
+    <div class="sp-form-title">📩 Üzenet küldése</div>
+    <div id="sp-contact-form">
+      <div class="sp-form-row">
+        <div class="sp-form-group">
+          <label class="sp-form-label">Neved *</label>
+          <input type="text" class="sp-form-input" id="sp-nev" placeholder="Kiss János" required>
+        </div>
+        <div class="sp-form-group">
+          <label class="sp-form-label">Email *</label>
+          <input type="email" class="sp-form-input" id="sp-email" placeholder="kiss@gmail.com" required>
+        </div>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Téma</label>
+        <select class="sp-form-select" id="sp-tema">
+          <option value="">Válassz témát...</option>
+          <option value="foglalas">Foglalással kapcsolatos kérdés</option>
+          <option value="helyszin">Helyszínnel kapcsolatos kérdés</option>
+          <option value="tulajdonos">Pályatulajdonosként szeretnék csatlakozni</option>
+          <option value="hiba">Hibát találtam</option>
+          <option value="egyeb">Egyéb</option>
+        </select>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Üzeneted *</label>
+        <textarea class="sp-form-textarea" id="sp-uzenet" placeholder="Írj nekünk bármit ami eszedbe jut..." required></textarea>
+      </div>
+      <div id="sp-form-error" style="display:none;color:#ef4444;font-size:.82rem;margin-bottom:10px;"></div>
+      <button type="button" class="sp-form-submit" id="sp-submit-btn" onclick="spSendContact()">📨 Üzenet küldése</button>
+    </div>
+    <div id="sp-form-success">
+      <div class="sp-success-icon">✅</div>
+      <h3>Üzenet elküldve!</h3>
+      <p>Köszönjük megkeresésed. Hamarosan válaszolunk az email címedre.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sp-faq-section">
+  <div class="sp-faq-inner">
+    <div class="sp-faq-title">Gyakori kérdések</div>
+    <div class="sp-faq-item">
+      <div class="sp-faq-q" onclick="this.parentElement.classList.toggle('open')">Ingyenes a Sportingo használata?<span class="sp-faq-arrow">▼</span></div>
+      <div class="sp-faq-a">Igen, a Sportingo játékosok számára teljesen ingyenes. Regisztráció sem szükséges a pályák böngészéséhez és foglalási kérés küldéséhez.</div>
+    </div>
+    <div class="sp-faq-item">
+      <div class="sp-faq-q" onclick="this.parentElement.classList.toggle('open')">Hogyan tudok pályát felvenni a platformra?<span class="sp-faq-arrow">▼</span></div>
+      <div class="sp-faq-a">Regisztrálj a portal.sportingo.hu oldalon tulajdonosként, töltsd fel a pálya adatait, majd a csapatunk jóváhagyja és élesíti a listázást.</div>
+    </div>
+    <div class="sp-faq-item">
+      <div class="sp-faq-q" onclick="this.parentElement.classList.toggle('open')">Mennyi idő alatt kapok visszajelzést a foglalásomra?<span class="sp-faq-arrow">▼</span></div>
+      <div class="sp-faq-a">Ez a pálya üzemeltetőjétől függ. A foglalási kérés azonnal megérkezik hozzájuk emailben, általában néhány órán belül visszajeleznek.</div>
+    </div>
+    <div class="sp-faq-item">
+      <div class="sp-faq-q" onclick="this.parentElement.classList.toggle('open')">Milyen sportágak érhetők el?<span class="sp-faq-arrow">▼</span></div>
+      <div class="sp-faq-a">Jelenleg futball, tenisz, padel és squash pályák találhatók a platformon. Folyamatosan bővítjük a kínálatot.</div>
+    </div>
+    <div class="sp-faq-item">
+      <div class="sp-faq-q" onclick="this.parentElement.classList.toggle('open')">Van mobilos alkalmazás?<span class="sp-faq-arrow">▼</span></div>
+      <div class="sp-faq-a">Egyelőre nincs dedikált mobilapp, de a sportingo.hu mobilon is tökéletesen használható, reszponzív felületen.</div>
+    </div>
+  </div>
+</section>
+
+<footer class="sp-footer">
+  <div class="sp-footer-logo">SPORTING<span>O</span></div>
+  <div>
+    <a href="https://sportingo.hu/hogyan-mukodik/">Hogyan működik?</a>
+    <a href="https://sportingo.hu/palyat-uzemeltetsz/">Pályát üzemeltetsz?</a>
+    <a href="https://sportingo.hu/kapcsolat/">Kapcsolat</a>
+    <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál</a>
+  </div>
+  <div style="margin-top:12px;">© 2026 Sportingo. Minden jog fenntartva.</div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div id="sp-login-modal-overlay">
+  <div id="sp-login-modal">
+    <div class="sp-modal-head">
+      <div>
+        <div class="sp-modal-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo"></div>
+        <div class="sp-modal-subtitle">Játékos fiók</div>
+      </div>
+      <button type="button" class="sp-modal-close" id="sp-modal-close-btn">&#x2715;</button>
+    </div>
+    <div id="sp-login-iframe-wrap">
+      <iframe id="sp-login-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+    </div>
+    <div class="sp-modal-foot">Pályatulajdonos? <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál &rarr;</a></div>
+  </div>
+</div>
+
+<!-- AUTH BRIDGE -->
+<iframe id="sp-auth-bridge" src="https://jatekos.sportingo.hu/auth-bridge" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;border:none;opacity:0;pointer-events:none;" sandbox="allow-scripts allow-same-origin"></iframe>
+
+<script>
+async function spSendContact(){
+  const nev = document.getElementById('sp-nev').value.trim();
+  const email = document.getElementById('sp-email').value.trim();
+  const tema = document.getElementById('sp-tema').value;
+  const uzenet = document.getElementById('sp-uzenet').value.trim();
+  const errEl = document.getElementById('sp-form-error');
+  const btn = document.getElementById('sp-submit-btn');
+
+  if(!nev || !email || !uzenet){
+    errEl.textContent = 'Kérjük töltsd ki a kötelező mezőket!';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = '⏳ Küldés...';
+
+  const temaLabel = {foglalas:'Foglalással kapcsolatos',helyszin:'Helyszínnel kapcsolatos',tulajdonos:'Pályatulajdonos csatlakozás',hiba:'Hibajelentés',egyeb:'Egyéb'}[tema] || 'Általános';
+
+  const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f0f7fb;padding:20px;">
+    <div style="max-width:500px;margin:0 auto;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+      <div style="background:linear-gradient(135deg,#1a8fc1,#2dbf7e);border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
+        <div style="font-size:24px;">📩</div>
+        <div style="color:white;font-weight:800;font-size:16px;margin-top:6px;">Új kapcsolati üzenet</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;background:#f0f7fb;border-radius:10px;margin-bottom:16px;">
+        <tr><td style="padding:10px 14px;color:#6b8a9a;font-size:13px;">Név</td><td style="padding:10px 14px;font-weight:700;font-size:13px;">${nev}</td></tr>
+        <tr><td style="padding:10px 14px;color:#6b8a9a;font-size:13px;">Email</td><td style="padding:10px 14px;font-weight:700;font-size:13px;">${email}</td></tr>
+        <tr><td style="padding:10px 14px;color:#6b8a9a;font-size:13px;">Téma</td><td style="padding:10px 14px;font-weight:700;font-size:13px;">${temaLabel}</td></tr>
+        <tr><td style="padding:10px 14px;color:#6b8a9a;font-size:13px;vertical-align:top;">Üzenet</td><td style="padding:10px 14px;font-size:13px;">${uzenet.replace(/\n/g,'<br>')}</td></tr>
+      </table>
+      <p style="color:#b0c4ce;font-size:11px;text-align:center;">Sportingo · sportingo.hu</p>
+    </div>
+  </body></html>`;
+
+  try {
+    await fetch('https://amowwfjxeursokkznmxl.supabase.co/functions/v1/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0' },
+      body: JSON.stringify({ to: 'admin@sportingo.hu', subject: `📩 Kapcsolati üzenet – ${temaLabel}`, html })
+    });
+    document.getElementById('sp-contact-form').style.display = 'none';
+    document.getElementById('sp-form-success').style.display = 'block';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '📨 Üzenet küldése';
+    errEl.textContent = 'Hiba történt, kérjük próbáld újra!';
+    errEl.style.display = 'block';
+  }
+}
+</script>
+
+<script>
+(function(){
+  // Állapot
+  let isLoggedIn = false, userEmail = '', explicitLogout = false;
+  const loginModalOverlay = document.getElementById('sp-login-modal-overlay');
+  const loginIframe       = document.getElementById('sp-login-iframe');
+  const loginIframeWrap   = document.getElementById('sp-login-iframe-wrap');
+  const authBridge        = document.getElementById('sp-auth-bridge');
+
+  function getBtn()      { return document.querySelector('.sportingo-auth-btn'); }
+  function getBtnLabel() { const b = getBtn(); return b ? b.querySelector('span:last-child') : null; }
+
+  function setLoggedInUI(name, email) {
+    const lbl = getBtnLabel();
+    if (lbl) lbl.textContent = name || email.split('@')[0];
+  }
+  function setLoggedOutUI() {
+    const lbl = getBtnLabel();
+    if (lbl) lbl.textContent = 'Bejelentkezés';
+  }
+  function clearAllCache() {
+    localStorage.removeItem('sp_user');
+    Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k); });
+  }
+
+  // INIT: explicit logout kezelés
+  if (sessionStorage.getItem('sp_logged_out') === '1') {
+    clearAllCache();
+    explicitLogout = true;
+  }
+
+  // Optimista UI cache-ből
+  if (!explicitLogout) {
+    const cached = localStorage.getItem('sp_user');
+    if (cached) {
+      try {
+        const u = JSON.parse(cached);
+        if (u && u.email) {
+          isLoggedIn = true;
+          userEmail  = u.email.trim().toLowerCase();
+          setLoggedInUI(u.name || u.email.split('@')[0], u.email);
+        }
+      } catch(e) {}
+    }
+  }
+
+  // Modal: MINDIG friss iframe – garantáltan tiszta állapot
+  function openLoginModal() {
+    loginIframe.onload = null;
+    loginIframe.src    = 'about:blank';
+    loginIframeWrap.style.background = '#f0f7fb';
+    loginModalOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function() {
+      loginIframe.onload = function() {
+        if (loginIframe.src === 'about:blank') return;
+        loginIframeWrap.style.background = 'transparent';
+        if (explicitLogout) {
+          try { loginIframe.contentWindow.postMessage({ type: 'sp-force-logout' }, 'https://jatekos.sportingo.hu'); } catch(e) {}
+        }
+      };
+      loginIframe.src = 'https://jatekos.sportingo.hu/?modal=1';
+    }, 50);
+  }
+
+  function closeLoginModal() {
+    loginModalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    // Reset: következő megnyitásra garantáltan tiszta lesz
+    loginIframe.onload = null;
+    loginIframe.src    = 'about:blank';
+    loginIframeWrap.style.background = '#f0f7fb';
+  }
+
+  // GOMB – mindig azonnal, nincs navigáció más oldalra
+  const btn = getBtn();
+  if (btn) btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    openLoginModal(); // modal nyílik minden esetben (bejelentkezett user is látja a portált benne)
+  });
+
+  document.getElementById('sp-modal-close-btn').addEventListener('click', closeLoginModal);
+  loginModalOverlay.addEventListener('click', function(e) { if (e.target === loginModalOverlay) closeLoginModal(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLoginModal(); });
+
+  // Bridge üzenetek
+  window.addEventListener('message', function(e) {
+    if (!e.origin.includes('jatekos.sportingo.hu')) return;
+    const d = e.data; if (!d) return;
+    const validTypes = ['sp-login-success', 'sp-auth-state', 'sp-logout'];
+    if (d.type && !validTypes.includes(d.type)) return;
+
+    if (d.loggedIn === true && d.email && !explicitLogout) {
+      const email = d.email.trim().toLowerCase();
+      const name  = d.name || email.split('@')[0];
+      isLoggedIn = true;
+      userEmail  = email;
+      explicitLogout = false;
+      localStorage.setItem('sp_user', JSON.stringify({ email, name }));
+      setLoggedInUI(name, email);
+      // Sikeres bejelentkezés után zárjuk a modalt
+      if (d.type === 'sp-login-success') closeLoginModal();
+    } else {
+      isLoggedIn = false;
+      userEmail  = '';
+      clearAllCache();
+      setLoggedOutUI();
+      if (d.type === 'sp-logout') {
+        explicitLogout = true;
+        try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e) {}
+        // Logout után reset az iframe
+        loginIframe.onload = null;
+        loginIframe.src    = 'about:blank';
+        loginIframeWrap.style.background = '#f0f7fb';
+      }
+    }
+  });
+
+  // Cross-tab logout
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'sp_user' && e.newValue === null) {
+      isLoggedIn = false; userEmail = ''; explicitLogout = true;
+      setLoggedOutUI();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
