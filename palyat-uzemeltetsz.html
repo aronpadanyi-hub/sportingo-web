@@ -296,5 +296,55 @@
   <div style="margin-top:12px;">© 2026 Sportingo. Minden jog fenntartva.</div>
 </footer>
 
+
+<!-- Auth bridge -->
+<iframe id="sp-auth-bridge" src="https://jatekos.sportingo.hu/auth-bridge" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;border:none;opacity:0;pointer-events:none;" sandbox="allow-scripts allow-same-origin"></iframe>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  const SUPABASE_URL='https://amowwfjxeursokkznmxl.supabase.co';
+  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
+  const {createClient}=supabase;
+  const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+
+  const btn=document.querySelector('.sportingo-auth-btn');
+  const btnLabel=btn?btn.querySelector('span:last-child'):null;
+
+  // Cache alapján azonnal beállít
+  const cached=localStorage.getItem('sp_user');
+  if(cached){
+    try{
+      const u=JSON.parse(cached);
+      if(u&&u.email&&btnLabel){
+        btnLabel.textContent=u.name||u.email.split('@')[0];
+        btn.querySelector('span:first-child').textContent='👤';
+      }
+    }catch(e){}
+  }
+
+  // Bridge üzenet figyelés
+  window.addEventListener('message',function(e){
+    if(!e.origin.includes('jatekos.sportingo.hu')) return;
+    const d=e.data; if(!d) return;
+    if((d.type==='sp-login-success'||d.type==='sp-auth-state')&&d.loggedIn&&d.email){
+      localStorage.setItem('sp_user',JSON.stringify({email:d.email,name:d.name||d.email.split('@')[0]}));
+      if(btnLabel) btnLabel.textContent=d.name||d.email.split('@')[0];
+    } else if(d.type==='sp-logout'||d.loggedIn===false){
+      localStorage.removeItem('sp_user');
+      if(btnLabel) btnLabel.textContent='Bejelentkezés';
+    }
+  });
+
+  // Gomb kattintás: főoldalra visz és megnyitja a login modalt
+  if(btn) btn.addEventListener('click',function(){
+    const user=localStorage.getItem('sp_user');
+    if(user){
+      window.location.href='https://sportingo.hu/?drawer=1';
+    } else {
+      window.location.href='https://sportingo.hu/?login=1';
+    }
+  });
+})();
+</script>
 </body>
 </html>
