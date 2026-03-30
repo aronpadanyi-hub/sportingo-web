@@ -3,769 +3,798 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sportingo – Játékos Portál</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <title>Sportingo – Foglalj sportpályát online</title>
+  <meta name="description" content="Sport- és élménypályák keresése és foglalása Magyarországon. Futball, tenisz, padel, squash.">
+  <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --blue:#1a8fc1;--green:#2dbf7e;--green-dark:#1a9960;
-      --grad:linear-gradient(135deg,var(--blue) 0%,var(--green) 100%);
-      --dark:#0a1628;--text:#1a2e3b;--muted:#6b8a9a;
-      --border:#d4e8f0;--bg:#f0f7fb;--error:#e53e3e;--success:#2dbf7e;
-      --green-pale:rgba(45,191,126,0.15);
-    }
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);}
-    #loginPage{display:flex;width:100%;min-height:100vh;}
-    .left-panel{width:42%;background:var(--dark);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:3rem;}
-    .left-panel::before{content:'';position:absolute;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(45,191,126,.15) 0%,transparent 70%);pointer-events:none;}
-    .left-panel::after{content:'';position:absolute;bottom:-150px;right:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(26,143,193,.2) 0%,transparent 70%);pointer-events:none;}
-    .field-lines{position:absolute;inset:0;opacity:.04;background-image:linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px);background-size:60px 60px;}
-    .logo-area{position:relative;z-index:2;}
-    .logo{display:flex;align-items:center;gap:10px;margin-bottom:.5rem;}
-    .logo-icon{width:40px;height:40px;background:var(--grad);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
-    .logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:white;}
-    .logo-sub{font-size:.75rem;color:rgba(255,255,255,.35);letter-spacing:2px;text-transform:uppercase;margin-left:50px;}
-    .hero-area{position:relative;z-index:2;}
-    .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(45,191,126,.15);border:1px solid rgba(45,191,126,.3);color:var(--green);font-size:.72rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:20px;margin-bottom:1.5rem;}
-    .hero-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.6rem,2.5vw,2.4rem);color:white;line-height:1.15;margin-bottom:1rem;}
-    .hero-title span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-    .hero-desc{color:rgba(255,255,255,.45);font-size:.88rem;line-height:1.7;}
-    .stats-row{display:flex;gap:2rem;margin-top:2rem;position:relative;z-index:2;}
-    .stat{border-top:1px solid rgba(255,255,255,.1);padding-top:1rem;}
-    .stat-num{font-family:'Syne',sans-serif;font-weight:700;font-size:1.5rem;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:4px;}
-    .stat-label{font-size:.72rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px;}
-    .right-panel{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;}
-    .login-box{width:100%;max-width:420px;}
-    .login-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.5rem;color:var(--dark);margin-bottom:6px;}
-    .login-sub{font-size:.85rem;color:var(--muted);margin-bottom:2rem;}
-    .auth-mode-toggle{display:flex;background:#f0f7fb;border-radius:12px;padding:4px;margin-bottom:1.5rem;}
-    .auth-mode-btn{flex:1;padding:8px;text-align:center;font-size:.85rem;font-weight:600;cursor:pointer;border-radius:9px;border:none;background:transparent;color:var(--muted);transition:all .2s;font-family:'Plus Jakarta Sans',sans-serif;}
-    .auth-mode-btn.active{background:white;color:var(--dark);box-shadow:0 2px 8px rgba(0,0,0,.08);}
-    .input-wrap{position:relative;margin-bottom:1rem;}
-    .input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:.95rem;pointer-events:none;}
-    .login-input{width:100%;padding:12px 14px 12px 40px;border:1.5px solid var(--border);border-radius:11px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;color:var(--text);background:white;outline:none;transition:all .2s;}
-    .login-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,143,193,.1);}
-    .btn-login{width:100%;padding:13px;background:var(--grad);color:white;border:none;border-radius:11px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .25s;margin-bottom:.75rem;}
-    .btn-login:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(26,143,193,.35);}
-    .btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none;}
-    .btn-google{width:100%;padding:12px;background:white;color:var(--text);border:1.5px solid var(--border);border-radius:11px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:.75rem;}
-    .btn-google:hover{border-color:var(--blue);box-shadow:0 4px 12px rgba(0,0,0,.08);}
-    .divider{display:flex;align-items:center;gap:12px;margin:.75rem 0;color:var(--muted);font-size:.8rem;}
-    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
-    .forgot-link{display:block;text-align:right;font-size:.78rem;color:var(--blue);text-decoration:none;font-weight:500;margin-bottom:1rem;}
-    .header{background:var(--dark);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.3);}
-    .header-logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:white;}
-    .header-logo-icon{width:32px;height:32px;background:var(--grad);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;}
-    .header-right{display:flex;align-items:center;gap:12px;}
-    .user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:5px 14px 5px 8px;}
-    .user-avatar{width:28px;height:28px;background:var(--grad);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:white;}
-    .user-name{font-size:.8rem;color:rgba(255,255,255,.8);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .btn-logout{padding:6px 14px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:.8rem;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;}
-    .btn-logout:hover{background:rgba(255,255,255,.15);color:white;}
-    .layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 60px);}
-    .sidebar{background:white;border-right:1px solid var(--border);padding:1.5rem 1rem;}
-    .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:0 8px;margin-bottom:6px;margin-top:1.5rem;}
-    .sidebar-section:first-child{margin-top:0;}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;font-size:.88rem;font-weight:500;cursor:pointer;transition:all .2s;color:var(--text);border:none;background:transparent;width:100%;text-align:left;}
-    .nav-item:hover{background:var(--bg);color:var(--blue);}
-    .nav-item.active{background:linear-gradient(135deg,rgba(26,143,193,.1),rgba(45,191,126,.1));color:var(--blue);font-weight:600;}
-    .nav-icon{font-size:1rem;width:20px;text-align:center;}
-    .main{padding:2rem;overflow-y:auto;}
-    .page{display:none;animation:fadeIn .3s ease;}
-    .page.active{display:block;}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem;}
-    .page-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.4rem;color:var(--dark);}
-    .page-sub{font-size:.85rem;color:var(--muted);margin-top:2px;}
-    .btn-primary{padding:10px 20px;background:var(--grad);color:white;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
-    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(26,143,193,.3);}
-    .btn-secondary{padding:10px 20px;background:white;color:var(--text);border:1.5px solid var(--border);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s;}
-    .btn-secondary:hover{border-color:var(--blue);color:var(--blue);}
-    .card{background:white;border-radius:16px;border:1.5px solid var(--border);box-shadow:0 2px 12px rgba(10,22,40,.06);}
-    .card-header{padding:1.1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-    .card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--dark);}
-    .card-body{padding:1.25rem;}
-    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
-    .stat-card{background:white;border-radius:14px;border:1.5px solid var(--border);padding:1.25rem;}
-    .stat-card-label{font-size:.75rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
-    .stat-card-value{font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;color:var(--dark);line-height:1;margin-bottom:4px;}
-    .palya-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;}
-    .palya-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:1.1rem;transition:all .2s;position:relative;}
-    .palya-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(26,143,193,.1);}
-    .palya-card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--dark);margin-bottom:2px;}
-    .palya-card-sub{font-size:.8rem;color:var(--blue);font-weight:600;margin-bottom:8px;}
-    .palya-card-meta{font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:3px;margin-bottom:12px;}
-    .heart-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.3rem;cursor:pointer;transition:transform .2s;padding:4px;}
-    .heart-btn:hover{transform:scale(1.2);}
-    .btn-foglalas{width:100%;padding:8px;background:var(--grad);color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;}
-    .btn-foglalas:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,143,193,.3);}
-    .foglalas-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border:1.5px solid var(--border);border-radius:14px;margin-bottom:.75rem;transition:all .2s;}
-    .foglalas-item.varakozik{border-left:4px solid #f59e0b;}
-    .foglalas-item.jovahagyva{border-left:4px solid var(--green);}
-    .foglalas-item.elutasitva{border-left:4px solid #ef4444;opacity:.7;}
-    .foglalas-item-info{flex:1;}
-    .foglalas-item-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;color:var(--dark);margin-bottom:3px;}
-    .foglalas-item-meta{font-size:.8rem;color:var(--muted);}
-    .status-pill{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
-    .status-pill.varakozik{background:#fff8e1;color:#f59e0b;}
-    .status-pill.jovahagyva{background:var(--green-pale);color:var(--green);}
-    .status-pill.elutasitva{background:#fff5f5;color:#ef4444;}
-    .form-group{margin-bottom:1rem;}
-    .form-label{display:block;font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:6px;}
-    .form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;color:var(--text);background:white;outline:none;transition:border-color .2s;}
-    .form-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,143,193,.08);}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-    .alert{padding:12px 16px;border-radius:10px;font-size:.85rem;margin-bottom:1.25rem;display:none;align-items:center;gap:8px;}
-    .alert.error{background:#fff5f5;border:1px solid #fed7d7;color:var(--error);display:flex;}
-    .alert.success{background:#f0fff4;border:1px solid #c6f6d5;color:var(--success);display:flex;}
-    .empty-state{text-align:center;padding:3rem 2rem;color:var(--muted);}
-    .empty-icon{font-size:2.5rem;margin-bottom:1rem;}
-    .empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--dark);margin-bottom:6px;}
-    .empty-sub{font-size:.85rem;line-height:1.6;}
-    .toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 20px;border-radius:12px;font-size:.88rem;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.3);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;}
-    .toast.show{transform:translateY(0);opacity:1;}
-    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @media(max-width:768px){
-      .left-panel{display:none;}
-      .layout{grid-template-columns:1fr;}
-      .sidebar{display:none;}
-      .stats-grid{grid-template-columns:1fr 1fr;}
-      .form-grid{grid-template-columns:1fr;}
-      .main{padding:1rem;}
-      .header{padding:0 1rem;}
-      .user-name{display:none;}
-      .page-header{flex-direction:column;align-items:flex-start;}
-    }
-    @media(max-width:400px){.stats-grid{grid-template-columns:1fr;}}
-    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: #f5f9fc; color: #0a1628; padding-top: 68px; }
 
-    /* AKTIVITÁS / STATOK */
-    .aktivitas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem;}
-    .aktivitas-card{background:white;border-radius:14px;border:1.5px solid var(--border);padding:1.1rem 1.25rem;position:relative;overflow:hidden;}
-    .aktivitas-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad);}
-    .aktivitas-card-icon{font-size:1.4rem;margin-bottom:.4rem;}
-    .aktivitas-card-value{font-family:'Syne',sans-serif;font-weight:800;font-size:1.6rem;color:var(--dark);line-height:1;margin-bottom:3px;}
-    .aktivitas-card-label{font-size:.72rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;}
-    .aktivitas-card-sub{font-size:.75rem;color:var(--blue);font-weight:600;margin-top:2px;}
-    .sorozat-bar{display:flex;gap:3px;margin-top:.5rem;}
-    .sorozat-dot{width:10px;height:10px;border-radius:50%;background:var(--border);}
-    .sorozat-dot.aktiv{background:var(--green);}
-    .visszahozo-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.25rem;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s;margin-bottom:.75rem;}
-    .visszahozo-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(26,143,193,.1);transform:translateY(-1px);}
-    .visszahozo-icon{width:44px;height:44px;background:linear-gradient(135deg,rgba(26,143,193,.1),rgba(45,191,126,.1));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
-    .visszahozo-nev{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--dark);margin-bottom:2px;}
-    .visszahozo-meta{font-size:.78rem;color:var(--muted);}
-    .visszahozo-btn{margin-left:auto;padding:7px 14px;background:var(--grad);color:white;border:none;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;flex-shrink:0;}
-    .rekord-item{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border);}
-    .rekord-item:last-child{border-bottom:none;}
-    .rekord-label{font-size:.82rem;color:var(--muted);}
-    .rekord-value{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--dark);}
-    .stats-two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
-    @media(max-width:768px){.stats-two-col{grid-template-columns:1fr;}}
+    /* ── HEADER ── */
+    #sp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 9000; background: white; box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+    #sp-header-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    #sp-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+    #sp-logo-img { height: 38px; width: auto; display: block; }
+    #sp-nav { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+    .sp-nav-link { padding: 8px 14px; border-radius: 8px; font-size: .88rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; white-space: nowrap; cursor: pointer; background: none; border: none; font-family: inherit; }
+    .sp-nav-link:hover, .sp-nav-link.active { background: rgba(26,143,193,.08); color: #1a8fc1; }
+    #sp-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    #sp-socials { display: flex; align-items: center; gap: 6px; }
+    .sp-social-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a2e3b; text-decoration: none; transition: all .2s; background: rgba(0,0,0,.04); }
+    .sp-social-btn:hover { background: rgba(26,143,193,.1); color: #1a8fc1; transform: translateY(-1px); }
+    .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
+    #sp-hamburger { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; transition: background .2s; }
+    #sp-hamburger span { display: block; width: 22px; height: 2px; background: #1a2e3b; border-radius: 2px; transition: all .3s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+    #sp-hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    #sp-hamburger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    #sp-hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    #sp-mobile-menu { display: none; background: white; border-top: 1px solid #f0f7fb; overflow: hidden; max-height: 0; transition: max-height .35s cubic-bezier(.4,0,.2,1); }
+    #sp-mobile-menu.is-open { max-height: 500px; }
+    #sp-mobile-nav { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 2px; }
+    .sp-mobile-link { padding: 12px 16px; border-radius: 10px; font-size: .95rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; display: flex; align-items: center; gap: 10px; cursor: pointer; background: none; border: none; font-family: inherit; width: 100%; text-align: left; }
+    .sp-mobile-link:hover { background: #f0f7fb; color: #1a8fc1; }
+    #sp-mobile-socials { display: flex; gap: 10px; padding: 12px 16px 0; margin-top: 8px; border-top: 1px solid #f0f7fb; }
+
+    /* ── HERO ── */
+    .sp-hero { position: relative; overflow: hidden; padding: 120px 20px 160px; text-align: center;
+      background: radial-gradient(1200px 500px at 15% 20%, rgba(36,107,253,.18), transparent 60%),
+                  radial-gradient(900px 420px at 85% 25%, rgba(34,197,94,.14), transparent 55%),
+                  linear-gradient(180deg, #0b1220 0%, #0f172a 55%, #111827 100%); }
+    .sp-hero::before, .sp-hero::after { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 999px; filter: blur(60px); opacity: .35; pointer-events: none; }
+    .sp-hero::before { top: -220px; left: -180px; background: rgba(36,107,253,.9); }
+    .sp-hero::after { bottom: -260px; right: -220px; background: rgba(34,197,94,.75); }
+    .sp-hero-inner { position: relative; max-width: 900px; margin: 0 auto; }
+    .sp-hero h1 { margin: 0; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; color: #f8fafc; font-size: clamp(32px,5vw,62px); text-shadow: 0 10px 30px rgba(0,0,0,.35); animation: fadeUp 700ms ease-out both; }
+    .sp-hero-accent { display: inline-block; background: linear-gradient(90deg, #60a5fa 0%, #22c55e 55%, #a7f3d0 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sp-hero h1::after { content: ""; display: block; width: min(560px,80%); height: 1px; margin: 24px auto 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── SEARCH + FILTER ── */
+    .sp-search-section { max-width: 1200px; margin: -60px auto 0; padding: 0 20px 40px; position: relative; z-index: 30; }
+    .sp-filters { background: white; border: 1.5px solid #d4e8f0; border-radius: 20px; padding: 1.25rem 1.5rem; box-shadow: 0 4px 24px rgba(10,22,40,.06); display: flex; flex-direction: column; gap: 1rem; }
+    .sp-filters__top { display: flex; flex-direction: column; gap: .75rem; }
+    .sp-filters__dynamic { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; padding-top: .75rem; border-top: 1.5px solid #f0f7fb; animation: fadein .2s ease; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .sp-search-wrap { position: relative; width: 100%; }
+    .sp-search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #6b8a9a; pointer-events: none; display: flex; transition: color .2s; }
+    .sp-search-wrap:focus-within .sp-search-icon { color: #1a8fc1; }
+    .sp-search-input { width: 100%; padding: 12px 44px 12px 42px; border: 1.5px solid #d4e8f0; border-radius: 12px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .9rem; color: #1a2e3b; background: #f0f7fb; outline: none; transition: all .2s; }
+    .sp-search-input:focus { border-color: #1a8fc1; background: white; box-shadow: 0 0 0 3px rgba(26,143,193,.1); }
+    .sp-search-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #d4e8f0; border: none; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b8a9a; transition: all .2s; padding: 0; }
+    .sp-search-clear:hover { background: #1a8fc1; color: white; }
+    .sp-sportag-wrap { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .sp-sportag-btn { padding: 8px 16px; border: 1.5px solid #d4e8f0; border-radius: 30px; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 600; color: #6b8a9a; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .sp-sportag-btn:hover { border-color: #1a8fc1; color: #1a8fc1; }
+    .sp-sportag-btn.active { background: linear-gradient(135deg,#1a8fc1,#2dbf7e); border-color: transparent; color: white; box-shadow: 0 4px 14px rgba(26,143,193,.25); }
+    .sp-selects { display: flex; flex-wrap: wrap; gap: .5rem; flex: 1; }
+    .sp-select { padding: 9px 32px 9px 14px; border: 1.5px solid #d4e8f0; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; color: #1a2e3b; background: white; cursor: pointer; outline: none; transition: border-color .2s; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b8a9a' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+    .sp-select:focus { border-color: #1a8fc1; }
+    .sp-reset { display: flex; align-items: center; gap: 6px; padding: 9px 16px; background: #fff5f5; color: #ef4444; border: 1.5px solid #fecaca; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .sp-reset:hover { background: #fee2e2; }
+
+    /* ── RESULTS ── */
+    .sp-main { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
+    .sp-results-header { margin-bottom: 1rem; }
+    .sp-count { font-size: .88rem; color: #6b8a9a; font-weight: 500; }
+    .sp-count strong { color: #1a2e3b; }
+    .sp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+    .sp-loading { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; color: #6b8a9a; font-size: .9rem; }
+    .sp-spinner { width: 36px; height: 36px; border: 3px solid #d4e8f0; border-top-color: #1a8fc1; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sp-card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+    .sp-card { background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; overflow: hidden; transition: all .25s; box-shadow: 0 2px 12px rgba(10,22,40,.06); height: 100%; display: flex; flex-direction: column; }
+    .sp-card:hover { border-color: #1a8fc1; box-shadow: 0 8px 32px rgba(26,143,193,.15); transform: translateY(-3px); }
+    .sp-card-thumb { aspect-ratio: 16/9; overflow: hidden; background: linear-gradient(135deg,rgba(26,143,193,.08),rgba(45,191,126,.08)); position: relative; }
+    .sp-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+    .sp-card:hover .sp-card-thumb img { transform: scale(1.04); }
+    .sp-card-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: rgba(26,143,193,.25); }
+    .sp-card-sport-badges { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
+    .sp-card-sport-badge { background: rgba(10,22,40,.75); backdrop-filter: blur(6px); color: white; font-size: .68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .sp-card-body { padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: .4rem; flex: 1; }
+    .sp-card-nev { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: #0a1628; line-height: 1.3; margin: 0; }
+    .sp-card-location { font-size: .8rem; color: #6b8a9a; display: flex; align-items: center; gap: 4px; }
+    .sp-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: .75rem; border-top: 1px solid #f0f7fb; }
+    .sp-card-palya-count { font-size: .78rem; color: #6b8a9a; font-weight: 500; }
+    .sp-card-cta { font-size: .78rem; font-weight: 700; color: #1a8fc1; }
+    .sp-card-arrow { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); display: flex; align-items: center; justify-content: center; color: white; font-size: 1rem; flex-shrink: 0; transition: transform .2s; }
+    .sp-card:hover .sp-card-arrow { transform: translateX(3px); }
+    .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
+    .sp-empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .sp-empty-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: #0a1628; margin-bottom: .5rem; }
+    .sp-empty-sub { font-size: .88rem; line-height: 1.6; }
+
+    /* ── AUTH MODAL + DRAWER (a meglévőből 1:1) ── */
+    #sp-login-modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,.55); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .25s; }
+    #sp-login-modal-overlay.open { opacity: 1; pointer-events: all; }
+    #sp-login-modal { background: white; border-radius: 20px; width: 420px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.25); overflow: hidden; }
+    .sp-modal-head { padding: 20px 20px 16px; display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1.5px solid #f0f7fb; }
+    .sp-modal-logo img { height: 36px; }
+    .sp-modal-subtitle { font-size: .78rem; color: #6b8a9a; font-weight: 600; margin-top: 4px; }
+    .sp-modal-close { background: #f0f7fb; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; color: #6b8a9a; transition: all .2s; flex-shrink: 0; }
+    .sp-modal-close:hover { background: #d4e8f0; color: #0a1628; }
+    #sp-login-iframe-wrap { flex: 1; background: #f0f7fb; }
+    #sp-login-iframe { width: 100%; height: 460px; border: none; display: block; }
+    .sp-modal-foot { padding: 12px 20px; border-top: 1.5px solid #f0f7fb; font-size: .78rem; color: #6b8a9a; text-align: center; }
+    .sp-modal-foot a { color: #1a8fc1; font-weight: 600; text-decoration: none; }
+    #sp-drawer-overlay { position: fixed; inset: 0; background: rgba(10,22,40,.45); backdrop-filter: blur(3px); z-index: 9998; opacity: 0; pointer-events: none; transition: opacity .3s; }
+    #sp-drawer-overlay.open { opacity: 1; pointer-events: all; }
+    #sp-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 95vw; background: white; z-index: 9999; box-shadow: -8px 0 40px rgba(10,22,40,.15); transform: translateX(100%); transition: transform .35s cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; overflow: hidden; }
+    #sp-drawer.open { transform: translateX(0); }
+    .sp-drawer-head { padding: 16px 16px 12px; border-bottom: 1.5px solid #f0f7fb; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .sp-drawer-user { display: flex; align-items: center; gap: 12px; }
+    .sp-drawer-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; color: white; flex-shrink: 0; }
+    .sp-drawer-name { font-weight: 800; font-size: .95rem; color: #0a1628; }
+    .sp-drawer-email { font-size: .75rem; color: #6b8a9a; }
+    .sp-drawer-close { background: #f0f7fb; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; color: #6b8a9a; transition: all .2s; }
+    .sp-drawer-close:hover { background: #d4e8f0; }
+    .sp-stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 12px 16px; flex-shrink: 0; }
+    .sp-stat-card { background: #f0f7fb; border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; transition: all .2s; border: 1.5px solid transparent; }
+    .sp-stat-card:hover { border-color: #1a8fc1; }
+    .sp-stat-card-val { font-weight: 800; font-size: 1.1rem; color: #0a1628; }
+    .sp-stat-card-lbl { font-size: .68rem; color: #6b8a9a; font-weight: 600; margin-top: 2px; }
+    .sp-tabs { display: flex; gap: 4px; padding: 0 16px 8px; flex-shrink: 0; }
+    .sp-tab { flex: 1; padding: 8px 4px; border: none; background: transparent; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .75rem; font-weight: 700; color: #6b8a9a; cursor: pointer; transition: all .2s; }
+    .sp-tab.active { background: linear-gradient(135deg,rgba(26,143,193,.1),rgba(45,191,126,.1)); color: #1a8fc1; }
+    .sp-drawer-body { flex: 1; overflow-y: auto; padding: 8px 16px 16px; }
+    .sp-tab-panel { display: none; }
+    .sp-tab-panel.active { display: block; }
+    .sp-filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .sp-filter-btn { padding: 5px 12px; border: 1.5px solid #d4e8f0; border-radius: 20px; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .75rem; font-weight: 700; color: #6b8a9a; cursor: pointer; transition: all .2s; }
+    .sp-filter-btn.active { background: #1a8fc1; border-color: #1a8fc1; color: white; }
+    .sp-booking-card { background: #f0f7fb; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; border: 1.5px solid transparent; }
+    .sp-booking-card.jovahagyva { border-color: rgba(45,191,126,.3); }
+    .sp-booking-card.elutasitva { border-color: rgba(239,68,68,.2); background: #fff5f5; }
+    .sp-booking-name { font-weight: 700; font-size: .88rem; color: #0a1628; margin-bottom: 6px; }
+    .sp-booking-meta { display: flex; align-items: center; justify-content: space-between; font-size: .75rem; color: #6b8a9a; gap: 8px; }
+    .sp-status-pill { padding: 3px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; background: #f0f7fb; color: #6b8a9a; white-space: nowrap; }
+    .sp-status-pill.jovahagyva { background: rgba(45,191,126,.12); color: #1a9960; }
+    .sp-status-pill.varakozik { background: rgba(245,158,11,.12); color: #b45309; }
+    .sp-status-pill.elutasitva { background: rgba(239,68,68,.1); color: #ef4444; }
+    .sp-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+    .sp-page-btn { padding: 7px 14px; border: 1.5px solid #d4e8f0; border-radius: 8px; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .78rem; font-weight: 700; color: #6b8a9a; cursor: pointer; transition: all .2s; }
+    .sp-page-btn:hover:not(:disabled) { border-color: #1a8fc1; color: #1a8fc1; }
+    .sp-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .sp-page-info { font-size: .78rem; color: #6b8a9a; font-weight: 600; }
+    .sp-kedvenc-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0f7fb; border-radius: 12px; margin-bottom: 8px; }
+    .sp-kedvenc-info { flex: 1; min-width: 0; }
+    .sp-kedvenc-name { font-weight: 700; font-size: .85rem; color: #0a1628; }
+    .sp-kedvenc-meta { font-size: .73rem; color: #6b8a9a; margin-top: 2px; }
+    .sp-kedvenc-link { font-size: .73rem; font-weight: 700; color: #1a8fc1; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
+    .sp-kedvenc-remove { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 4px; border-radius: 6px; transition: background .2s; flex-shrink: 0; }
+    .sp-kedvenc-remove:hover { background: #fee2e2; }
+    .sp-new-booking-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: linear-gradient(135deg,rgba(26,143,193,.08),rgba(45,191,126,.08)); color: #1a8fc1; border: 1.5px solid rgba(26,143,193,.3); border-radius: 12px; font-weight: 700; font-size: .82rem; text-decoration: none; transition: all .2s; margin-bottom: 12px; }
+    .sp-new-booking-btn:hover { background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; border-color: transparent; }
+    .sp-profil-card { background: #f0f7fb; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .sp-profil-field { margin-bottom: 12px; }
+    .sp-profil-label { font-size: .75rem; font-weight: 700; color: #6b8a9a; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .sp-profil-value { font-size: .88rem; font-weight: 600; color: #0a1628; }
+    .sp-profil-input { width: 100%; padding: 9px 12px; border: 1.5px solid #d4e8f0; border-radius: 9px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .88rem; color: #0a1628; background: white; outline: none; }
+    .sp-profil-input:focus { border-color: #1a8fc1; }
+    .sp-profil-save-btn { width: 100%; padding: 10px; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; border: none; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: .88rem; cursor: pointer; transition: all .2s; }
+    .sp-profil-msg { font-size: .8rem; margin-top: 8px; padding: 8px 12px; border-radius: 8px; }
+    .sp-profil-msg.ok { background: rgba(45,191,126,.1); color: #1a9960; }
+    .sp-profil-msg.err { background: rgba(239,68,68,.1); color: #ef4444; }
+    .sp-drawer-foot { padding: 12px 16px; border-top: 1px solid #f0f7fb; background: white; flex-shrink: 0; }
+    .sp-drawer-foot-row { display: flex; gap: 8px; }
+    .sp-portal-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: linear-gradient(135deg,rgba(26,143,193,.08),rgba(45,191,126,.08)); color: #1a8fc1; border: 1.5px solid rgba(26,143,193,.3); border-radius: 10px; font-weight: 700; font-size: .82rem; text-decoration: none; transition: all .2s; }
+    .sp-portal-btn:hover { background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; border-color: transparent; }
+    .sp-logout-btn { padding: 10px 16px; background: #fff5f5; color: #ef4444; border: 1.5px solid #fed7d7; border-radius: 10px; font-weight: 700; font-size: .82rem; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .sp-logout-btn:hover { background: #fed7d7; }
+    .sp-empty { text-align: center; padding: 2rem 1rem; color: #6b8a9a; font-size: .85rem; }
+    .sp-loading { text-align: center; padding: 2rem; color: #6b8a9a; font-size: .85rem; }
+    #sportingo-auth-iframe { position: fixed; left: -9999px; top: -9999px; width: 1px; height: 1px; border: none; opacity: 0; pointer-events: none; }
+
+    /* ── FOOTER ── */
+    .sp-footer { background: #0b1220; color: rgba(255,255,255,.6); padding: 40px 20px; text-align: center; font-size: .83rem; }
+    .sp-footer a { color: rgba(255,255,255,.7); text-decoration: none; margin: 0 10px; }
+    .sp-footer a:hover { color: white; }
+    .sp-footer-logo { font-size: 1.2rem; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; color: white; margin-bottom: 12px; }
+    .sp-footer-logo span { color: #1a8fc1; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      #sp-nav, #sp-socials { display: none; }
+      #sp-hamburger { display: flex; }
+      #sp-mobile-menu { display: block; }
+      #sp-header-inner { padding: 0 16px; }
+      .sp-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 640px) {
+      .sp-hero { padding: 90px 18px 130px; }
+      .sp-filters { padding: 1rem; border-radius: 16px; }
+      .sp-sportag-btn { padding: 7px 12px; font-size: .8rem; }
+      .sp-grid { grid-template-columns: 1fr; }
+      #sp-logo-img { height: 32px; }
+      body { padding-top: 60px; }
+      #sp-header-inner { height: 60px; }
+    }
+    @media (max-width: 600px) {
+      #sp-drawer { width: 100vw; }
+      #sp-login-modal { border-radius: 16px 16px 0 0; max-height: 95vh; position: fixed; bottom: 0; width: 100%; }
+      #sp-login-modal-overlay { align-items: flex-end; }
+    }
   </style>
 </head>
 <body>
 
-<div id="loginPage">
-  <div class="left-panel">
-    <div class="field-lines"></div>
-    <div class="logo-area">
-      <div class="logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" style="height:36px;width:auto;"></div>
-      <div class="logo-sub">Játékos Portál</div>
-    </div>
-    <div class="hero-area">
-      <div class="hero-badge"><span>●</span> Játékos fiók</div>
-      <div class="hero-title">Foglalj pályát<br><span>gyorsan és egyszerűen</span></div>
-      <div class="hero-desc">Kövesd a foglalásaidat, mentsd el kedvenc pályáidat és értékeld a sportélményeidet.</div>
-      <div class="stats-row">
-        <div class="stat"><div class="stat-num">60+</div><div class="stat-label">Aktív pálya</div></div>
-        <div class="stat"><div class="stat-num">1 200+</div><div class="stat-label">Foglalás/hó</div></div>
-        <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Ingyenes</div></div>
+<!-- HEADER -->
+<header id="sp-header">
+  <div id="sp-header-inner">
+    <a href="https://sportingo.hu" id="sp-logo" aria-label="Sportingo főoldal">
+      <img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" id="sp-logo-img">
+    </a>
+    <nav id="sp-nav">
+      <button class="sp-nav-link active" id="sp-nav-palya">Pályák</button>
+      <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-nav-link">Hogyan működik?</a>
+      <a href="https://sportingo.hu/palyat-uzemeltetsz/" class="sp-nav-link">Pályát üzemeltetsz?</a>
+      <a href="https://sportingo.hu/kapcsolat/" class="sp-nav-link">Kapcsolat</a>
+    </nav>
+    <div id="sp-header-right">
+      <div id="sp-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
       </div>
+      <div class="sportingo-auth-wrap">
+        <button type="button" class="sportingo-auth-btn">
+          <span class="sportingo-auth-icon">👤</span>
+          <span class="sportingo-auth-label">Bejelentkezés</span>
+        </button>
+      </div>
+      <button id="sp-hamburger" aria-label="Menü" aria-expanded="false" onclick="spToggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
     </div>
-    <div style="color:rgba(255,255,255,.2);font-size:.72rem;">© 2025 Sportingo · sportingo.hu</div>
   </div>
-  <div class="right-panel">
-    <div class="login-box">
-      <div class="login-title" id="loginTitle">Üdvözlünk! 👋</div>
-      <div class="login-sub" id="loginSub">Lépj be a játékos fiókodba.</div>
-      <div class="auth-mode-toggle">
-        <button class="auth-mode-btn active" id="modeLogin" onclick="setMode('login')">Bejelentkezés</button>
-        <button class="auth-mode-btn" id="modeRegister" onclick="setMode('register')">Regisztráció</button>
+  <div id="sp-mobile-menu" aria-hidden="true">
+    <nav id="sp-mobile-nav">
+      <button class="sp-mobile-link" id="sp-mobile-palya">⚽ Pályák</button>
+      <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-mobile-link">❓ Hogyan működik?</a>
+      <a href="https://sportingo.hu/palyat-uzemeltetsz/" class="sp-mobile-link">🏟 Pályát üzemeltetsz?</a>
+      <a href="https://sportingo.hu/kapcsolat/" class="sp-mobile-link">📬 Kapcsolat</a>
+      <div id="sp-mobile-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
       </div>
-      <div class="alert" id="loginAlert"></div>
-      <div id="registerFields" style="display:none;">
-        <div class="input-wrap"><span class="input-icon">👤</span><input type="text" class="login-input" id="regNev" placeholder="Teljes neved"></div>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="sp-hero">
+  <div class="sp-hero-inner">
+    <h1>Foglalj sportpályát online.<br><span class="sp-hero-accent">Gyorsan. Egyszerűen.</span></h1>
+  </div>
+</section>
+
+<!-- SEARCH + FILTER -->
+<div class="sp-search-section" id="sp-filters-section">
+  <div class="sp-filters" id="sp-filters">
+    <div class="sp-filters__top">
+      <div class="sp-search-wrap">
+        <span class="sp-search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input type="text" id="sp-search" class="sp-search-input" placeholder="Város vagy helyszín neve..." autocomplete="off">
+        <button type="button" id="sp-search-clear" class="sp-search-clear" style="display:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
       </div>
-      <div class="input-wrap"><span class="input-icon">📧</span><input type="email" class="login-input" id="emailInput" placeholder="email@cimed.hu" autocomplete="email"></div>
-      <div class="input-wrap" id="passwordWrap"><span class="input-icon">🔒</span><input type="password" class="login-input" id="passwordInput" placeholder="••••••••" autocomplete="current-password"></div>
-      <a href="#" class="forgot-link" id="forgotLink" onclick="forgotPassword(event)">Elfelejtettem a jelszavam</a>
-      <button class="btn-login" id="loginBtn" onclick="handleAuth()">
-        <span id="loginBtnText">Bejelentkezés →</span>
+      <div class="sp-sportag-wrap">
+        <button class="sp-sportag-btn active" data-sport="">🏟 Összes</button>
+        <button class="sp-sportag-btn" data-sport="Futball">⚽ Futball</button>
+        <button class="sp-sportag-btn" data-sport="Tenisz">🎾 Tenisz</button>
+        <button class="sp-sportag-btn" data-sport="Padel">🏸 Padel</button>
+        <button class="sp-sportag-btn" data-sport="Squash">🟡 Squash</button>
+      </div>
+    </div>
+    <div class="sp-filters__dynamic" id="sp-dynamic-filters" style="display:none;">
+      <div class="sp-selects" id="sp-selects-wrap"></div>
+      <button id="sp-reset" class="sp-reset">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Szűrők törlése
       </button>
-      <div class="divider">vagy</div>
-      <button class="btn-google" onclick="googleLogin()">
-        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        Folytatás Google-lel
-      </button>
-      <div style="text-align:center;font-size:.8rem;color:var(--muted);margin-top:1rem;">
-        Pályatulajdonos vagy? <a href="https://portal.sportingo.hu" style="color:var(--blue);font-weight:600;">Tulajdonos portál →</a>
-      </div>
     </div>
   </div>
 </div>
 
-<div id="appPage" style="display:none;">
-  <div class="header">
-    <div class="header-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" style="height:28px;width:auto;"> <span style="font-size:.75rem;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;">Játékos</span></div>
-    <div class="header-right">
-      <div class="user-chip">
-        <div class="user-avatar" id="userInitial">?</div>
-        <span class="user-name" id="userNameDisplay"></span>
-      </div>
-      <button class="btn-logout" onclick="handleLogout()">Kijelentkezés</button>
+<!-- RESULTS -->
+<main class="sp-main">
+  <div class="sp-results-header">
+    <div id="sp-count" class="sp-count"></div>
+  </div>
+  <div id="sp-grid" class="sp-grid">
+    <div class="sp-loading">
+      <div class="sp-spinner"></div>
+      <span>Helyszínek betöltése...</span>
     </div>
   </div>
-  <div class="layout">
-    <div class="sidebar">
-      <div class="sidebar-section">Főmenü</div>
-      <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span> Áttekintés</button>
-      <button class="nav-item" id="nav-kedvencek" onclick="showPage('kedvencek',this)"><span class="nav-icon">❤️</span> Kedvenc pályák</button>
-      <button class="nav-item" id="nav-foglalasaim" onclick="showPage('foglalasaim',this)"><span class="nav-icon">📋</span> Foglalásaim</button>
-      <button class="nav-item" id="nav-statok" onclick="showPage('statok',this)"><span class="nav-icon">📊</span> Statisztikák</button>
-      <button class="nav-item" id="nav-profil" onclick="showPage('profil',this)"><span class="nav-icon">👤</span> Profilom</button>
-      <div class="sidebar-section">Felfedezés</div>
-      <button class="nav-item" onclick="window.open('https://sportingo.hu','_blank')"><span class="nav-icon">🔍</span> Pályák keresése ↗</button>
+</main>
+
+<!-- FOOTER -->
+<footer class="sp-footer">
+  <div class="sp-footer-logo">SPORTING<span>O</span></div>
+  <div>
+    <a href="https://sportingo.hu/hogyan-mukodik/">Hogyan működik?</a>
+    <a href="https://sportingo.hu/palyat-uzemeltetsz/">Pályát üzemeltetsz?</a>
+    <a href="https://sportingo.hu/kapcsolat/">Kapcsolat</a>
+    <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál</a>
+  </div>
+  <div style="margin-top:12px;">© 2026 Sportingo. Minden jog fenntartva.</div>
+</footer>
+
+<!-- AUTH MODAL -->
+<div id="sp-login-modal-overlay">
+  <div id="sp-login-modal">
+    <div class="sp-modal-head">
+      <div>
+        <div class="sp-modal-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo"></div>
+        <div class="sp-modal-subtitle">Játékos fiók</div>
+      </div>
+      <button type="button" class="sp-modal-close" data-sp-close-login>&#x2715;</button>
     </div>
-    <div class="main">
-      <div id="page-dashboard" class="page active">
-        <div class="page-header">
-          <div><div class="page-title">Áttekintés</div><div class="page-sub" id="welcomeMsg">Üdv!</div></div>
-          <button class="btn-primary" onclick="window.open('https://sportingo.hu','_blank')">🔍 Pályák keresése</button>
-        </div>
-        <!-- Havi aktivitás -->
-        <div class="aktivitas-grid" id="aktivitasGrid">
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">⏱️</div><div class="aktivitas-card-value" id="aktivHaviOra">–</div><div class="aktivitas-card-label">Sport ebben a hónapban</div><div class="aktivitas-card-sub" id="aktivHaviSub"></div></div>
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">📅</div><div class="aktivitas-card-value" id="aktivHaviDb">–</div><div class="aktivitas-card-label">Foglalás ebben a hónapban</div><div class="aktivitas-card-sub" id="aktivOsszesDb"></div></div>
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">⚽</div><div class="aktivitas-card-value" id="aktivKedvencSport">–</div><div class="aktivitas-card-label">Kedvenc sportágad</div><div class="aktivitas-card-sub" id="aktivKedvencHelyszin"></div></div>
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">🔥</div><div class="aktivitas-card-value" id="aktivSorozat">–</div><div class="aktivitas-card-label">Hetes sorozat</div><div class="sorozat-bar" id="sorozatBar"></div></div>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-card-label">Foglalásaim</div><div class="stat-card-value" id="statFoglalasok">–</div></div>
-          <div class="stat-card"><div class="stat-card-label">Kedvenc pályák</div><div class="stat-card-value" style="color:var(--blue)" id="statKedvencek">–</div></div>
-          <div class="stat-card" style="opacity:.5;"><div class="stat-card-label">Értékeléseim</div><div class="stat-card-value" style="color:var(--green);font-size:1rem;" id="statErtekelesek">Hamarosan</div></div>
-        </div>
-        <!-- Legutóbb itt játszottál -->
-        <div class="card" style="margin-bottom:1.5rem;" id="visszahozo-wrap">
-          <div class="card-header"><div class="card-title">📍 Legutóbb itt játszottál</div></div>
-          <div class="card-body" id="visszahozo-lista"><div class="empty-state"><div class="empty-icon">📍</div><div class="empty-title">Betöltés...</div></div></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">📋 Legutóbbi foglalások</div><button class="btn-primary" style="font-size:.8rem;padding:7px 14px;" onclick="showPage('foglalasaim',document.getElementById('nav-foglalasaim'))">Összes →</button></div>
-          <div class="card-body" id="dashFoglalasok"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Betöltés...</div></div></div>
-        </div>
-      </div>
+    <div id="sp-login-iframe-wrap">
+      <iframe id="sp-login-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+    </div>
+    <div class="sp-modal-foot">Pályatulajdonos? <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál &rarr;</a></div>
+  </div>
+</div>
 
-      <div id="page-kedvencek" class="page">
-        <div class="page-header">
-          <div><div class="page-title">❤️ Kedvenc pályák</div><div class="page-sub">A mentett pályáid</div></div>
-        </div>
-        <div id="kedvencekList">
-          <div class="empty-state" style="background:white;border-radius:16px;border:1.5px solid var(--border);">
-            <div class="empty-icon">❤️</div><div class="empty-title">Betöltés...</div>
-          </div>
-        </div>
+<!-- DRAWER -->
+<div id="sp-drawer-overlay"></div>
+<div id="sp-drawer">
+  <div class="sp-drawer-head">
+    <div class="sp-drawer-user">
+      <div class="sp-drawer-avatar" id="sp-drawer-avatar">?</div>
+      <div>
+        <div class="sp-drawer-name" id="sp-drawer-name">–</div>
+        <div class="sp-drawer-email" id="sp-drawer-email">–</div>
       </div>
-
-      <div id="page-statok" class="page">
-        <div class="page-header"><div><div class="page-title">📊 Statisztikáim</div><div class="page-sub">Sportolási előzményeid és rekordok</div></div></div>
-        <div class="aktivitas-grid">
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">⏱️</div><div class="aktivitas-card-value" id="statOsszOra">–</div><div class="aktivitas-card-label">Összes lejátszott óra</div></div>
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">📅</div><div class="aktivitas-card-value" id="statOsszFogl">–</div><div class="aktivitas-card-label">Összes foglalás</div></div>
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">🏟</div><div class="aktivitas-card-value" id="statHelyszinDb">–</div><div class="aktivitas-card-label">Különböző helyszín</div></div>
-          <div class="aktivitas-card"><div class="aktivitas-card-icon">⚽</div><div class="aktivitas-card-value" id="statTopSport">–</div><div class="aktivitas-card-label">Legtöbbet játszott sport</div></div>
-        </div>
-        <div class="stats-two-col">
-          <div class="card">
-            <div class="card-header"><div class="card-title">🏆 Rekordok</div></div>
-            <div class="card-body" id="statRekordok"><div class="empty-state"><div class="empty-title">Betöltés...</div></div></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">⚽ Sport megoszlás</div></div>
-            <div class="card-body" id="statSportMegoszlas"><div class="empty-state"><div class="empty-title">Betöltés...</div></div></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">📍 Leggyakrabban látogatott helyszínek</div></div>
-          <div class="card-body" id="statTopHelyszinek"><div class="empty-state"><div class="empty-title">Betöltés...</div></div></div>
-        </div>
+    </div>
+    <button type="button" class="sp-drawer-close" data-sp-close-drawer>&#x2715;</button>
+  </div>
+  <div class="sp-stat-row">
+    <div class="sp-stat-card" id="sp-stat-card-foglalasok"><div class="sp-stat-card-val" id="sp-stat-foglalasok">–</div><div class="sp-stat-card-lbl">Foglalásaim</div></div>
+    <div class="sp-stat-card" id="sp-stat-card-kedvencek"><div class="sp-stat-card-val" id="sp-stat-kedvencek">–</div><div class="sp-stat-card-lbl">Kedvenceim</div></div>
+    <div class="sp-stat-card"><div class="sp-stat-card-val" id="sp-stat-kovetkezo">–</div><div class="sp-stat-card-lbl">Következő</div></div>
+  </div>
+  <div class="sp-tabs">
+    <button class="sp-tab active" data-tab="foglalasok">📅 Foglalásaim</button>
+    <button class="sp-tab" data-tab="kedvencek">❤️ Kedvenceim</button>
+    <button class="sp-tab" data-tab="profil">👤 Profil</button>
+  </div>
+  <div class="sp-drawer-body">
+    <div class="sp-tab-panel active" id="sp-tab-foglalasok">
+      <a href="#sp-filters-section" class="sp-new-booking-btn" onclick="document.getElementById('sp-drawer').classList.remove('open');document.getElementById('sp-drawer-overlay').classList.remove('open');document.body.style.overflow='';return true;">➕ Új foglalás</a>
+      <div class="sp-filter-row">
+        <button class="sp-filter-btn active" data-filter="mind">Mind</button>
+        <button class="sp-filter-btn" data-filter="jovahagyva">✅ Jóváhagyva</button>
+        <button class="sp-filter-btn" data-filter="varakozik">⏳ Várakozik</button>
+        <button class="sp-filter-btn" data-filter="elutasitva">❌ Elutasítva</button>
       </div>
-
-      <div id="page-foglalasaim" class="page">
-        <div class="page-header">
-          <div><div class="page-title">📋 Foglalásaim</div><div class="page-sub">Aktív és korábbi foglalások</div></div>
-          <select class="form-input" id="foglalasFilter" onchange="loadFoglalasaim()" style="max-width:160px;padding:8px 12px;">
-            <option value="all">Összes</option>
-            <option value="varakozik">⏳ Várakozók</option>
-            <option value="jovahagyva">✅ Jóváhagyottak</option>
-            <option value="elutasitva">❌ Elutasítottak</option>
-          </select>
-        </div>
-        <div id="foglalasaimList">
-          <div class="empty-state" style="background:white;border-radius:16px;border:1.5px solid var(--border);">
-            <div class="empty-icon">📋</div><div class="empty-title">Betöltés...</div>
-          </div>
-        </div>
+      <div id="sp-bookings-list"><div class="sp-loading">⏳ Betöltés...</div></div>
+      <div class="sp-pagination" id="sp-pagination" style="display:none;">
+        <button class="sp-page-btn" id="sp-prev-page">← Előző</button>
+        <span class="sp-page-info" id="sp-page-info"></span>
+        <button class="sp-page-btn" id="sp-next-page">Következő →</button>
       </div>
-
-      <div id="page-profil" class="page">
-        <div class="page-header">
-          <div><div class="page-title">👤 Profilom</div><div class="page-sub">Személyes adatok szerkesztése</div></div>
-        </div>
-        <div class="card" style="max-width:560px;">
-          <div class="card-header"><div class="card-title">📝 Adataim</div></div>
-          <div class="card-body">
-            <div class="alert" id="profilAlert"></div>
-            <div class="form-grid">
-              <div class="form-group"><label class="form-label">Teljes név</label><input type="text" class="form-input" id="profilNev" placeholder="Tóth Gábor"></div>
-              <div class="form-group"><label class="form-label">Telefonszám</label><input type="tel" class="form-input" id="profilTel" placeholder="+36 30 123 4567"></div>
-              <div class="form-group"><label class="form-label">Email cím</label><input type="email" class="form-input" id="profilEmail" disabled style="opacity:.6;cursor:not-allowed;"></div>
-              <div class="form-group"><label class="form-label">Város</label><input type="text" class="form-input" id="profilVaros" placeholder="Budapest"></div>
-            </div>
-            <div style="display:flex;justify-content:flex-end;margin-top:.5rem;">
-              <button class="btn-primary" onclick="saveProfil()">💾 Mentés</button>
-            </div>
-          </div>
-        </div>
-        <div class="card" style="max-width:560px;margin-top:1rem;">
-          <div class="card-header"><div class="card-title">🔔 Értesítők</div></div>
-          <div class="card-body">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;background:var(--bg);border-radius:10px;border:1.5px solid var(--border);">
-              <div>
-                <div style="font-weight:600;font-size:.88rem;">Foglalás visszaigazolás</div>
-                <div style="font-size:.78rem;color:var(--muted);margin-top:2px;">Email ha jóváhagyják a foglalásom</div>
-              </div>
-              <div style="width:10px;height:10px;background:var(--green);border-radius:50%;"></div>
-            </div>
-          </div>
-        </div>
+    </div>
+    <div class="sp-tab-panel" id="sp-tab-kedvencek">
+      <div id="sp-kedvencek-list"><div class="sp-loading">⏳ Betöltés...</div></div>
+    </div>
+    <div class="sp-tab-panel" id="sp-tab-profil">
+      <div class="sp-profil-card">
+        <div class="sp-profil-field"><div class="sp-profil-label">Név</div><input type="text" class="sp-profil-input" id="sp-profil-nev" placeholder="Teljes neved"></div>
+        <div class="sp-profil-field"><div class="sp-profil-label">Email</div><div class="sp-profil-value" id="sp-profil-email-display">–</div></div>
+        <div class="sp-profil-field"><div class="sp-profil-label">Telefonszám</div><input type="tel" class="sp-profil-input" id="sp-profil-telefon" placeholder="+36 xx xxx xxxx"></div>
+        <div class="sp-profil-field"><div class="sp-profil-label">Város</div><input type="text" class="sp-profil-input" id="sp-profil-varos" placeholder="Pl. Budapest"></div>
+        <button class="sp-profil-save-btn" id="sp-profil-save-btn">💾 Adatok mentése</button>
+        <div id="sp-profil-msg" style="display:none;"></div>
       </div>
+      <div class="sp-profil-card">
+        <div class="sp-profil-label" style="margin-bottom:8px;">Jelszó módosítása</div>
+        <button class="sp-profil-save-btn" id="sp-pw-reset-btn" style="background:#0a1628;">📧 Jelszóváltoztatási email küldése</button>
+        <div id="sp-pw-msg" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="sp-drawer-foot">
+    <div class="sp-drawer-foot-row">
+      <a href="https://jatekos.sportingo.hu" target="_blank" class="sp-portal-btn">🎮 Teljes játékos portál ↗</a>
+      <button type="button" class="sp-logout-btn" id="sp-logout-btn">🚪 Kilépés</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<iframe id="sportingo-auth-iframe" src="https://jatekos.sportingo.hu/auth-bridge" sandbox="allow-scripts allow-same-origin"></iframe>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL='https://amowwfjxeursokkznmxl.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
-const {createClient}=supabase;
-const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+(function(){
+  const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
 
-let currentUser=null,authMode='login',appInitialized=false;
+  // ── HAMBURGER ──
+  window.spToggleMenu = function(){
+    var btn = document.getElementById('sp-hamburger');
+    var menu = document.getElementById('sp-mobile-menu');
+    if(!btn||!menu) return;
+    var isOpen = btn.classList.toggle('is-open');
+    menu.classList.toggle('is-open', isOpen);
+    btn.setAttribute('aria-expanded', isOpen);
+    menu.setAttribute('aria-hidden', !isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  };
 
-async function init(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session){currentUser=session.user;showApp();}
-  sb.auth.onAuthStateChange((event,session)=>{
-    if(event==='SIGNED_IN'&&session){
-      currentUser=session.user;
-      sendLoginSuccess(session.user);
-      showApp();
+  // ── PÁLYA NAV ──
+  function handlePalyaClick(e){
+    e.preventDefault();
+    var filters = document.getElementById('sp-filters');
+    if(filters){ filters.scrollIntoView({behavior:'smooth', block:'start'}); setTimeout(function(){ var s=document.getElementById('sp-search'); if(s) s.focus(); }, 400); }
+  }
+  document.getElementById('sp-nav-palya').addEventListener('click', handlePalyaClick);
+  document.getElementById('sp-mobile-palya').addEventListener('click', function(e){ handlePalyaClick(e); spToggleMenu(); });
+
+  // ── LISTÁZÓ ──
+  const SPORT_FILTERS = {
+    'Futball': [
+      { id:'boritas', label:'🌿 Borítás', options:[{value:'',label:'Összes borítás'},{value:'Műfű',label:'Műfű'},{value:'Élő fű',label:'Élő fű'},{value:'Parketta / PVC',label:'Parketta'},{value:'Homok',label:'Homok'}] },
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+      { id:'jatekforma', label:'⚽ Pályaméret', options:[{value:'',label:'Minden méret'},{value:'Kispálya',label:'Kispálya'},{value:'Nagypálya',label:'Nagypálya'}] },
+    ],
+    'Tenisz': [
+      { id:'boritas', label:'🌿 Borítás', options:[{value:'',label:'Összes borítás'},{value:'Salak',label:'Salak'},{value:'Kemény pálya',label:'Kemény pálya'},{value:'Műfű',label:'Műfű'},{value:'Szőnyeg',label:'Szőnyeg'}] },
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Padel': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Squash': [],
+  };
+
+  let allHelyszinek=[], filtered=[], activeFilters={}, activeSport='', debounceTimer=null;
+  const grid=document.getElementById('sp-grid'), countEl=document.getElementById('sp-count');
+  const searchEl=document.getElementById('sp-search'), clearBtn=document.getElementById('sp-search-clear');
+  const resetBtn=document.getElementById('sp-reset'), dynPanel=document.getElementById('sp-dynamic-filters');
+  const selectsWrap=document.getElementById('sp-selects-wrap');
+
+  async function loadHelyszinek(){
+    try {
+      const url = SUPABASE_URL+'/rest/v1/helyszinek?statusz=eq.jovahagyva&select=id,nev,slug,varos,helyszin,palyas(id,slug,sportag,boritas,fedett,jatekforma,ar_per_ora,kep_url,statusz)&order=nev.asc&limit=300';
+      const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer '+SUPABASE_KEY } });
+      if(!res.ok) throw new Error();
+      const data = await res.json();
+      const PRIO = ['Futball','Tenisz','Padel','Squash'];
+      allHelyszinek = data.map(h => {
+        const jov = (h.palyas||[]).filter(p => p.statusz==='jovahagyva');
+        const sportok = [...new Set(jov.map(p=>p.sportag).filter(Boolean))];
+        let kep = '';
+        for(const sp of PRIO){ const t=jov.find(p=>p.sportag===sp&&p.kep_url); if(t){kep=t.kep_url;break;} }
+        if(!kep) kep = jov.find(p=>p.kep_url)?.kep_url||'';
+        const kepekSportag={};
+        for(const sp of PRIO){ const t=jov.find(p=>p.sportag===sp&&p.kep_url); if(t) kepekSportag[sp]=t.kep_url; }
+        return {...h, _palyas:jov, _sportok:sportok, _kep:kep, _kepekSportag:kepekSportag};
+      }).filter(h=>h._palyas.length>0);
+      applyFilters();
+    } catch(e) {
+      grid.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">⚠️</div><div class="sp-empty-title">Betöltési hiba</div><div class="sp-empty-sub">Kérjük próbáld újra később.</div></div>';
     }
-    if(event==='SIGNED_OUT'){currentUser=null;appInitialized=false;showLogin();}
-  });
-}
-init();
-
-function sendLoginSuccess(user){
-  const name=user.user_metadata?.full_name||user.email.split('@')[0];
-  const msg={type:'sp-login-success',loggedIn:true,email:user.email,name:name};
-  const origins=['https://sportingo.hu','https://www.sportingo.hu','https://jatekos.sportingo.hu','https://portal.sportingo.hu'];
-  origins.forEach(o=>{
-    if(window.parent!==window) try{window.parent.postMessage(msg,o);}catch(e){}
-    if(window.opener&&!window.opener.closed) try{window.opener.postMessage(msg,o);}catch(e){}
-  });
-}
-
-function setMode(mode){
-  authMode=mode;
-  document.getElementById('modeLogin').classList.toggle('active',mode==='login');
-  document.getElementById('modeRegister').classList.toggle('active',mode==='register');
-  document.getElementById('registerFields').style.display=mode==='register'?'block':'none';
-  document.getElementById('forgotLink').style.display=mode==='login'?'block':'none';
-  document.getElementById('loginTitle').textContent=mode==='login'?'Üdvözlünk! 👋':'Regisztráció 🎉';
-  document.getElementById('loginSub').textContent=mode==='login'?'Lépj be a játékos fiókodba.':'Hozz létre ingyenes fiókot!';
-  document.getElementById('loginBtnText').textContent=mode==='login'?'Bejelentkezés →':'Regisztráció →';
-  document.getElementById('passwordInput').placeholder=mode==='register'?'Min. 6 karakter':'••••••••';
-}
-
-async function handleAuth(){
-  const email=document.getElementById('emailInput').value.trim();
-  const pw=document.getElementById('passwordInput').value;
-  const btn=document.getElementById('loginBtn'),txt=document.getElementById('loginBtnText');
-  if(!email||!pw){showLoginAlert('Kérjük töltsd ki az összes mezőt!','error');return;}
-  btn.disabled=true;txt.innerHTML='<span class="spinner"></span>';
-  if(authMode==='register'){
-    const nev=document.getElementById('regNev').value.trim();
-    if(!nev||nev.length<2){btn.disabled=false;txt.textContent='Regisztráció →';showLoginAlert('Add meg a nevedet (legalább 2 karakter)!','error');return;}
-    if(pw.length<8){btn.disabled=false;txt.textContent='Regisztráció →';showLoginAlert('A jelszó legalább 8 karakter legyen!','error');return;}
-    const {error}=await sb.auth.signUp({email,password:pw,options:{data:{full_name:nev}}});
-    if(error){btn.disabled=false;txt.textContent='Regisztráció →';showLoginAlert(error.message,'error');return;}
-    showLoginAlert('✅ Sikeres regisztráció! Ellenőrizd az emailed.','success');
-    btn.disabled=false;txt.textContent='Regisztráció →';
-  }else{
-    const {error}=await sb.auth.signInWithPassword({email,password:pw});
-    if(error){btn.disabled=false;txt.textContent='Bejelentkezés →';showLoginAlert('Hibás email vagy jelszó!','error');return;}
-    // showApp() az onAuthStateChange-en fut le automatikusan
   }
-}
 
-async function googleLogin(){
-  const {data,error}=await sb.auth.signInWithOAuth({
-    provider:'google',
-    options:{
-      redirectTo:'https://jatekos.sportingo.hu/auth-callback',
-      skipBrowserRedirect:true
+  document.querySelectorAll('.sp-sportag-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.sp-sportag-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      activeSport=btn.dataset.sport; activeFilters={};
+      renderDynamicFilters(); applyFilters();
+    });
+  });
+
+  function renderDynamicFilters(){
+    const filters=SPORT_FILTERS[activeSport]||[];
+    if(!filters.length){ dynPanel.style.display='none'; selectsWrap.innerHTML=''; return; }
+    dynPanel.style.display='flex';
+    selectsWrap.innerHTML=filters.map(f=>`
+      <select class="sp-select" data-filter-id="${f.id}">
+        ${f.options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
+      </select>`).join('');
+    selectsWrap.querySelectorAll('.sp-select').forEach(sel=>{
+      sel.addEventListener('change',()=>{ activeFilters[sel.dataset.filterId]=sel.value; applyFilters(); });
+    });
+  }
+
+  function applyFilters(){
+    const search=searchEl.value.trim().toLowerCase();
+    clearBtn.style.display=search?'flex':'none';
+    const hasAnyFilter=search||activeSport||Object.values(activeFilters).some(v=>v);
+    resetBtn.style.display=hasAnyFilter?'flex':'none';
+    filtered=allHelyszinek.filter(h=>{
+      if(search){ const t=[(h.nev||''),(h.varos||'')].join(' ').toLowerCase(); if(!t.includes(search)) return false; }
+      if(activeSport){ if(!h._palyas.some(p=>p.sportag===activeSport)) return false; }
+      const rel=activeSport?h._palyas.filter(p=>p.sportag===activeSport):h._palyas;
+      for(const [id,val] of Object.entries(activeFilters)){
+        if(!val) continue;
+        if(!rel.some(p=>(p[id]||'').toLowerCase().includes(val.toLowerCase()))) return false;
+      }
+      return true;
+    });
+    renderCards();
+  }
+
+  function renderCards(){
+    countEl.innerHTML='<strong>'+filtered.length+'</strong> helyszín található';
+    if(!filtered.length){
+      grid.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">🔍</div><div class="sp-empty-title">Nincs találat</div><div class="sp-empty-sub">Próbálj más szűrési feltételeket.</div></div>';
+      return;
+    }
+    grid.innerHTML=filtered.map(h=>{
+      const rel=activeSport?h._palyas.filter(p=>p.sportag===activeSport):h._palyas;
+      let url;
+      if(rel.length===1&&rel[0].slug) url='https://adatlap.sportingo.hu/palya?slug='+rel[0].slug;
+      else if(h.slug) url='https://adatlap.sportingo.hu/helyszin?slug='+h.slug;
+      else url='#';
+      const sportok=activeSport?(h._sportok.includes(activeSport)?[activeSport]:h._sportok.slice(0,3)):h._sportok.slice(0,3);
+      const badges=sportok.map(s=>`<span class="sp-card-sport-badge">${esc(s)}</span>`).join('');
+      const egyPalya=rel.length===1;
+      const kep=(activeSport&&h._kepekSportag[activeSport])?h._kepekSportag[activeSport]:h._kep;
+      return `<a href="${url}" class="sp-card-link">
+        <div class="sp-card">
+          <div class="sp-card-thumb">
+            ${kep?`<img src="${esc(kep)}" alt="${esc(h.nev||'')}" loading="lazy">`:'<div class="sp-card-thumb-placeholder">🏟</div>'}
+            ${badges?`<div class="sp-card-sport-badges">${badges}</div>`:''}
+          </div>
+          <div class="sp-card-body">
+            <h3 class="sp-card-nev">${esc(h.nev||'Névtelen helyszín')}</h3>
+            ${h.varos?`<div class="sp-card-location">📍 ${esc(h.varos)}</div>`:''}
+            <div class="sp-card-footer">
+              <div class="${egyPalya?'sp-card-cta':'sp-card-palya-count'}">${egyPalya?'📧 Foglalási kérés küldése':'⚽ '+rel.length+' pálya'}</div>
+              <div class="sp-card-arrow">→</div>
+            </div>
+          </div>
+        </div>
+      </a>`;
+    }).join('');
+  }
+
+  function esc(s){ const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
+  function debounce(fn,ms){ clearTimeout(debounceTimer); debounceTimer=setTimeout(fn,ms); }
+
+  searchEl.addEventListener('input',()=>{ clearBtn.style.display=searchEl.value?'flex':'none'; debounce(applyFilters,280); });
+  clearBtn.addEventListener('click',()=>{ searchEl.value=''; clearBtn.style.display='none'; searchEl.focus(); applyFilters(); });
+  resetBtn.addEventListener('click',()=>{
+    searchEl.value=''; clearBtn.style.display='none'; activeFilters={}; activeSport='';
+    document.querySelectorAll('.sp-sportag-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    dynPanel.style.display='none'; selectsWrap.innerHTML=''; applyFilters();
+  });
+
+  loadHelyszinek();
+
+  // ── AUTH ──
+  let sb=null, isLoggedIn=false, userEmail='', hasCachedSession=false, sessionChecked=false, loginIframeLoaded=false;
+  let allBookings=[], filteredBookings=[], currentPage=1, activeFilter='mind';
+  const perPage=10;
+  const loginModalOverlay=document.getElementById('sp-login-modal-overlay');
+  const loginIframe=document.getElementById('sp-login-iframe');
+  const loginIframeWrap=document.getElementById('sp-login-iframe-wrap');
+  const drawer=document.getElementById('sp-drawer');
+  const drawerOverlay=document.getElementById('sp-drawer-overlay');
+  const bookingList=document.getElementById('sp-bookings-list');
+  const kedvencekList=document.getElementById('sp-kedvencek-list');
+  const dAvatar=document.getElementById('sp-drawer-avatar');
+  const dName=document.getElementById('sp-drawer-name');
+  const dEmail=document.getElementById('sp-drawer-email');
+  const logoutBtn=document.getElementById('sp-logout-btn');
+
+  function getLabels(){ return document.querySelectorAll('.sportingo-auth-label'); }
+  function getIcons(){ return document.querySelectorAll('.sportingo-auth-icon'); }
+  function hasButtons(){ return document.querySelectorAll('.sportingo-auth-btn').length>0; }
+  function setButtonsLoading(v){ document.querySelectorAll('.sportingo-auth-btn').forEach(b=>b.disabled=v); }
+  function setButtonsOpacity(v){ document.querySelectorAll('.sportingo-auth-btn').forEach(b=>b.style.opacity=v); }
+
+  function setLoggedInUI(name, email){
+    getLabels().forEach(l=>l.textContent=name||email.split('@')[0]);
+    getIcons().forEach(i=>i.textContent='👤');
+    if(dAvatar) dAvatar.textContent=(name||email)[0].toUpperCase();
+    if(dName) dName.textContent=name||email.split('@')[0];
+    if(dEmail) dEmail.textContent=email;
+    document.getElementById('sp-profil-email-display').textContent=email;
+  }
+  function setLoggedOutUI(){
+    getLabels().forEach(l=>l.textContent='Bejelentkezés');
+    getIcons().forEach(i=>i.textContent='👤');
+  }
+
+  const cached=localStorage.getItem('sp_user');
+  if(cached){ try{ const u=JSON.parse(cached); if(u&&u.email){ hasCachedSession=true; isLoggedIn=true; userEmail=u.email.trim().toLowerCase(); setLoggedInUI(u.name||u.email.split('@')[0],u.email); } }catch(e){} }
+  if(!hasCachedSession&&hasButtons()){ setButtonsLoading(true); getLabels().forEach(l=>l.textContent='...'); }
+  setTimeout(function(){ if(!sessionChecked){ sessionChecked=true; setButtonsLoading(false); if(!hasCachedSession) getLabels().forEach(l=>l.textContent='Bejelentkezés'); } },1500);
+
+  window.addEventListener('message',function(e){
+    if(!e.origin.includes('jatekos.sportingo.hu')) return;
+    const d=e.data; if(!d) return;
+    const validTypes=['sp-login-success','sp-auth-state','sp-logout'];
+    if(d.type&&!validTypes.includes(d.type)) return;
+    const loggedIn=d.loggedIn===true, email=d.email?d.email.trim().toLowerCase():'', name=d.name||(email?email.split('@')[0]:'');
+    sessionChecked=true; setButtonsLoading(false);
+    if(loggedIn&&email){
+      isLoggedIn=true; userEmail=email; hasCachedSession=true;
+      localStorage.setItem('sp_user',JSON.stringify({email:email.trim().toLowerCase(),name}));
+      setLoggedInUI(name,email);
+      if(loginModalOverlay.classList.contains('open')){ closeLoginModal(); setTimeout(openDrawer,300); }
+    } else if(d.type==='sp-logout'||(!loggedIn&&!hasCachedSession)){
+      isLoggedIn=false; userEmail=''; localStorage.removeItem('sp_user'); setLoggedOutUI();
     }
   });
-  if(error){showLoginAlert('Google belépés sikertelen!','error');return;}
-  if(!data?.url){showLoginAlert('Nem sikerült a Google URL lekérése.','error');return;}
-  const w=500,h=620;
-  const left=Math.round(screen.width/2-w/2);
-  const top=Math.round(screen.height/2-h/2);
-  const popup=window.open(data.url,'google-oauth',`width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`);
-  if(!popup) window.location.href=data.url;
-}
 
-let forgotCooldown=false;
-async function forgotPassword(e){
-  e.preventDefault();
-  if(forgotCooldown){showLoginAlert('Kérlek várj legalább 60 másodpercet az újraküldés előtt.','error');return;}
-  const email=document.getElementById('emailInput').value.trim();
-  if(!email){showLoginAlert('Add meg az email címed!','error');return;}
-  const link=document.getElementById('forgotLink');
-  link.style.pointerEvents='none';link.style.opacity='.4';
-  const {error:pwErr}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://jatekos.sportingo.hu'});
-  if(pwErr){
-    link.style.pointerEvents='';link.style.opacity='';
-    if(pwErr.message?.includes('rate limit')||pwErr.message?.includes('rate_limit')){
-      showLoginAlert('Kérlek várj egy kicsit, majd próbáld újra.','error');
-    }else{
-      showLoginAlert('Nem sikerült elküldeni a visszaállító emailt.','error');
-    }
-    return;
+  document.getElementById('sp-stat-card-foglalasok').addEventListener('click',()=>switchTab('foglalasok'));
+  document.getElementById('sp-stat-card-kedvencek').addEventListener('click',()=>switchTab('kedvencek'));
+
+  function switchTab(name){
+    document.querySelectorAll('.sp-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.sp-tab-panel').forEach(p=>p.classList.remove('active'));
+    const tab=document.querySelector('[data-tab="'+name+'"]'), panel=document.getElementById('sp-tab-'+name);
+    if(tab) tab.classList.add('active'); if(panel) panel.classList.add('active');
+    if(name==='kedvencek') loadKedvencek();
+    if(name==='foglalasok'&&!allBookings.length) waitForReadyThenLoad();
   }
-  showLoginAlert('✅ Jelszó visszaállító email elküldve!','success');
-  forgotCooldown=true;
-  let sec=60;
-  const origText=link.textContent;
-  link.textContent=`Újraküldés ${sec} mp múlva`;
-  const timer=setInterval(()=>{
-    sec--;
-    link.textContent=sec>0?`Újraküldés ${sec} mp múlva`:origText;
-    if(sec<=0){clearInterval(timer);forgotCooldown=false;link.style.pointerEvents='';link.style.opacity='';}
-  },1000);
-}
+  document.querySelectorAll('.sp-tab').forEach(tab=>{ tab.addEventListener('click',()=>{ switchTab(tab.dataset.tab); if(tab.dataset.tab==='profil') loadProfil(); }); });
+  document.querySelectorAll('.sp-filter-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.sp-filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); activeFilter=btn.dataset.filter; currentPage=1; applyFilterAndRender(); }); });
+  document.getElementById('sp-prev-page').addEventListener('click',()=>{ if(currentPage>1){currentPage--;renderBookingsPage();} });
+  document.getElementById('sp-next-page').addEventListener('click',()=>{ if(currentPage<Math.ceil(filteredBookings.length/perPage)){currentPage++;renderBookingsPage();} });
 
-async function handleLogout(){
-  appInitialized=false;
-  currentUser=null;
-  // 0. Auth-bridge értesítése (az kezeli a saját Supabase sessionjét)
-  const bridgeIframe=document.getElementById('sp-auth-bridge');
-  if(bridgeIframe&&bridgeIframe.contentWindow){
-    try{ bridgeIframe.contentWindow.postMessage({type:'sp-logout-request'},'https://jatekos.sportingo.hu'); }catch(e){}
-  }
-  // 1. Supabase globális signOut
-  try{ await sb.auth.signOut({scope:'global'}); }catch(e){}
-  // 2. Teljes cache törlés
-  localStorage.removeItem('sp_user');
-  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
-  // 3. Broadcast minden nyitott tabnak (főoldal is hallja)
-  try{ window.postMessage({type:'sp-logout',loggedIn:false},'*'); }catch(e){}
-  // 4. Hard reload - törli az in-memory sessiont is
-  setTimeout(()=>{ location.reload(true); }, 150);
-}
-
-function showLogin(){
-  document.getElementById('appPage').style.display='none';
-  document.getElementById('loginPage').style.display='flex';
-}
-
-async function showApp(){
-  if(appInitialized)return;
-  appInitialized=true;
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('appPage').style.display='block';
-  const name=currentUser.user_metadata?.full_name||currentUser.email;
-  const shortName=name.split('@')[0];
-  document.getElementById('userNameDisplay').textContent=shortName;
-  document.getElementById('userInitial').textContent=shortName[0].toUpperCase();
-  document.getElementById('welcomeMsg').textContent=`Üdv, ${shortName}!`;
-  document.getElementById('profilEmail').value=currentUser.email;
-  document.getElementById('profilNev').value=currentUser.user_metadata?.full_name||'';
-  document.getElementById('profilTel').value=currentUser.user_metadata?.telefon||'';
-  document.getElementById('profilVaros').value=currentUser.user_metadata?.varos||'';
-  await loadDashboard();
-}
-
-function showPage(pageId,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+pageId).classList.add('active');
-  if(btn)btn.classList.add('active');
-  if(pageId==='kedvencek')loadKedvencek();
-  if(pageId==='foglalasaim')loadFoglalasaim();
-  if(pageId==='statok')loadStatok();
-}
-
-async function loadDashboard(){
-  const email=currentUser.email;
-  const {data:fogl,error:foglErr}=await sb.from('foglalasok')
-    .select('id,statusz,palya_id,palyas(nev,helyszin_nev,sportag),idopontok(datum,kezdes,veg)')
-    .eq('ugyfel_email',email)
-    .order('created_at',{ascending:false});
-  if(foglErr){console.error('loadDashboard hiba:',foglErr);}
-  const {data:kedv,error:kedvErr}=await sb.from('kedvencek').select('id').eq('ugyfel_email',email);
-  if(kedvErr)console.error('kedvencek hiba:',kedvErr);
-  document.getElementById('statFoglalasok').textContent=fogl?fogl.length:0;
-  document.getElementById('statKedvencek').textContent=kedv?kedv.length:0;
-  renderDashFoglalasok(fogl?fogl.slice(0,3):[]);
-  renderAktivitas(fogl||[]);
-  renderVisszahuzo(fogl||[]);
-}
-
-function perc2ora(kezdes,veg){
-  if(!kezdes||!veg)return 0;
-  const [kh,km]=kezdes.substring(0,5).split(':').map(Number);
-  const [vh,vm]=veg.substring(0,5).split(':').map(Number);
-  return Math.max(0,((vh*60+vm)-(kh*60+km))/60);
-}
-
-function escJ(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
-
-function renderAktivitas(fogl){
-  const now=new Date();
-  const honapEleje=new Date(now.getFullYear(),now.getMonth(),1);
-  const hetEleje=new Date(now);
-  hetEleje.setDate(now.getDate()-((now.getDay()+6)%7));
-  hetEleje.setHours(0,0,0,0);
-  const jov=fogl.filter(f=>f.statusz==='jovahagyva');
-  const haviF=jov.filter(f=>f.idopontok?.datum&&new Date(f.idopontok.datum+'T00:00:00')>=honapEleje);
-  const haviOra=haviF.reduce((s,f)=>s+perc2ora(f.idopontok?.kezdes,f.idopontok?.veg),0);
-  document.getElementById('aktivHaviOra').textContent=haviOra>0?haviOra.toFixed(1).replace('.',',')+' óra':'0 óra';
-  const haviCel=4;
-  const hatralevo=Math.max(0,haviCel-haviOra);
-  document.getElementById('aktivHaviSub').textContent=hatralevo>0
-    ?`Még ${hatralevo.toFixed(1).replace('.',',')} óra a havi célhoz!`
-    :'🎉 Elérted a havi célt!';
-  document.getElementById('aktivHaviDb').textContent=haviF.length;
-  document.getElementById('aktivOsszesDb').textContent=jov.length+' összes';
-  const sCnt={};
-  jov.filter(f=>f.palyas?.sportag).forEach(f=>{const s=f.palyas.sportag;sCnt[s]=(sCnt[s]||0)+1;});
-  const topS=Object.entries(sCnt).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('aktivKedvencSport').textContent=topS?topS[0]:'–';
-  const hCnt={};
-  jov.filter(f=>f.palyas?.helyszin_nev||f.palyas?.nev).forEach(f=>{const h=f.palyas.helyszin_nev||f.palyas.nev;hCnt[h]=(hCnt[h]||0)+1;});
-  const topH=Object.entries(hCnt).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('aktivKedvencHelyszin').textContent=topH?'📍 '+topH[0]:'';
-  const hetekSet=new Set();
-  jov.filter(f=>f.idopontok?.datum).forEach(f=>{
-    const d=new Date(f.idopontok.datum+'T00:00:00');
-    const mon=new Date(d);mon.setDate(d.getDate()-((d.getDay()+6)%7));
-    hetekSet.add(mon.toISOString().substring(0,10));
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest('.sportingo-auth-btn');
+    if(btn){ e.preventDefault(); e.stopPropagation(); if(!sessionChecked&&!hasCachedSession){ setButtonsOpacity('.6'); const wait=setInterval(()=>{ if(sessionChecked){clearInterval(wait);setButtonsOpacity('1');handleBtnAction();} },100); setTimeout(()=>{clearInterval(wait);setButtonsOpacity('1');handleBtnAction();},2000); return; } handleBtnAction(); return; }
+    if(e.target.matches('[data-sp-close-login]')){ e.preventDefault(); closeLoginModal(); return; }
+    if(e.target===loginModalOverlay){ closeLoginModal(); return; }
+    if(e.target.matches('[data-sp-close-drawer]')||e.target.closest('[data-sp-close-drawer]')){ closeDrawer(); return; }
+    if(e.target===drawerOverlay){ closeDrawer(); return; }
   });
-  const hetek=Array.from(hetekSet).sort().reverse();
-  let sorozat=0;
-  for(let i=0;i<8;i++){
-    const exp=new Date(hetEleje);exp.setDate(hetEleje.getDate()-i*7);
-    if(hetek.includes(exp.toISOString().substring(0,10)))sorozat++;
-    else if(i>0)break;
+
+  function handleBtnAction(){ if(isLoggedIn) openDrawer(); else openLoginModal(); }
+  function openLoginModal(){ loginModalOverlay.classList.add('open'); document.body.style.overflow='hidden'; if(!loginIframeLoaded){ loginIframeLoaded=true; loginIframe.src='https://jatekos.sportingo.hu/?modal=1'; loginIframe.onload=()=>loginIframeWrap.style.background='transparent'; } }
+  function closeLoginModal(){ loginModalOverlay.classList.remove('open'); document.body.style.overflow=''; }
+  function openDrawer(){
+    drawer.classList.add('open'); drawerOverlay.classList.add('open'); document.body.style.overflow='hidden';
+    document.querySelectorAll('.sp-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.sp-tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelector('[data-tab="foglalasok"]').classList.add('active');
+    document.getElementById('sp-tab-foglalasok').classList.add('active');
+    allBookings=[]; filteredBookings=[]; currentPage=1; activeFilter='mind';
+    document.querySelectorAll('.sp-filter-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.sp-filter-btn[data-filter="mind"]').classList.add('active');
+    bookingList.innerHTML='<div class="sp-loading">⏳ Betöltés...</div>';
+    waitForReadyThenLoad(); loadMiniStats();
   }
-  document.getElementById('aktivSorozat').textContent=sorozat>0?sorozat+' hét':'–';
-  const bar=document.getElementById('sorozatBar');
-  if(bar)bar.innerHTML=Array.from({length:Math.max(sorozat,4)},(_,i)=>`<div class="sorozat-dot${i<sorozat?' aktiv':''}"></div>`).join('');
-}
+  function closeDrawer(){ drawer.classList.remove('open'); drawerOverlay.classList.remove('open'); document.body.style.overflow=''; }
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrawer(); closeLoginModal(); } });
 
-function renderVisszahuzo(fogl){
-  const wrap=document.getElementById('visszahozo-lista');
-  const wrapDiv=document.getElementById('visszahozo-wrap');
-  if(!wrap)return;
-  const jov=fogl.filter(f=>f.statusz==='jovahagyva'&&f.palyas);
-  const seen=new Map();
-  jov.forEach(f=>{const k=f.palya_id;if(!seen.has(k))seen.set(k,f);});
-  const top=Array.from(seen.values()).slice(0,3);
-  if(!top.length){if(wrapDiv)wrapDiv.style.display='none';return;}
-  if(wrapDiv)wrapDiv.style.display='';
-  const sEmoji={Futball:'⚽',Tenisz:'🎾',Padel:'🏸',Squash:'🟡',Kosárlabda:'🏀'};
-  wrap.innerHTML=top.map(f=>{
-    const nev=f.palyas?.helyszin_nev||f.palyas?.nev||'–';
-    const sport=f.palyas?.sportag||'';
-    const emoji=sEmoji[sport]||'🏟';
-    const datum=f.idopontok?.datum?new Date(f.idopontok.datum+'T00:00:00').toLocaleDateString('hu-HU',{month:'short',day:'numeric'}):'';
-    return `<div class="visszahozo-card"><div class="visszahozo-icon">${emoji}</div><div style="flex:1;"><div class="visszahozo-nev">${escJ(nev)}</div><div class="visszahozo-meta">${sport?sport+' · ':''}${datum?'Utoljára: '+datum:''}</div></div><button class="visszahozo-btn" onclick="window.open('https://sportingo.hu','_blank')">🔄 Újra</button></div>`;
-  }).join('');
-}
-
-async function loadStatok(){
-  const email=currentUser.email;
-  const {data:fogl}=await sb.from('foglalasok')
-    .select('id,statusz,palya_id,palyas(nev,helyszin_nev,sportag),idopontok(datum,kezdes,veg)')
-    .eq('ugyfel_email',email);
-  if(!fogl||!fogl.length){
-    ['statOsszOra','statOsszFogl','statHelyszinDb','statTopSport'].forEach(id=>document.getElementById(id).textContent='0');
-    document.getElementById('statRekordok').innerHTML='<div class="empty-state"><div class="empty-title">Még nincs elég adat</div></div>';
-    return;
+  function waitForReadyThenLoad(retries=0){
+    if(retries>20){ bookingList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">⚠️</div>Nem sikerült betölteni.</div>'; return; }
+    if(!sb&&window.supabase&&typeof window.supabase.createClient==='function'){ try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); window._spSb=sb; }catch(e){} }
+    if(sb&&userEmail){ loadBookings(); return; }
+    setTimeout(()=>waitForReadyThenLoad(retries+1),200);
   }
-  const jov=fogl.filter(f=>f.statusz==='jovahagyva');
-  const osszOra=jov.reduce((s,f)=>s+perc2ora(f.idopontok?.kezdes,f.idopontok?.veg),0);
-  document.getElementById('statOsszOra').textContent=osszOra.toFixed(1).replace('.',',')+' óra';
-  document.getElementById('statOsszFogl').textContent=jov.length;
-  const helyszinek=new Set(jov.map(f=>f.palya_id).filter(Boolean));
-  document.getElementById('statHelyszinDb').textContent=helyszinek.size;
-  const sCnt={};
-  jov.filter(f=>f.palyas?.sportag).forEach(f=>{const s=f.palyas.sportag;sCnt[s]=(sCnt[s]||0)+1;});
-  const topS=Object.entries(sCnt).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('statTopSport').textContent=topS?topS[0]:'–';
-  const honapCnt={};
-  jov.filter(f=>f.idopontok?.datum).forEach(f=>{const m=f.idopontok.datum.substring(0,7);honapCnt[m]=(honapCnt[m]||0)+1;});
-  const topH=Object.entries(honapCnt).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('statRekordok').innerHTML=`
-    <div class="rekord-item"><span class="rekord-label">🏆 Legjobb hónap</span><span class="rekord-value">${topH?topH[0]+' ('+topH[1]+' fogl.)':'–'}</span></div>
-    <div class="rekord-item"><span class="rekord-label">⏱️ Összes sportidő</span><span class="rekord-value">${osszOra.toFixed(1).replace('.',',')} óra</span></div>
-    <div class="rekord-item"><span class="rekord-label">📍 Helyszínek száma</span><span class="rekord-value">${helyszinek.size} db</span></div>
-    <div class="rekord-item"><span class="rekord-label">📅 Összes foglalás</span><span class="rekord-value">${jov.length} db</span></div>`;
-  const hCnt={};
-  jov.filter(f=>f.palyas).forEach(f=>{const h=f.palyas.helyszin_nev||f.palyas.nev;if(h)hCnt[h]=(hCnt[h]||0)+1;});
-  document.getElementById('statSportMegoszlas').innerHTML=Object.entries(sCnt).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
-    const pct=Math.round(n/jov.length*100);
-    return `<div style="margin-bottom:.6rem;"><div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:3px;"><span style="font-weight:600;">${escJ(s)}</span><span style="color:var(--muted);">${n}x · ${pct}%</span></div><div style="height:6px;background:var(--border);border-radius:3px;"><div style="height:6px;background:var(--grad);border-radius:3px;width:${pct}%;"></div></div></div>`;
-  }).join('')||'<div class="empty-state"><div class="empty-title">Nincs elég adat</div></div>';
-  document.getElementById('statTopHelyszinek').innerHTML=Object.entries(hCnt).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([h,n],i)=>
-    `<div class="rekord-item"><span class="rekord-label">${i+1}. ${escJ(h)}</span><span class="rekord-value">${n} látogatás</span></div>`
-  ).join('')||'<div class="empty-state"><div class="empty-title">Nincs adat</div></div>';
-}
 
-function renderDashFoglalasok(foglalasok){
-  const el=document.getElementById('dashFoglalasok');
-  if(!foglalasok.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Még nincs foglalásod</div><div class="empty-sub">Keresd meg kedvenc pályádat a sportingo.hu-n!</div></div>';return;}
-  const sl={varakozik:'⏳ Várakozik',jovahagyva:'✅ Jóváhagyva',elutasitva:'❌ Elutasítva'};
-  el.innerHTML=foglalasok.map(f=>{
-    const pNev=f.palyas?.helyszin_nev||f.palyas?.nev||'–';
-    const datum=f.idopontok?.datum?new Date(f.idopontok.datum).toLocaleDateString('hu-HU',{month:'short',day:'numeric'}):'–';
-    const kezdes=f.idopontok?.kezdes?.substring(0,5)||'';
-    const veg=f.idopontok?.veg?.substring(0,5)||'';
-    return `<div class="foglalas-item ${f.statusz}"><div class="foglalas-item-info"><div class="foglalas-item-name">⚽ ${pNev}</div><div class="foglalas-item-meta">📅 ${datum} · 🕐 ${kezdes}–${veg}</div></div><span class="status-pill ${f.statusz}">${sl[f.statusz]||f.statusz}</span></div>`;
-  }).join('');
-}
-
-// ── JAVÍTVA: email alapján ──
-async function loadKedvencek(){
-  const email=currentUser.email;
-  const {data}=await sb.from('kedvencek')
-    .select('palya_id,palyas(id,nev,helyszin_nev,helyszin,ar_per_ora,boritas,kep_url,slug)')
-    .eq('ugyfel_email',email);
-  const el=document.getElementById('kedvencekList');
-  if(!data||!data.length){
-    el.innerHTML='<div class="empty-state" style="background:white;border-radius:16px;border:1.5px solid var(--border);"><div class="empty-icon">❤️</div><div class="empty-title">Még nincsenek kedvenc pályáid</div><div class="empty-sub">A sportingo.hu-n a pályáknál a ❤️ gombra kattintva menthetsz kedvenceket.</div></div>';
-    return;
+  async function loadMiniStats(){
+    if(!sb&&window.supabase&&typeof window.supabase.createClient==='function'){ try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); window._spSb=sb; }catch(e){} }
+    if(!userEmail||!sb) return;
+    const {data:fogl}=await sb.from('foglalasok').select('id,statusz').eq('ugyfel_email',userEmail);
+    const {data:kedv}=await sb.from('kedvencek').select('id').eq('ugyfel_email',userEmail);
+    const fEl=document.getElementById('sp-stat-foglalasok'), kEl=document.getElementById('sp-stat-kedvencek');
+    if(fEl) fEl.textContent=fogl?fogl.length:'0';
+    if(kEl) kEl.textContent=kedv?kedv.length:'0';
   }
-  el.innerHTML=`<div class="palya-grid">${data.map(k=>renderPalyaCard(k.palyas,true)).join('')}</div>`;
-}
 
-function renderPalyaCard(p,isKedvenc){
-  if(!p)return'';
-  const foglalas_url=p.slug
-    ?`https://portal.sportingo.hu/foglalas?palya=${p.slug}`
-    :'https://portal.sportingo.hu';
-  const palyaUrl=p.slug?`https://sportingo.hu/p/${p.slug}`:'https://sportingo.hu';
-  const altText=escJ(p.helyszin_nev||p.nev||'');
-  const nevText=escJ(p.helyszin_nev||p.nev||'–');
-  const subText=p.helyszin_nev&&p.nev?`<div class="palya-card-sub">${escJ(p.nev)}</div>`:'';
-  const helyszinText=p.helyszin?`<span>📍 ${escJ(p.helyszin)}</span>`:'';
-  const arText=p.ar_per_ora?`<span>💰 ${p.ar_per_ora.toLocaleString('hu-HU')} Ft/óra</span>`:'';
-  const boritasText=p.boritas?`<span>🏟 ${escJ(p.boritas)}</span>`:'';
-  const thumbHtml=p.kep_url
-    ?`<div class="palya-card-thumb" style="height:120px;border-radius:10px;overflow:hidden;margin-bottom:10px;background:var(--bg);"><img src="${p.kep_url}" alt="${altText}" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.closest('.palya-card-thumb').innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;font-size:2rem;&quot;>🏟</div>'"></div>`
-    :'';
-  return `<div class="palya-card" style="position:relative;">
-    <button class="heart-btn" onclick="toggleKedvenc('${p.id}',this)" title="${isKedvenc?'Eltávolítás kedvencekből':'Kedvencekhez adás'}">${isKedvenc?'❤️':'🤍'}</button>
-    ${thumbHtml}
-    <div class="palya-card-name"><a href="${palyaUrl}" target="_blank" style="color:inherit;text-decoration:none;">${nevText}</a></div>
-    ${subText}
-    <div class="palya-card-meta">
-      ${helyszinText}
-      ${arText}
-      ${boritasText}
-    </div>
-    <button class="btn-foglalas" onclick="window.open('${foglalas_url}','_blank')">📅 Foglalás</button>
-  </div>`;
-}
+  const sportEmoji={Futball:'⚽',Tenisz:'🎾',Padel:'🎾',Squash:'🟡'};
+  const statuszLabel={varakozik:'⏳ Várakozik',jovahagyva:'✅ Jóváhagyva',elutasitva:'❌ Elutasítva'};
 
-// ── JAVÍTVA: email alapján ──
-async function toggleKedvenc(palyaId,btn){
-  if(!currentUser){showToast('Bejelentkezés szükséges!');return;}
-  const email=currentUser.email;
-  const isKedvenc=btn.textContent==='❤️';
-  if(isKedvenc){
-    const {error:delErr}=await sb.from('kedvencek').delete().eq('ugyfel_email',email).eq('palya_id',palyaId);
-    if(delErr){showToast('❌ Hiba: '+delErr.message);return;}
-    btn.textContent='🤍';
-    showToast('💔 Eltávolítva a kedvencekből');
-    const kPage=document.getElementById('page-kedvencek');
-    if(kPage&&kPage.classList.contains('active'))await loadKedvencek();
-  }else{
-    const {error:insErr}=await sb.from('kedvencek').insert({ugyfel_email:email,palya_id:palyaId});
-    if(insErr){showToast('❌ Hiba: '+insErr.message);return;}
-    btn.textContent='❤️';
-    showToast('❤️ Kedvencekhez adva!');
+  async function loadBookings(){
+    const {data,error}=await sb.from('foglalasok').select('*,palyas(nev,helyszin_nev,sportag,slug)').eq('ugyfel_email',userEmail).order('created_at',{ascending:false});
+    if(error||!data){ bookingList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">⚠️</div>Hiba a betöltésnél.</div>'; return; }
+    allBookings=data; applyFilterAndRender();
   }
-  // Stat frissítése
-  const {data}=await sb.from('kedvencek').select('id').eq('ugyfel_email',email);
-  document.getElementById('statKedvencek').textContent=data?data.length:0;
-}
 
-async function loadFoglalasaim(){
-  const filter=document.getElementById('foglalasFilter').value;
-  const email=currentUser.email;
-  let query=sb.from('foglalasok')
-    .select('*,palyas(nev,helyszin_nev),idopontok(datum,kezdes,veg)')
-    .eq('ugyfel_email',email)
-    .order('created_at',{ascending:false});
-  if(filter!=='all')query=query.eq('statusz',filter);
-  const {data}=await query;
-  const el=document.getElementById('foglalasaimList');
-  if(!data||!data.length){
-    el.innerHTML='<div class="empty-state" style="background:white;border-radius:16px;border:1.5px solid var(--border);"><div class="empty-icon">📋</div><div class="empty-title">Nincs foglalás</div><div class="empty-sub">Még nem küldtél foglalási kérést.</div></div>';
-    return;
+  function applyFilterAndRender(){ filteredBookings=activeFilter==='mind'?allBookings:allBookings.filter(f=>f.statusz===activeFilter); currentPage=1; renderBookingsPage(); }
+
+  function renderBookingsPage(){
+    const pagination=document.getElementById('sp-pagination');
+    if(!filteredBookings.length){ bookingList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs ilyen foglalásod.<br><a href="/" style="color:#1a8fc1;font-weight:600;">Keress pályát →</a></div>'; if(pagination) pagination.style.display='none'; return; }
+    const maxPage=Math.ceil(filteredBookings.length/perPage), start=(currentPage-1)*perPage, page=filteredBookings.slice(start,start+perPage);
+    bookingList.innerHTML=page.map(f=>{
+      const pNev=f.palyas?.helyszin_nev||f.palyas?.nev||'–', sport=f.palyas?.sportag||'', emoji=sportEmoji[sport]||'🏟';
+      const safe=['varakozik','jovahagyva','elutasitva'].includes(f.statusz)?f.statusz:'';
+      const slug=f.palyas?.slug||'';
+      const linkHtml=slug?`<div style="margin-top:6px;"><a href="https://adatlap.sportingo.hu/palya?slug=${spEsc(slug)}" target="_blank" style="color:#1a8fc1;font-size:.72rem;font-weight:700;text-decoration:none;">Pálya adatlap ↗</a></div>`:'';
+      return `<div class="sp-booking-card ${safe}"><div class="sp-booking-name">${emoji} ${spEsc(pNev)}</div><div class="sp-booking-meta"><span>📅 Foglalás</span><span class="sp-status-pill ${safe}">${statuszLabel[f.statusz]||f.statusz}</span></div>${linkHtml}</div>`;
+    }).join('');
+    if(maxPage>1){ pagination.style.display='flex'; document.getElementById('sp-page-info').textContent=currentPage+' / '+maxPage; document.getElementById('sp-prev-page').disabled=currentPage===1; document.getElementById('sp-next-page').disabled=currentPage===maxPage; }
+    else pagination.style.display='none';
   }
-  const sl={varakozik:'⏳ Várakozik',jovahagyva:'✅ Jóváhagyva',elutasitva:'❌ Elutasítva'};
-  el.innerHTML=data.map(f=>{
-    const pNev=f.palyas?.helyszin_nev||f.palyas?.nev||'–';
-    const datum=f.idopontok?.datum?new Date(f.idopontok.datum).toLocaleDateString('hu-HU',{weekday:'long',month:'long',day:'numeric'}):'–';
-    const kezdes=f.idopontok?.kezdes?.substring(0,5)||'';
-    const veg=f.idopontok?.veg?.substring(0,5)||'';
-    return `<div class="foglalas-item ${f.statusz}"><div class="foglalas-item-info"><div class="foglalas-item-name">⚽ ${pNev}</div><div class="foglalas-item-meta">📅 ${datum} · 🕐 ${kezdes}–${veg}</div>${f.megjegyzes?`<div class="foglalas-item-meta" style="margin-top:3px;">💬 ${f.megjegyzes}</div>`:''}</div><span class="status-pill ${f.statusz}">${sl[f.statusz]||f.statusz}</span></div>`;
-  }).join('');
-}
 
-async function saveProfil(){
-  const nev=document.getElementById('profilNev').value.trim();
-  const tel=document.getElementById('profilTel').value.trim();
-  const varos=document.getElementById('profilVaros').value.trim();
-  const {error}=await sb.auth.updateUser({data:{full_name:nev,telefon:tel,varos}});
-  if(error){showAlert('profilAlert',error.message,'error');return;}
-  showToast('✅ Profil mentve!');
-  const el=document.getElementById('profilAlert');el.className='alert success';el.textContent='✅ Sikeresen mentve!';
-  setTimeout(()=>el.className='alert',3000);
-}
+  async function loadKedvencek(){
+    if(!userEmail||!sb){ kedvencekList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Nincs kedvenc pályád még.</div>'; return; }
+    kedvencekList.innerHTML='<div class="sp-loading">⏳ Betöltés...</div>';
+    const {data,error}=await sb.from('kedvencek').select('id,palya_id,palyas(nev,helyszin_nev,sportag,slug,varos)').eq('ugyfel_email',userEmail).order('created_at',{ascending:false});
+    if(error||!data||!data.length){ kedvencekList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Még nincs kedvenc pályád.<br><a href="/" style="color:#1a8fc1;font-weight:600;">Fedezz fel pályákat →</a></div>'; return; }
+    kedvencekList.innerHTML=data.map(k=>{
+      const p=k.palyas||{}, nev=p.helyszin_nev||p.nev||'–', sport=p.sportag||'', varos=p.varos||'', emoji=sportEmoji[sport]||'🏟', slug=p.slug||'';
+      return `<div class="sp-kedvenc-card"><div class="sp-kedvenc-info"><div class="sp-kedvenc-name">${emoji} ${spEsc(nev)}</div><div class="sp-kedvenc-meta">${varos?'📍 '+spEsc(varos):sport}</div></div>${slug?`<a href="https://adatlap.sportingo.hu/palya?slug=${spEsc(slug)}" target="_blank" class="sp-kedvenc-link">Foglalás →</a>`:''}<button class="sp-kedvenc-remove" data-kedvenc-id="${k.id}" data-palya-id="${k.palya_id}">🗑</button></div>`;
+    }).join('');
+    kedvencekList.addEventListener('click',async function(e){
+      const btn=e.target.closest('.sp-kedvenc-remove'); if(!btn) return;
+      btn.textContent='⏳';
+      const {error}=await sb.from('kedvencek').delete().eq('id',btn.dataset.kedvencId);
+      if(!error){ btn.closest('.sp-kedvenc-card').remove(); const kEl=document.getElementById('sp-stat-kedvencek'); if(kEl) kEl.textContent=Math.max(0,parseInt(kEl.textContent||'0')-1); }
+      else btn.textContent='🗑';
+    },{once:true});
+  }
 
-function showLoginAlert(msg,type){const el=document.getElementById('loginAlert');el.className='alert '+type;el.textContent=msg;}
-function showAlert(id,msg,type){const el=document.getElementById(id);el.className='alert '+type;el.textContent=msg;}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginPage').style.display!=='none')handleAuth();});
+  async function loadProfil(){
+    if(!userEmail||!sb) return;
+    const {data}=await sb.from('ugyfelek').select('nev,telefon,varos').eq('email',userEmail).maybeSingle();
+    if(data){
+      const n=document.getElementById('sp-profil-nev'), t=document.getElementById('sp-profil-telefon'), v=document.getElementById('sp-profil-varos');
+      if(n&&data.nev) n.value=data.nev; if(t&&data.telefon) t.value=data.telefon; if(v&&data.varos) v.value=data.varos;
+    }
+  }
+
+  document.getElementById('sp-profil-save-btn').addEventListener('click',async function(){
+    if(!userEmail||!sb) return;
+    const btn=this, nev=document.getElementById('sp-profil-nev').value.trim(), tel=document.getElementById('sp-profil-telefon').value.trim(), var_=document.getElementById('sp-profil-varos').value.trim(), msg=document.getElementById('sp-profil-msg');
+    btn.disabled=true; btn.textContent='⏳ Mentés...';
+    const {error}=await sb.from('ugyfelek').upsert({email:userEmail,nev,telefon:tel,varos:var_},{onConflict:'email'});
+    btn.disabled=false; btn.textContent='💾 Adatok mentése'; msg.style.display='block';
+    if(!error){ msg.className='sp-profil-msg ok'; msg.textContent='✅ Adatok sikeresen mentve!'; if(nev){ if(dAvatar) dAvatar.textContent=nev[0].toUpperCase(); if(dName) dName.textContent=nev; getLabels().forEach(l=>l.textContent=nev); const c=JSON.parse(localStorage.getItem('sp_user')||'{}'); c.name=nev; localStorage.setItem('sp_user',JSON.stringify(c)); } }
+    else { msg.className='sp-profil-msg err'; msg.textContent='❌ Hiba a mentés során.'; }
+    setTimeout(()=>msg.style.display='none',3000);
+  });
+
+  document.getElementById('sp-pw-reset-btn').addEventListener('click',async function(){
+    if(!userEmail||!sb) return;
+    const btn=this, msg=document.getElementById('sp-pw-msg');
+    btn.disabled=true; btn.textContent='⏳ Küldés...';
+    const {error}=await sb.auth.resetPasswordForEmail(userEmail,{redirectTo:'https://jatekos.sportingo.hu/jelszo-reset'});
+    btn.disabled=false; btn.textContent='📧 Jelszóváltoztatási email küldése'; msg.style.display='block';
+    if(!error){ msg.className='sp-profil-msg ok'; msg.textContent='✅ Email elküldve!'; }
+    else { msg.className='sp-profil-msg err'; msg.textContent='❌ Nem sikerült az email küldése.'; }
+    setTimeout(()=>msg.style.display='none',4000);
+  });
+
+  logoutBtn.addEventListener('click',async function(){
+    // 1. Bridge signOut
+    const authIframe=document.getElementById('sportingo-auth-iframe');
+    if(authIframe&&authIframe.contentWindow){ try{ authIframe.contentWindow.postMessage({type:'sp-logout-request'},'https://jatekos.sportingo.hu'); }catch(e){} }
+    // 2. Saját Supabase signOut
+    if(sb&&sb.auth){ try{ await sb.auth.signOut({scope:'global'}); }catch(e){} }
+    // 3. Teljes cache törlés
+    localStorage.removeItem('sp_user');
+    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')) localStorage.removeItem(k); });
+    // 4. Broadcast minden nyitott tabnak
+    try{ window.postMessage({type:'sp-logout',loggedIn:false},'*'); }catch(e){}
+    // 5. Hard reload
+    setTimeout(()=>{ location.reload(true); }, 150);
+  });
+
+  function spEsc(s){ const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
+
+  // sessionStorage scroll
+  if(sessionStorage.getItem('sp_scroll_to_results')){
+    sessionStorage.removeItem('sp_scroll_to_results');
+    setTimeout(()=>{ const app=document.getElementById('sp-filters-section'); if(app) app.scrollIntoView({behavior:'smooth',block:'start'}); },600);
+  }
+})();
 </script>
 </body>
 </html>
