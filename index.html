@@ -675,16 +675,10 @@
     }
   }
   function resetLoginIframe(){
-    // Teljesen új iframe DOM elem – a régi Supabase JS instance megsemmisül
-    const newIframe=document.createElement('iframe');
-    newIframe.id='sp-login-iframe';
-    newIframe.style.cssText='width:100%;height:460px;border:none;display:block;';
-    newIframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
-    newIframe.src='about:blank';
-    loginIframeWrap.innerHTML='';
-    loginIframeWrap.appendChild(newIframe);
-    loginIframe=newIframe;
+    // Iframe src visszaállítása about:blank-re – Supabase session már törölve a bridge által
+    loginIframe.src='about:blank';
     loginIframeLoaded=false;
+    loginIframeWrap.style.background='#f0f7fb';
   }
   function closeLoginModal(){ loginModalOverlay.classList.remove('open'); document.body.style.overflow=''; }
   function openDrawer(){
