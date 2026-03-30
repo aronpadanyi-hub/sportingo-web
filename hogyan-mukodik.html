@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hogyan működik? | Sportingo</title>
+  <meta name="description" content="Így foglalhatsz sportpályát a Sportingon – egyszerűen, gyorsan, pár lépésben.">
+  <link rel="icon" href="https://sportingo.hu/wp-content/uploads/2026/03/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: #f5f9fc; color: #0a1628; padding-top: 68px; }
+
+    /* ── HEADER ── */
+    #sp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 9000; background: white; box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+    #sp-header-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    #sp-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+    #sp-logo-img { height: 38px; width: auto; display: block; }
+    #sp-nav { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+    .sp-nav-link { padding: 8px 14px; border-radius: 8px; font-size: .88rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; white-space: nowrap; cursor: pointer; background: none; border: none; font-family: inherit; }
+    .sp-nav-link:hover, .sp-nav-link.active { background: rgba(26,143,193,.08); color: #1a8fc1; }
+    #sp-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    #sp-socials { display: flex; align-items: center; gap: 6px; }
+    .sp-social-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a2e3b; text-decoration: none; transition: all .2s; background: rgba(0,0,0,.04); }
+    .sp-social-btn:hover { background: rgba(26,143,193,.1); color: #1a8fc1; transform: translateY(-1px); }
+    .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; }
+    #sp-hamburger { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; }
+    #sp-hamburger span { display: block; width: 22px; height: 2px; background: #1a2e3b; border-radius: 2px; transition: all .3s; transform-origin: center; }
+    #sp-hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    #sp-hamburger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    #sp-hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    #sp-mobile-menu { display: none; background: white; border-top: 1px solid #f0f7fb; overflow: hidden; max-height: 0; transition: max-height .35s cubic-bezier(.4,0,.2,1); }
+    #sp-mobile-menu.is-open { max-height: 400px; }
+    #sp-mobile-nav { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 2px; }
+    .sp-mobile-link { padding: 12px 16px; border-radius: 10px; font-size: .95rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; display: flex; align-items: center; gap: 10px; }
+    .sp-mobile-link:hover { background: #f0f7fb; color: #1a8fc1; }
+
+    /* ── HERO ── */
+    .sp-hero { position: relative; overflow: hidden; padding: 100px 20px 120px; text-align: center;
+      background: radial-gradient(1200px 500px at 15% 20%, rgba(36,107,253,.18), transparent 60%),
+                  radial-gradient(900px 420px at 85% 25%, rgba(34,197,94,.14), transparent 55%),
+                  linear-gradient(180deg, #0b1220 0%, #0f172a 55%, #111827 100%); }
+    .sp-hero::before { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 999px; filter: blur(60px); opacity: .3; top: -220px; left: -180px; background: rgba(36,107,253,.9); pointer-events: none; }
+    .sp-hero::after { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 999px; filter: blur(60px); opacity: .3; bottom: -260px; right: -220px; background: rgba(34,197,94,.75); pointer-events: none; }
+    .sp-hero-inner { position: relative; max-width: 700px; margin: 0 auto; }
+    .sp-hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 20px; padding: 6px 14px; font-size: .78rem; font-weight: 700; color: rgba(255,255,255,.7); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 20px; }
+    .sp-hero h1 { font-family: 'Syne', sans-serif; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; color: #f8fafc; font-size: clamp(28px,4.5vw,52px); margin-bottom: 16px; }
+    .sp-hero-accent { background: linear-gradient(90deg, #60a5fa, #22c55e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sp-hero p { color: rgba(255,255,255,.65); font-size: clamp(.9rem,1.5vw,1.05rem); line-height: 1.7; max-width: 520px; margin: 0 auto; }
+
+    /* ── STEPS ── */
+    .sp-steps-section { max-width: 1100px; margin: 0 auto; padding: 80px 20px; }
+    .sp-steps-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-top: 56px; }
+    .sp-step-card { background: white; border: 1.5px solid #d4e8f0; border-radius: 20px; padding: 28px 22px; position: relative; transition: all .25s; box-shadow: 0 2px 12px rgba(10,22,40,.05); }
+    .sp-step-card:hover { border-color: #1a8fc1; box-shadow: 0 8px 32px rgba(26,143,193,.12); transform: translateY(-4px); }
+    .sp-step-num { position: absolute; top: -14px; left: 22px; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; font-size: .75rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .sp-step-icon { font-size: 2rem; margin-bottom: 14px; }
+    .sp-step-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: #0a1628; margin-bottom: 8px; }
+    .sp-step-text { font-size: .85rem; color: #4a6070; line-height: 1.65; }
+    .sp-connector { display: none; }
+
+    /* ── WHY ── */
+    .sp-why-section { background: linear-gradient(135deg, #0b1220, #0f172a); padding: 80px 20px; }
+    .sp-why-inner { max-width: 1100px; margin: 0 auto; }
+    .sp-why-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 48px; }
+    .sp-why-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 18px; padding: 24px; transition: all .25s; }
+    .sp-why-card:hover { background: rgba(255,255,255,.08); border-color: rgba(26,143,193,.4); transform: translateY(-2px); }
+    .sp-why-icon { font-size: 1.8rem; margin-bottom: 12px; }
+    .sp-why-title { font-weight: 700; font-size: .95rem; color: white; margin-bottom: 6px; }
+    .sp-why-text { font-size: .83rem; color: rgba(255,255,255,.55); line-height: 1.65; }
+
+    /* ── CTA ── */
+    .sp-cta-section { max-width: 1100px; margin: 0 auto; padding: 80px 20px; text-align: center; }
+    .sp-cta-box { background: white; border: 1.5px solid #d4e8f0; border-radius: 24px; padding: 56px 40px; box-shadow: 0 4px 24px rgba(10,22,40,.06); }
+    .sp-cta-box h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.4rem,3vw,2rem); color: #0a1628; margin-bottom: 12px; }
+    .sp-cta-box p { color: #4a6070; font-size: .95rem; margin-bottom: 28px; }
+    .sp-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: .95rem; border-radius: 12px; text-decoration: none; border: none; cursor: pointer; transition: all .2s; box-shadow: 0 4px 20px rgba(26,143,193,.3); }
+    .sp-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(26,143,193,.4); }
+
+    /* ── SECTION HEADER ── */
+    .sp-section-label { font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: #1a8fc1; margin-bottom: 10px; }
+    .sp-section-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.4rem,3vw,2.2rem); color: #0a1628; line-height: 1.2; margin-bottom: 12px; }
+    .sp-section-title.light { color: white; }
+    .sp-section-sub { font-size: .95rem; color: #4a6070; line-height: 1.65; max-width: 540px; }
+    .sp-section-sub.light { color: rgba(255,255,255,.55); }
+
+    /* ── FOOTER ── */
+    .sp-footer { background: #0b1220; color: rgba(255,255,255,.5); padding: 40px 20px; text-align: center; font-size: .83rem; }
+    .sp-footer a { color: rgba(255,255,255,.6); text-decoration: none; margin: 0 10px; }
+    .sp-footer a:hover { color: white; }
+    .sp-footer-logo { font-size: 1.1rem; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; color: white; margin-bottom: 12px; }
+    .sp-footer-logo span { color: #1a8fc1; }
+
+    @media (max-width: 900px) {
+      #sp-nav, #sp-socials { display: none; }
+      #sp-hamburger { display: flex; }
+      #sp-mobile-menu { display: block; }
+      .sp-steps-grid { grid-template-columns: repeat(2,1fr); }
+      .sp-why-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 560px) {
+      .sp-steps-grid, .sp-why-grid { grid-template-columns: 1fr; }
+      .sp-cta-box { padding: 36px 20px; }
+      body { padding-top: 60px; }
+      #sp-header-inner { height: 60px; }
+      #sp-logo-img { height: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<header id="sp-header">
+  <div id="sp-header-inner">
+    <a href="https://sportingo.hu" id="sp-logo"><img src="https://sportingo.hu/wp-content/uploads/2026/03/logo.png" alt="Sportingo" id="sp-logo-img"></a>
+    <nav id="sp-nav">
+      <a href="https://sportingo.hu" class="sp-nav-link">Pályák</a>
+      <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-nav-link active">Hogyan működik?</a>
+      <a href="https://sportingo.hu/palyat-uzemeltetsz/" class="sp-nav-link">Pályát üzemeltetsz?</a>
+      <a href="https://sportingo.hu/kapcsolat/" class="sp-nav-link">Kapcsolat</a>
+    </nav>
+    <div id="sp-header-right">
+      <div id="sp-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+      </div>
+      <button type="button" class="sportingo-auth-btn"><span>👤</span><span>Bejelentkezés</span></button>
+      <button id="sp-hamburger" aria-label="Menü" onclick="document.getElementById('sp-hamburger').classList.toggle('is-open');document.getElementById('sp-mobile-menu').classList.toggle('is-open');"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div id="sp-mobile-menu">
+    <nav id="sp-mobile-nav">
+      <a href="https://sportingo.hu" class="sp-mobile-link">⚽ Pályák</a>
+      <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-mobile-link">❓ Hogyan működik?</a>
+      <a href="https://sportingo.hu/palyat-uzemeltetsz/" class="sp-mobile-link">🏟 Pályát üzemeltetsz?</a>
+      <a href="https://sportingo.hu/kapcsolat/" class="sp-mobile-link">📬 Kapcsolat</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="sp-hero">
+  <div class="sp-hero-inner">
+    <div class="sp-hero-badge">⚡ Egyszerű & gyors</div>
+    <h1>Pályafoglalás <span class="sp-hero-accent">pár lépésben</span></h1>
+    <p>Sportingo segítségével percek alatt megtalálod a számodra tökéletes pályát, és leadhatod a foglalási kérésedet – bonyodalmak nélkül.</p>
+  </div>
+</section>
+
+<!-- STEPS -->
+<section class="sp-steps-section">
+  <div class="sp-section-label">Folyamat</div>
+  <div class="sp-section-title">Hogyan működik?</div>
+  <p class="sp-section-sub">Négy egyszerű lépés, és már játszhatsz is. Nem kell regisztráció a böngészéshez.</p>
+
+  <div class="sp-steps-grid">
+    <div class="sp-step-card">
+      <div class="sp-step-num">1</div>
+      <div class="sp-step-icon">🔍</div>
+      <div class="sp-step-title">Keress sportág és helyszín szerint</div>
+      <p class="sp-step-text">Válaszd ki a kedvenc sportágadat – futball, tenisz, padel vagy squash – és szűrj városra vagy helyszín névre.</p>
+    </div>
+    <div class="sp-step-card">
+      <div class="sp-step-num">2</div>
+      <div class="sp-step-icon">🏟</div>
+      <div class="sp-step-title">Válassz pályát</div>
+      <p class="sp-step-text">Böngészd át a helyszín adatlapját: borítás, elhelyezés, ár, nyitvatartás. Megtalálod az összes fontos infót egy helyen.</p>
+    </div>
+    <div class="sp-step-card">
+      <div class="sp-step-num">3</div>
+      <div class="sp-step-icon">📋</div>
+      <div class="sp-step-title">Küldd el a foglalási kérést</div>
+      <p class="sp-step-text">Töltsd ki a rövid foglalási űrlapot – neved, email, kívánt időpont. Az üzenet azonnal megérkezik a pálya üzemeltetőjéhez.</p>
+    </div>
+    <div class="sp-step-card">
+      <div class="sp-step-num">4</div>
+      <div class="sp-step-icon">✅</div>
+      <div class="sp-step-title">Visszaigazolás és játék!</div>
+      <p class="sp-step-text">A helyszín rövid időn belül felveszi veled a kapcsolatot és visszaigazolja a foglalást. Már csak ki kell menned játszani!</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="sp-why-section">
+  <div class="sp-why-inner">
+    <div class="sp-section-label" style="color:#60a5fa;">Miért Sportingo?</div>
+    <div class="sp-section-title light">Minden egy helyen</div>
+    <p class="sp-section-sub light">Nem kell telefonálgatni, keresgélni. A Sportingo összegyűjti a legjobb pályákat Magyarországon.</p>
+    <div class="sp-why-grid">
+      <div class="sp-why-card">
+        <div class="sp-why-icon">⚡</div>
+        <div class="sp-why-title">Gyors keresés</div>
+        <p class="sp-why-text">Sportág, város, borítás, elhelyezés – szűrj pontosan arra amire szükséged van.</p>
+      </div>
+      <div class="sp-why-card">
+        <div class="sp-why-icon">📍</div>
+        <div class="sp-why-title">Helyi pályák</div>
+        <p class="sp-why-text">Több tucat helyszín Magyarország-szerte, folyamatosan bővülő kínálattal.</p>
+      </div>
+      <div class="sp-why-card">
+        <div class="sp-why-icon">🔒</div>
+        <div class="sp-why-title">Biztonságos</div>
+        <p class="sp-why-text">Csak ellenőrzött, jóváhagyott helyszínek jelennek meg a platformon.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="sp-cta-section">
+  <div class="sp-cta-box">
+    <h2>Készen állsz? Találd meg a pályád!</h2>
+    <p>Több tucat helyszín vár rád Magyarország-szerte. Indulj el most – ingyen, regisztráció nélkül.</p>
+    <a href="https://sportingo.hu" class="sp-btn-primary">⚽ Pályák böngészése →</a>
+  </div>
+</section>
+
+<footer class="sp-footer">
+  <div class="sp-footer-logo">SPORTING<span>O</span></div>
+  <div>
+    <a href="https://sportingo.hu/hogyan-mukodik/">Hogyan működik?</a>
+    <a href="https://sportingo.hu/palyat-uzemeltetsz/">Pályát üzemeltetsz?</a>
+    <a href="https://sportingo.hu/kapcsolat/">Kapcsolat</a>
+    <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál</a>
+  </div>
+  <div style="margin-top:12px;">© 2026 Sportingo. Minden jog fenntartva.</div>
+</footer>
+
+</body>
+</html>
