@@ -345,56 +345,128 @@ async function spSendContact(){
 
 <script>
 (function(){
-  const btn = document.querySelector('.sportingo-auth-btn');
-  const btnLabel = btn ? btn.querySelector('span:last-child') : null;
+  // Állapot
+  let isLoggedIn = false, userEmail = '', explicitLogout = false;
   const loginModalOverlay = document.getElementById('sp-login-modal-overlay');
-  const loginIframe = document.getElementById('sp-login-iframe');
-  let loginIframeLoaded = false;
+  const loginIframe       = document.getElementById('sp-login-iframe');
+  const loginIframeWrap   = document.getElementById('sp-login-iframe-wrap');
+  const authBridge        = document.getElementById('sp-auth-bridge');
 
-  // Cache alapján azonnal beállít
-  const cached = localStorage.getItem('sp_user');
-  if(cached){
-    try{
-      const u = JSON.parse(cached);
-      if(u && u.email && btnLabel) btnLabel.textContent = u.name || u.email.split('@')[0];
-    }catch(e){}
+  function getBtn()      { return document.querySelector('.sportingo-auth-btn'); }
+  function getBtnLabel() { const b = getBtn(); return b ? b.querySelector('span:last-child') : null; }
+
+  function setLoggedInUI(name, email) {
+    const lbl = getBtnLabel();
+    if (lbl) lbl.textContent = name || email.split('@')[0];
+  }
+  function setLoggedOutUI() {
+    const lbl = getBtnLabel();
+    if (lbl) lbl.textContent = 'Bejelentkezés';
+  }
+  function clearAllCache() {
+    localStorage.removeItem('sp_user');
+    Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k); });
   }
 
-  function openLoginModal(){
+  // INIT: explicit logout kezelés
+  if (sessionStorage.getItem('sp_logged_out') === '1') {
+    clearAllCache();
+    explicitLogout = true;
+  }
+
+  // Optimista UI cache-ből
+  if (!explicitLogout) {
+    const cached = localStorage.getItem('sp_user');
+    if (cached) {
+      try {
+        const u = JSON.parse(cached);
+        if (u && u.email) {
+          isLoggedIn = true;
+          userEmail  = u.email.trim().toLowerCase();
+          setLoggedInUI(u.name || u.email.split('@')[0], u.email);
+        }
+      } catch(e) {}
+    }
+  }
+
+  // Modal: MINDIG friss iframe – garantáltan tiszta állapot
+  function openLoginModal() {
+    loginIframe.onload = null;
+    loginIframe.src    = 'about:blank';
+    loginIframeWrap.style.background = '#f0f7fb';
     loginModalOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
-    if(!loginIframeLoaded){
-      loginIframeLoaded = true;
+    setTimeout(function() {
+      loginIframe.onload = function() {
+        if (loginIframe.src === 'about:blank') return;
+        loginIframeWrap.style.background = 'transparent';
+        if (explicitLogout) {
+          try { loginIframe.contentWindow.postMessage({ type: 'sp-force-logout' }, 'https://jatekos.sportingo.hu'); } catch(e) {}
+        }
+      };
       loginIframe.src = 'https://jatekos.sportingo.hu/?modal=1';
-      loginIframe.onload = function(){ document.getElementById('sp-login-iframe-wrap').style.background = 'transparent'; };
-    }
-  }
-  function closeLoginModal(){
-    loginModalOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+    }, 50);
   }
 
-  if(btn) btn.addEventListener('click', function(){
-    if(localStorage.getItem('sp_user')){
-      window.location.href = 'https://sportingo.hu/?drawer=1';
-    } else {
-      openLoginModal();
-    }
+  function closeLoginModal() {
+    loginModalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    // Reset: következő megnyitásra garantáltan tiszta lesz
+    loginIframe.onload = null;
+    loginIframe.src    = 'about:blank';
+    loginIframeWrap.style.background = '#f0f7fb';
+  }
+
+  // GOMB – mindig azonnal, nincs navigáció más oldalra
+  const btn = getBtn();
+  if (btn) btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    openLoginModal(); // modal nyílik minden esetben (bejelentkezett user is látja a portált benne)
   });
 
   document.getElementById('sp-modal-close-btn').addEventListener('click', closeLoginModal);
-  loginModalOverlay.addEventListener('click', function(e){ if(e.target === loginModalOverlay) closeLoginModal(); });
+  loginModalOverlay.addEventListener('click', function(e) { if (e.target === loginModalOverlay) closeLoginModal(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLoginModal(); });
 
-  window.addEventListener('message', function(e){
-    if(!e.origin.includes('jatekos.sportingo.hu')) return;
-    const d = e.data; if(!d) return;
-    if((d.type === 'sp-login-success' || d.type === 'sp-auth-state') && d.loggedIn && d.email){
-      localStorage.setItem('sp_user', JSON.stringify({email: d.email, name: d.name || d.email.split('@')[0]}));
-      if(btnLabel) btnLabel.textContent = d.name || d.email.split('@')[0];
-      closeLoginModal();
-    } else if(d.type === 'sp-logout' || d.loggedIn === false){
-      localStorage.removeItem('sp_user');
-      if(btnLabel) btnLabel.textContent = 'Bejelentkezés';
+  // Bridge üzenetek
+  window.addEventListener('message', function(e) {
+    if (!e.origin.includes('jatekos.sportingo.hu')) return;
+    const d = e.data; if (!d) return;
+    const validTypes = ['sp-login-success', 'sp-auth-state', 'sp-logout'];
+    if (d.type && !validTypes.includes(d.type)) return;
+
+    if (d.loggedIn === true && d.email && !explicitLogout) {
+      const email = d.email.trim().toLowerCase();
+      const name  = d.name || email.split('@')[0];
+      isLoggedIn = true;
+      userEmail  = email;
+      explicitLogout = false;
+      localStorage.setItem('sp_user', JSON.stringify({ email, name }));
+      setLoggedInUI(name, email);
+      // Sikeres bejelentkezés után zárjuk a modalt
+      if (d.type === 'sp-login-success') closeLoginModal();
+    } else {
+      isLoggedIn = false;
+      userEmail  = '';
+      clearAllCache();
+      setLoggedOutUI();
+      if (d.type === 'sp-logout') {
+        explicitLogout = true;
+        try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e) {}
+        // Logout után reset az iframe
+        loginIframe.onload = null;
+        loginIframe.src    = 'about:blank';
+        loginIframeWrap.style.background = '#f0f7fb';
+      }
+    }
+  });
+
+  // Cross-tab logout
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'sp_user' && e.newValue === null) {
+      isLoggedIn = false; userEmail = ''; explicitLogout = true;
+      setLoggedOutUI();
     }
   });
 })();
