@@ -669,8 +669,13 @@
     const name=d.name||(email?email.split('@')[0]:'');
 
     if(loggedIn&&email){
-      // Bridge megerősíti a bejelentkezett állapotot
-      if(loggedOutExplicitly) return;
+      // Ha explicit logout volt és ez csak polling (sp-auth-state), ne írjuk felül
+      if(loggedOutExplicitly&&d.type==='sp-auth-state') return;
+      // Friss bejelentkezés (sp-login-success) → reset loggedOutExplicitly flag
+      if(d.type==='sp-login-success'){
+        loggedOutExplicitly=false;
+        try{ sessionStorage.removeItem('sp_logged_out'); }catch(e){}
+      }
       isLoggedIn=true; userEmail=email; hasCachedSession=true;
       localStorage.setItem('sp_user',JSON.stringify({email,name}));
       setLoggedInUI(name,email);
