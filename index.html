@@ -339,7 +339,7 @@
   <div id="sp-login-modal">
     <div class="sp-modal-head">
       <div>
-        <div class="sp-modal-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/logo_portal/logo_portal.png" alt="Sportingo"></div>
+        <div class="sp-modal-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo"></div>
         <div class="sp-modal-subtitle">Játékos fiók</div>
       </div>
       <button type="button" class="sp-modal-close" data-sp-close-login>&#x2715;</button>
@@ -411,7 +411,7 @@
   </div>
   <div class="sp-drawer-foot">
     <div class="sp-drawer-foot-row">
-      <a href="https://jatekos.sportingo.hu" target="_blank" class="sp-portal-btn">🎮 Teljes játékos portál ↗</a>
+      <a href="https://jatekos.sportingo.hu" target="_blank" class="sp-portal-btn" id="sp-portal-link">🎮 Teljes játékos portál ↗</a>
       <button type="button" class="sp-logout-btn" id="sp-logout-btn">🚪 Kilépés</button>
     </div>
   </div>
@@ -784,6 +784,26 @@
     kedvencekList.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Nincs kedvenc pályád.</div>';
     closeDrawer();
   });
+
+  // Játékos portál link: session token átadása URL-ben
+  const portalLink=document.getElementById('sp-portal-link');
+  if(portalLink){
+    portalLink.addEventListener('click',async function(e){
+      e.preventDefault();
+      let url='https://jatekos.sportingo.hu';
+      if(sb){
+        try{
+          const {data:{session}}=await sb.auth.getSession();
+          if(session){
+            const token=session.access_token;
+            const refresh=session.refresh_token;
+            url+='?access_token='+encodeURIComponent(token)+'&refresh_token='+encodeURIComponent(refresh);
+          }
+        }catch(e){}
+      }
+      window.open(url,'_blank');
+    });
+  }
 
   function spEsc(s){ const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
 
