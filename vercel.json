@@ -1,12 +1,4 @@
 {
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.sportingo.hu" }],
-      "destination": "https://sportingo.hu/$1",
-      "permanent": true
-    }
-  ],
   "routes": [
     { "src": "/hogyan-mukodik", "dest": "/hogyan-mukodik.html" },
     { "src": "/hogyan-mukodik/", "dest": "/hogyan-mukodik.html" },
