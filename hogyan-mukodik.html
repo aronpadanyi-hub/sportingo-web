@@ -791,13 +791,30 @@
     }
   }
   document.getElementById('sp-profil-save-btn').addEventListener('click', async function() {
-    if (!userEmail || !sb) return;
+    if (!userEmail) return;
     const btn = this, nev = document.getElementById('sp-profil-nev').value.trim(), tel = document.getElementById('sp-profil-telefon').value.trim(), msg = document.getElementById('sp-profil-msg');
     btn.disabled = true; btn.textContent = '⏳ Mentés...';
-    const { error } = await sb.auth.updateUser({ data: { full_name: nev, name: nev, telefon: tel, phone: tel } });
+    const authIframe = document.getElementById('sportingo-auth-iframe');
+    const ok = await new Promise(function(resolve) {
+      const timeout = setTimeout(function(){ resolve(false); }, 4000);
+      function onSaveResp(e) {
+        if (!e.origin.includes('jatekos.sportingo.hu')) return;
+        if (e.data && e.data.type === 'sp-profile-saved') {
+          window.removeEventListener('message', onSaveResp);
+          clearTimeout(timeout);
+          resolve(e.data.ok);
+        }
+      }
+      window.addEventListener('message', onSaveResp);
+      if (authIframe && authIframe.contentWindow) {
+        try { authIframe.contentWindow.postMessage({type:'sp-save-profile', nev, tel}, 'https://jatekos.sportingo.hu'); } catch(e2) {}
+      } else { clearTimeout(timeout); resolve(false); }
+    });
     btn.disabled = false; btn.textContent = '💾 Adatok mentése'; msg.style.display = 'block';
-    if (!error) { msg.className = 'sp-profil-msg ok'; msg.textContent = '✅ Adatok sikeresen mentve!'; if (nev) { if (dAvatar) dAvatar.textContent = nev[0].toUpperCase(); if (dName) dName.textContent = nev; getLabels().forEach(l => l.textContent = nev); const c = JSON.parse(localStorage.getItem('sp_user')||'{}'); c.name = nev; localStorage.setItem('sp_user', JSON.stringify(c)); } }
-    else { msg.className = 'sp-profil-msg err'; msg.textContent = '❌ Hiba a mentés során.'; }
+    if (ok) {
+      msg.className = 'sp-profil-msg ok'; msg.textContent = '✅ Adatok sikeresen mentve!';
+      if (nev) { if (dAvatar) dAvatar.textContent = nev[0].toUpperCase(); if (dName) dName.textContent = nev; getLabels().forEach(l => l.textContent = nev); const c = JSON.parse(localStorage.getItem('sp_user') || '{}'); c.name = nev; localStorage.setItem('sp_user', JSON.stringify(c)); }
+    } else { msg.className = 'sp-profil-msg err'; msg.textContent = '❌ Hiba a mentés során.'; }
     setTimeout(() => msg.style.display = 'none', 3000);
   });
   document.getElementById('sp-pw-reset-btn').addEventListener('click', async function() {
