@@ -449,7 +449,6 @@
         <div class="sp-profil-field"><div class="sp-profil-label">Név</div><input type="text" class="sp-profil-input" id="sp-profil-nev" placeholder="Teljes neved"></div>
         <div class="sp-profil-field"><div class="sp-profil-label">Email</div><div class="sp-profil-value" id="sp-profil-email-display">–</div></div>
         <div class="sp-profil-field"><div class="sp-profil-label">Telefonszám</div><input type="tel" class="sp-profil-input" id="sp-profil-telefon" placeholder="+36 xx xxx xxxx"></div>
-        <div class="sp-profil-field"><div class="sp-profil-label">Város</div><input type="text" class="sp-profil-input" id="sp-profil-varos" placeholder="Pl. Budapest"></div>
         <button class="sp-profil-save-btn" id="sp-profil-save-btn">💾 Adatok mentése</button>
         <div id="sp-profil-msg" style="display:none;"></div>
       </div>
@@ -730,17 +729,18 @@
   }
   async function loadProfil() {
     if (!userEmail || !sb) return;
-    const { data } = await sb.from('ugyfelek').select('nev,telefon,varos').eq('email', userEmail).maybeSingle();
-    if (data) {
-      const n = document.getElementById('sp-profil-nev'), t = document.getElementById('sp-profil-telefon'), v = document.getElementById('sp-profil-varos');
-      if (n && data.nev) n.value = data.nev; if (t && data.telefon) t.value = data.telefon; if (v && data.varos) v.value = data.varos;
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      const n = document.getElementById('sp-profil-nev'), t = document.getElementById('sp-profil-telefon');
+      if (n) n.value = user.user_metadata?.full_name || user.user_metadata?.name || '';
+      if (t) t.value = user.user_metadata?.telefon || user.user_metadata?.phone || '';
     }
   }
   document.getElementById('sp-profil-save-btn').addEventListener('click', async function() {
     if (!userEmail || !sb) return;
-    const btn = this, nev = document.getElementById('sp-profil-nev').value.trim(), tel = document.getElementById('sp-profil-telefon').value.trim(), var_ = document.getElementById('sp-profil-varos').value.trim(), msg = document.getElementById('sp-profil-msg');
+    const btn = this, nev = document.getElementById('sp-profil-nev').value.trim(), tel = document.getElementById('sp-profil-telefon').value.trim(), msg = document.getElementById('sp-profil-msg');
     btn.disabled = true; btn.textContent = '⏳ Mentés...';
-    const { error } = await sb.from('ugyfelek').upsert({ email: userEmail, nev, telefon: tel, varos: var_ }, { onConflict: 'email' });
+    const { error } = await sb.auth.updateUser({ data: { full_name: nev, name: nev, telefon: tel, phone: tel } });
     btn.disabled = false; btn.textContent = '💾 Adatok mentése'; msg.style.display = 'block';
     if (!error) { msg.className = 'sp-profil-msg ok'; msg.textContent = '✅ Adatok sikeresen mentve!'; if (nev) { if (dAvatar) dAvatar.textContent = nev[0].toUpperCase(); if (dName) dName.textContent = nev; getLabels().forEach(l => l.textContent = nev); const c = JSON.parse(localStorage.getItem('sp_user')||'{}'); c.name = nev; localStorage.setItem('sp_user', JSON.stringify(c)); } }
     else { msg.className = 'sp-profil-msg err'; msg.textContent = '❌ Hiba a mentés során.'; }
