@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Sportingo Auth Debug</title>
+<style>
+  body { font-family: monospace; background: #0a1628; color: #e0f0ff; padding: 20px; margin: 0; }
+  h2 { color: #2dbf7e; margin-bottom: 16px; }
+  .section { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .section h3 { color: #1a8fc1; margin: 0 0 12px; font-size: .9rem; text-transform: uppercase; letter-spacing: 1px; }
+  .log { background: #000; border-radius: 6px; padding: 12px; font-size: .78rem; line-height: 1.8; max-height: 300px; overflow-y: auto; }
+  .ok  { color: #2dbf7e; }
+  .err { color: #ef4444; }
+  .warn{ color: #f59e0b; }
+  .info{ color: #60a5fa; }
+  button { background: #1a8fc1; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: monospace; font-size: .85rem; margin: 4px; }
+  button:hover { background: #2dbf7e; }
+  .status-pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+  .pill-ok  { background: rgba(45,191,126,.2); color: #2dbf7e; border: 1px solid #2dbf7e; }
+  .pill-err { background: rgba(239,68,68,.2);  color: #ef4444;  border: 1px solid #ef4444; }
+  .pill-wait{ background: rgba(245,158,11,.2); color: #f59e0b;  border: 1px solid #f59e0b; }
+  #status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .status-card { background: rgba(255,255,255,.04); border-radius: 8px; padding: 12px; }
+  .status-card-label { font-size: .7rem; color: #6b8a9a; margin-bottom: 6px; text-transform: uppercase; }
+  .status-card-val { font-size: .9rem; font-weight: 700; word-break: break-all; }
+</style>
+</head>
+<body>
+
+<h2>🔍 Sportingo Auth Debug</h2>
+<p style="color:#6b8a9a;font-size:.8rem;margin-bottom:20px;">
+  Nyisd meg ezt az oldalt <strong>sportingo.hu</strong> vagy <strong>adatlap.sportingo.hu</strong> subdomainjén.<br>
+  Majd nyomd meg a gombokat sorban és nézd az eredményeket.
+</p>
+
+<div class="section">
+  <h3>Jelenlegi állapot</h3>
+  <div id="status-grid">
+    <div class="status-card"><div class="status-card-label">Bridge üzenet érkezett</div><div class="status-card-val" id="st-bridge-ackd"><span class="status-pill pill-wait">Várakozás...</span></div></div>
+    <div class="status-card"><div class="status-card-label">Bridge session</div><div class="status-card-val" id="st-session"><span class="status-pill pill-wait">–</span></div></div>
+    <div class="status-card"><div class="status-card-label">Aktuális origin</div><div class="status-card-val" id="st-origin" style="color:#f59e0b;">–</div></div>
+    <div class="status-card"><div class="status-card-label">Bridge iframe origin</div><div class="status-card-val" id="st-bridge-origin" style="color:#f59e0b;">–</div></div>
+    <div class="status-card"><div class="status-card-label">sp_user cache</div><div class="status-card-val" id="st-cache">–</div></div>
+    <div class="status-card"><div class="status-card-label">Bridge iframe betöltve</div><div class="status-card-val" id="st-iframe-loaded"><span class="status-pill pill-wait">–</span></div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Műveletek</h3>
+  <button onclick="requestSession()">📡 Session lekérés (sp-request-session)</button>
+  <button onclick="checkLocalStorage()">🗄️ LocalStorage vizsgálat</button>
+  <button onclick="checkIframeOrigin()">🔎 Bridge iframe origin ellenőrzés</button>
+  <button onclick="clearLog()">🗑️ Log törlése</button>
+</div>
+
+<div class="section">
+  <h3>Eseménynapló</h3>
+  <div class="log" id="log"></div>
+</div>
+
+<!-- Bridge iframe ugyanúgy mint az éles oldalakon -->
+<iframe id="sportingo-auth-iframe"
+  src="https://jatekos.sportingo.hu/auth-bridge"
+  sandbox="allow-scripts allow-same-origin"
+  style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;border:none;opacity:0;pointer-events:none;">
+</iframe>
+
+<script>
+const log = document.getElementById('log');
+let msgCount = 0;
+
+function addLog(msg, type='info') {
+  const t = new Date().toISOString().substr(11,12);
+  const el = document.createElement('div');
+  el.className = type;
+  el.textContent = `[${t}] ${msg}`;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() { log.innerHTML = ''; }
+
+function setPill(id, text, type) {
+  document.getElementById(id).innerHTML = `<span class="status-pill pill-${type}">${text}</span>`;
+}
+
+function setVal(id, text, color) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  if (color) el.style.color = color;
+}
+
+// ── Jelenlegi oldal originja ──
+setVal('st-origin', window.location.origin, '#f59e0b');
+
+// ── sp_user cache vizsgálat ──
+function updateCacheDisplay() {
+  try {
+    const raw = localStorage.getItem('sp_user');
+    if (raw) {
+      const u = JSON.parse(raw);
+      setVal('st-cache', u.email || '(nincs email)', '#2dbf7e');
+    } else {
+      setVal('st-cache', '(üres)', '#6b8a9a');
+    }
+  } catch(e) {
+    setVal('st-cache', '(parse hiba)', '#ef4444');
+  }
+}
+updateCacheDisplay();
+
+// ── Bridge iframe betöltés figyelése ──
+const bridgeIframe = document.getElementById('sportingo-auth-iframe');
+bridgeIframe.addEventListener('load', function() {
+  setPill('st-iframe-loaded', 'Betöltve ✓', 'ok');
+  addLog('Bridge iframe load esemény tüzelt', 'ok');
+  // Próbáljuk kiolvasni az iframe originét
+  setTimeout(checkIframeOrigin, 100);
+});
+addLog('Bridge iframe betöltés indul: ' + bridgeIframe.src, 'info');
+
+// ── postMessage figyelés ──
+window.addEventListener('message', function(e) {
+  msgCount++;
+  addLog(`[MSG #${msgCount}] origin="${e.origin}" type="${e.data?.type}" loggedIn=${e.data?.loggedIn}`, 
+         e.origin.includes('jatekos.sportingo.hu') ? 'ok' : 'warn');
+
+  if (!e.origin.includes('jatekos.sportingo.hu')) {
+    addLog(`  ⚠️ VÁRATLAN ORIGIN – ez a bridge NEM jatekos.sportingo.hu-ról küld!`, 'err');
+    setVal('st-bridge-origin', e.origin, '#ef4444');
+    return;
+  }
+
+  setVal('st-bridge-origin', e.origin, '#2dbf7e');
+
+  const d = e.data;
+  if (!d) return;
+
+  setPill('st-bridge-ackd', 'Igen ✓', 'ok');
+
+  if (d.loggedIn === true && d.email) {
+    setPill('st-session', `Bejelentkezve: ${d.email}`, 'ok');
+    addLog(`  ✅ SESSION OK: email=${d.email} name=${d.name} type=${d.type}`, 'ok');
+  } else if (d.type === 'sp-auth-state' || d.type === 'sp-logout') {
+    setPill('st-session', 'Nincs session (kijelentkezett)', 'err');
+    addLog(`  ❌ NINCS SESSION: type=${d.type} loggedIn=${d.loggedIn}`, 'err');
+  } else if (d.type === 'sp-bridge-ready') {
+    addLog(`  🟢 BRIDGE READY jelzés érkezett`, 'ok');
+  }
+
+  updateCacheDisplay();
+});
+
+// ── Session lekérés ──
+function requestSession() {
+  const ai = document.getElementById('sportingo-auth-iframe');
+  if (!ai || !ai.contentWindow) {
+    addLog('❌ Bridge iframe contentWindow nem elérhető!', 'err');
+    return;
+  }
+  addLog('📡 sp-request-session küldése bridge-nek...', 'info');
+  try {
+    ai.contentWindow.postMessage({type: 'sp-request-session'}, 'https://jatekos.sportingo.hu');
+    addLog('  postMessage elküldve origin=https://jatekos.sportingo.hu', 'ok');
+  } catch(ex) {
+    addLog('  ❌ postMessage HIBA: ' + ex.message, 'err');
+  }
+}
+
+// ── LocalStorage vizsgálat ──
+function checkLocalStorage() {
+  addLog('── LocalStorage vizsgálat ──', 'info');
+  
+  // Saját oldal localStorage
+  addLog(`Oldal origin: ${window.location.origin}`, 'info');
+  const spUser = localStorage.getItem('sp_user');
+  addLog(`  sp_user: ${spUser ? spUser.substring(0,80) : '(üres)'}`, spUser ? 'ok' : 'warn');
+  
+  const sbKeys = Object.keys(localStorage).filter(k => k.startsWith('sb-'));
+  if (sbKeys.length) {
+    sbKeys.forEach(k => addLog(`  Supabase key: ${k}`, 'ok'));
+  } else {
+    addLog(`  ⚠️ Nincs Supabase session token ezen az originen (${window.location.origin})`, 'warn');
+    addLog(`  Ez NORMÁLIS ha a session jatekos.sportingo.hu-n van tárolva`, 'info');
+  }
+
+  const signalKey = localStorage.getItem('sp_auth_signal');
+  addLog(`  sp_auth_signal: ${signalKey ? signalKey.substring(0,80) : '(üres)'}`, signalKey ? 'ok' : 'warn');
+}
+
+// ── Bridge iframe origin ellenőrzés ──
+function checkIframeOrigin() {
+  const ai = document.getElementById('sportingo-auth-iframe');
+  addLog('── Bridge iframe origin ellenőrzés ──', 'info');
+  addLog(`  iframe.src: ${ai.src}`, 'info');
+  
+  try {
+    // Ha allow-same-origin aktív és az iframe valóban ugyanazon az originen fut,
+    // akkor contentWindow.location.href olvasható lesz
+    const href = ai.contentWindow.location.href;
+    addLog(`  contentWindow.location.href: ${href}`, 'ok');
+    addLog(`  ✅ allow-same-origin MŰKöDIK – iframe olvasható`, 'ok');
+    setVal('st-bridge-origin', new URL(href).origin, '#2dbf7e');
+  } catch(ex) {
+    addLog(`  contentWindow.location olvasása SIKERTELEN: ${ex.message}`, 'warn');
+    addLog(`  Ez NORMÁLIS ha az iframe cross-origin (jatekos.sportingo.hu != ${window.location.origin})`, 'info');
+    addLog(`  A bridge postMessage-en keresztül kommunikál – ez a helyes működés`, 'ok');
+    setVal('st-bridge-origin', 'cross-origin (nem olvasható)', '#2dbf7e');
+  }
+}
+
+// ── Automatikus indítás ──
+setTimeout(function() {
+  addLog('=== Auto-init: session lekérés ===', 'info');
+  requestSession();
+}, 500);
+
+setTimeout(function() {
+  addLog('=== Auto-init: localStorage vizsgálat ===', 'info');
+  checkLocalStorage();
+}, 800);
+
+setTimeout(function() {
+  if (document.getElementById('st-bridge-ackd').textContent.includes('Várakozás')) {
+    addLog('⚠️ 3 másodperc után sem érkezett bridge válasz!', 'err');
+    addLog('  Lehetséges okok:', 'err');
+    addLog('  1. A bridge iframe nem töltődött be (hálózati hiba?)', 'err');
+    addLog('  2. A postMessage nem ért el a bridge-hez', 'err');
+    addLog('  3. A bridge origin szűrője blokkolja ezt az origint: ' + window.location.origin, 'err');
+    setPill('st-bridge-ackd', '3s után sem válaszolt ❌', 'err');
+  }
+}, 3000);
+</script>
+</body>
+</html>
