@@ -468,6 +468,11 @@
 </div>
 
 <iframe id="sportingo-auth-iframe" src="https://jatekos.sportingo.hu/auth-bridge" sandbox="allow-scripts allow-same-origin"></iframe>
+<script>
+if (window.location.hostname === 'www.sportingo.hu') {
+  window.location.replace('https://sportingo.hu' + window.location.pathname + window.location.search + window.location.hash);
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
