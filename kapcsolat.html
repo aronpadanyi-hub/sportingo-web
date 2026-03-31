@@ -539,7 +539,10 @@ async function spSendContact(){
     if (d.loggedIn === true && d.email) {
       // sp-login-success: MINDIG feldolgozzuk – explicit logout után is!
       // sp-auth-state (polling): csak ha nem volt explicit logout
-      if (d.type === 'sp-auth-state' && explicitLogout) return;
+      if (d.type === 'sp-auth-state' && explicitLogout) {
+        try { sessionStorage.removeItem('sp_logged_out'); } catch(e3) {}
+        explicitLogout = false;
+      }
       const email = d.email.trim().toLowerCase();
       const name  = d.name || email.split('@')[0];
       isLoggedIn = true; userEmail = email;
