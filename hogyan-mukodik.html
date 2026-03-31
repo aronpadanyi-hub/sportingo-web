@@ -610,16 +610,33 @@
 
   function openLoginModal() {
     if (!loginIframe || !loginModalOverlay) return;
-    loginIframe.onload = null; loginIframe.src = 'about:blank';
+    // Garantált tiszta állapot: about:blank-re állítjuk először
+    loginIframe.onload = null;
+    loginIframe.src = 'about:blank';
     if (loginIframeWrap) loginIframeWrap.style.background = '#f0f7fb';
-    loginModalOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+    loginModalOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
     setTimeout(function() {
+      var wasExplicitLogout = explicitLogout;
+      function sendForceLogoutIfNeeded() {
+        if (!wasExplicitLogout) return;
+        try { loginIframe.contentWindow.postMessage({ type: 'sp-force-logout' }, 'https://jatekos.sportingo.hu'); } catch(e) {}
+      }
       loginIframe.onload = function() {
         if (loginIframe.src === 'about:blank') return;
         if (loginIframeWrap) loginIframeWrap.style.background = 'transparent';
-        if (explicitLogout) { try { loginIframe.contentWindow.postMessage({ type: 'sp-force-logout' }, 'https://jatekos.sportingo.hu'); } catch(e) {} }
+        sendForceLogoutIfNeeded();
+        // Dupla küldés: service worker cache esetén is megérkezzen
+        setTimeout(sendForceLogoutIfNeeded, 300);
       };
       loginIframe.src = 'https://jatekos.sportingo.hu/?modal=1';
+      // Fallback: ha az onload nem tüzel időben (pl. cache)
+      setTimeout(function() {
+        if (loginIframe.src !== 'about:blank' && loginIframe.contentWindow) {
+          if (loginIframeWrap) loginIframeWrap.style.background = 'transparent';
+          sendForceLogoutIfNeeded();
+        }
+      }, 600);
     }, 50);
   }
   function closeLoginModal() {
@@ -779,6 +796,12 @@
     setTimeout(() => msg.style.display = 'none', 4000);
   });
   function spEsc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+
+  // ── NAVIGÁCIÓ ──
+  var navPalya = document.getElementById('sp-nav-palya');
+  var mobPalya = document.getElementById('sp-mobile-palya');
+  if (navPalya) navPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
+  if (mobPalya) mobPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
 })();
 </script>
 </body>
