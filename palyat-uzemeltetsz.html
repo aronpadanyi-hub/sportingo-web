@@ -470,443 +470,367 @@
 <iframe id="sportingo-auth-iframe" src="https://jatekos.sportingo.hu/auth-bridge" sandbox="allow-scripts allow-same-origin"></iframe>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// SPORTINGO AUTH MANAGER v1 – Minden oldalra ugyanez kerül
-// Függ: #sportingo-auth-iframe, #sp-login-modal-overlay, #sp-drawer
-// ═══════════════════════════════════════════════════════════════════
-(function () {
-  'use strict';
+(function(){
+  const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
+  let sb = null, isLoggedIn = false, userEmail = '', explicitLogout = false;
+  let allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'mind';
+  const perPage = 5;
 
-  // ── Belső állapot ──
-  var _loggedIn = false;
-  var _email = '';
-  var _explicitLogout = (sessionStorage.getItem('sp_logged_out') === '1');
+  const drawer        = document.getElementById('sp-drawer');
+  const drawerOverlay = document.getElementById('sp-drawer-overlay');
+  const bookingList   = document.getElementById('sp-bookings-list');
+  const kedvencekList = document.getElementById('sp-kedvencek-list');
+  const dAvatar       = document.getElementById('sp-drawer-avatar');
+  const dName         = document.getElementById('sp-drawer-name');
+  const dEmail        = document.getElementById('sp-drawer-email');
+  const logoutBtn     = document.getElementById('sp-logout-btn');
+  const loginModalOverlay = document.getElementById('sp-login-modal-overlay');
+  const loginIframe       = document.getElementById('sp-login-iframe');
+  const loginIframeWrap   = document.getElementById('sp-login-iframe-wrap');
 
-  // ── DOM refs (késő bind, mert a script a </body> előtt fut) ──
-  function el(id) { return document.getElementById(id); }
-  function qAll(sel) { return document.querySelectorAll(sel); }
+  function getLabels() { return document.querySelectorAll('.sportingo-auth-label'); }
+  function getIcons()  { return document.querySelectorAll('.sportingo-auth-icon'); }
 
-  // ── UI frissítés ──
   function setLoggedInUI(name, email) {
-    qAll('.sportingo-auth-label').forEach(function(l) { l.textContent = name; });
-    qAll('.sportingo-auth-icon').forEach(function(i) { i.textContent = '👤'; });
-    var av = el('sp-drawer-avatar'); if (av) av.textContent = name[0].toUpperCase();
-    var dn = el('sp-drawer-name');   if (dn) dn.textContent = name;
-    var de = el('sp-drawer-email');  if (de) de.textContent = email;
-    var pd = el('sp-profil-email-display'); if (pd) pd.textContent = email;
+    getLabels().forEach(l => l.textContent = name || email.split('@')[0]);
+    getIcons().forEach(i => i.textContent = '👤');
+    if (dAvatar) dAvatar.textContent = (name || email)[0].toUpperCase();
+    if (dName)   dName.textContent   = name || email.split('@')[0];
+    if (dEmail)  dEmail.textContent  = email;
+    const ed = document.getElementById('sp-profil-email-display');
+    if (ed) ed.textContent = email;
   }
   function setLoggedOutUI() {
-    qAll('.sportingo-auth-label').forEach(function(l) { l.textContent = 'Bejelentkezés'; });
-    qAll('.sportingo-auth-icon').forEach(function(i) { i.textContent = '👤'; });
+    getLabels().forEach(l => l.textContent = 'Bejelentkezés');
+    getIcons().forEach(i => i.textContent = '👤');
+  }
+  function clearAllCache() {
+    localStorage.removeItem('sp_user');
+    Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k); });
+    try { sessionStorage.removeItem('sp_user'); } catch(e) {}
   }
 
-  // ── Optimista UI cache-ből (azonnali megjelenítés) ──
-  if (!_explicitLogout) {
-    try {
-      var cached = JSON.parse(localStorage.getItem('sp_user') || 'null');
-      if (cached && cached.email) {
-        _loggedIn = true; _email = cached.email;
-        setLoggedInUI(cached.name || cached.email.split('@')[0], cached.email);
-      }
-    } catch(e) {}
-  }
-
-  // ── Bridge kommunikáció ──
-  function toBridge(msg) {
-    var iframe = el('sportingo-auth-iframe');
-    if (iframe && iframe.contentWindow) {
-      try { iframe.contentWindow.postMessage(msg, 'https://jatekos.sportingo.hu'); } catch(e) {}
+  if (sessionStorage.getItem('sp_logged_out') === '1') { clearAllCache(); explicitLogout = true; }
+  if (!explicitLogout) {
+    const cached = localStorage.getItem('sp_user');
+    if (cached) {
+      try {
+        const u = JSON.parse(cached);
+        if (u && u.email) { /* Csak UI hint – isLoggedIn/userEmail csak bridge választól lesz true */ setLoggedInUI(u.name || u.email.split('@')[0], u.email); }
+      } catch(e) {}
     }
   }
 
-  // ── Session kérés a bridge-től ──
-  function requestSession() { toBridge({ type: 'sp-request-session' }); }
-
-  // ── Bridge üzenetek fogadása ──
   window.addEventListener('message', function(e) {
     if (!e.origin.includes('jatekos.sportingo.hu')) return;
-    var d = e.data;
-    if (!d || !d.type) return;
+    const d = e.data; if (!d) return;
+    const validTypes = ['sp-login-success', 'sp-auth-state', 'sp-logout'];
+    if (d.type && !validTypes.includes(d.type)) return;
 
-    // Bejelentkezés (polling vagy közvetlen)
-    if ((d.type === 'sp-auth-state' || d.type === 'sp-login-success') && d.loggedIn && d.email) {
-      if (d.type === 'sp-auth-state' && _explicitLogout) return;
-      var name = d.name || d.email.split('@')[0];
-      _loggedIn = true; _email = d.email; _explicitLogout = false;
-      try { sessionStorage.removeItem('sp_logged_out'); } catch(e) {}
-      try { localStorage.setItem('sp_user', JSON.stringify({ email: d.email, name: name })); } catch(e) {}
-      setLoggedInUI(name, d.email);
+    if (d.loggedIn === true && d.email) {
+      // sp-login-success: MINDIG feldolgozzuk – explicit logout után is!
+      // sp-auth-state (polling): csak ha nem volt explicit logout
+      if (d.type === 'sp-auth-state' && explicitLogout) {
+        try { sessionStorage.removeItem('sp_logged_out'); } catch(e3) {}
+        explicitLogout = false;
+      }
+      const email = d.email.trim().toLowerCase();
+      const name  = d.name || email.split('@')[0];
+      isLoggedIn = true; userEmail = email;
+      explicitLogout = false; // reset: új session kezdődik
+      try { sessionStorage.removeItem('sp_logged_out'); } catch(e2) {}
+      localStorage.setItem('sp_user', JSON.stringify({ email, name }));
+      setLoggedInUI(name, email);
       if (d.type === 'sp-login-success') {
-        var ov = el('sp-login-modal-overlay');
-        if (ov && ov.classList.contains('open')) {
-          if (window.spCloseLoginModal) window.spCloseLoginModal();
-          setTimeout(function() { if (window.spOpenDrawer) window.spOpenDrawer(); }, 300);
+        // Bejelentkezés: modal bezár → drawer kinyílik
+        if (loginModalOverlay && loginModalOverlay.classList.contains('open')) {
+          closeLoginModal();
+          setTimeout(openDrawer, 300);
         }
       }
-      return;
-    }
-
-    // Kijelentkezés
-    if (d.type === 'sp-logout') {
-      _loggedIn = false; _email = ''; _explicitLogout = true;
-      try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e) {}
-      try { localStorage.removeItem('sp_user'); } catch(e) {}
-      setLoggedOutUI();
-      if (window.spCloseDrawer) window.spCloseDrawer();
-      return;
-    }
-
-    // Modal bezárás (jatekos.sportingo.hu modal módban)
-    if (d.type === 'sp-modal-close') {
-      var ov2 = el('sp-login-modal-overlay');
-      if (ov2 && ov2.classList.contains('open')) {
-        if (window.spCloseLoginModal) window.spCloseLoginModal();
-        if (_loggedIn && window.spOpenDrawer) setTimeout(window.spOpenDrawer, 300);
+    } else {
+      isLoggedIn = false; userEmail = ''; clearAllCache(); setLoggedOutUI();
+      if (d.type === 'sp-logout') {
+        explicitLogout = true;
+        try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e2) {}
       }
-      return;
-    }
-
-    // Profil mentés visszajelzés
-    if (d.type === 'sp-profile-saved') {
-      var btn = el('sp-profil-save-btn'), msg = el('sp-profil-msg');
-      if (btn) { btn.disabled = false; btn.textContent = '💾 Adatok mentése'; }
-      if (msg) {
-        msg.style.display = 'block';
-        if (d.ok) {
-          msg.className = 'sp-profil-msg ok'; msg.textContent = '✅ Adatok sikeresen mentve!';
-          var nev = (el('sp-profil-nev') || {}).value || '';
-          if (nev.trim()) {
-            var av2 = el('sp-drawer-avatar'); if (av2) av2.textContent = nev.trim()[0].toUpperCase();
-            var dn2 = el('sp-drawer-name');   if (dn2) dn2.textContent = nev.trim();
-            qAll('.sportingo-auth-label').forEach(function(l) { l.textContent = nev.trim(); });
-            try { var c2 = JSON.parse(localStorage.getItem('sp_user')||'{}'); c2.name = nev.trim(); localStorage.setItem('sp_user', JSON.stringify(c2)); } catch(e) {}
-          }
-        } else { msg.className = 'sp-profil-msg err'; msg.textContent = '❌ Hiba a mentés során.'; }
-        setTimeout(function() { msg.style.display = 'none'; }, 3000);
-      }
-      return;
     }
   });
 
-  // Cross-tab logout érzékelés
   window.addEventListener('storage', function(e) {
-    if (e.key === 'sp_user' && !e.newValue && _loggedIn) {
-      _loggedIn = false; _email = ''; _explicitLogout = true; setLoggedOutUI();
-    }
+    if (e.key === 'sp_user' && e.newValue === null) { isLoggedIn = false; userEmail = ''; explicitLogout = true; setLoggedOutUI(); }
   });
 
-  // Auth gomb kattintás
+  // ── BROADCASTCHANNEL – kereszt-tab szinkron (web ↔ adatlap) ──
+  if (typeof BroadcastChannel !== 'undefined') {
+    const _authBC = new BroadcastChannel('sportingo-auth');
+    _authBC.onmessage = function(ev) {
+      const d = ev.data;
+      if (!d || !d.type) return;
+      if (d.type === 'sp-login-success' && d.loggedIn && d.email) {
+        const email = d.email.trim().toLowerCase();
+        const name  = d.name || email.split('@')[0];
+        isLoggedIn = true; userEmail = email; explicitLogout = false;
+        try { sessionStorage.removeItem('sp_logged_out'); } catch(e) {}
+        localStorage.setItem('sp_user', JSON.stringify({ email, name }));
+        setLoggedInUI(name, email);
+      } else if (d.type === 'sp-logout') {
+        isLoggedIn = false; userEmail = ''; explicitLogout = true;
+        clearAllCache();
+        try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e) {}
+        setLoggedOutUI();
+      }
+    };
+  }
+
   document.addEventListener('click', function(e) {
-    if (e.target.closest('.sportingo-auth-btn')) {
-      e.preventDefault(); e.stopPropagation();
-      if (_loggedIn) { if (window.spOpenDrawer) window.spOpenDrawer(); }
-      else { if (window.spOpenLoginModal) window.spOpenLoginModal(); }
-    }
-    if (e.target.matches('[data-sp-close-login]') || e.target === el('sp-login-modal-overlay')) {
-      if (window.spCloseLoginModal) window.spCloseLoginModal();
-    }
-    if (e.target.matches('[data-sp-close-drawer]') || e.target.closest('[data-sp-close-drawer]') || e.target === el('sp-drawer-overlay')) {
-      if (window.spCloseDrawer) window.spCloseDrawer();
-    }
-    if (e.key === 'Escape' || false) { /* ESC keydown-ban */ }
+    const authBtn = e.target.closest('.sportingo-auth-btn');
+    if (authBtn) { e.preventDefault(); e.stopPropagation(); isLoggedIn ? openDrawer() : openLoginModal(); return; }
+    if (e.target.matches('[data-sp-close-login]'))                                                  { e.preventDefault(); closeLoginModal(); return; }
+    if (loginModalOverlay && e.target === loginModalOverlay)                                        { closeLoginModal(); return; }
+    if (e.target.matches('[data-sp-close-drawer]') || e.target.closest('[data-sp-close-drawer]'))  { closeDrawer(); return; }
+    if (e.target === drawerOverlay)                                                                  { closeDrawer(); return; }
   });
 
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      if (window.spCloseDrawer) window.spCloseDrawer();
-      if (window.spCloseLoginModal) window.spCloseLoginModal();
-    }
-  });
-
-  // Profil mentés gomb
-  document.addEventListener('click', function(e) {
-    if (!e.target.matches('#sp-profil-save-btn')) return;
-    if (!_loggedIn) return;
-    var btn = e.target;
-    var nev = (el('sp-profil-nev') || {}).value || '';
-    var tel = (el('sp-profil-telefon') || {}).value || '';
-    btn.disabled = true; btn.textContent = '⏳ Mentés...';
-    toBridge({ type: 'sp-save-profile', nev: nev.trim(), tel: tel.trim() });
-  });
-
-  // Logout gomb
-  document.addEventListener('click', function(e) {
-    if (!e.target.matches('#sp-logout-btn')) return;
-    _loggedIn = false; _email = ''; _explicitLogout = true;
-    try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e2) {}
-    try { localStorage.removeItem('sp_user'); } catch(e2) {}
-    setLoggedOutUI();
-    if (window.spCloseDrawer) window.spCloseDrawer();
-    toBridge({ type: 'sp-logout-request' });
-  });
-
-  // Publikus API: más scriptek (drawer, modal) számára
-  window.spAuth = {
-    isLoggedIn: function() { return _loggedIn; },
-    email: function() { return _email; },
-    requestSession: requestSession,
-    toBridge: toBridge,
-  };
-
-  // Session kérés a bridge-től betöltéskor
-  setTimeout(requestSession, 200);
-  setTimeout(function() { if (!_loggedIn && !_explicitLogout) requestSession(); }, 900);
-
-})();
-
-</script>
-<script>
-// ═══════════════════════════════════════════════════════════════════
-// SPORTINGO DRAWER MANAGER – Drawer + Modal UI logika
-// Az auth állapotot a window.spAuth-tól kapja
-// ═══════════════════════════════════════════════════════════════════
-(function() {
-
-  var SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
-  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
-
-  function el(id) { return document.getElementById(id); }
-
-  var drawer        = el('sp-drawer');
-  var drawerOverlay = el('sp-drawer-overlay');
-  var loginOverlay  = el('sp-login-modal-overlay');
-  var loginIframe   = el('sp-login-iframe');
-  var loginWrap     = el('sp-login-iframe-wrap');
-  var bookingList   = el('sp-bookings-list');
-  var kedvencekList = el('sp-kedvencek-list');
-
-  // ── Drawer ──
-  window.spOpenDrawer = function() {
-    if (!drawer) return;
-    // Tab reset: mindig foglalasok
-    document.querySelectorAll('.sp-tab').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.sp-tab-panel').forEach(function(p) { p.classList.remove('active'); });
-    var ft = document.querySelector('[data-tab="foglalasok"]');
-    var fp = el('sp-tab-foglalasok');
-    if (ft) ft.classList.add('active');
-    if (fp) fp.classList.add('active');
-    drawer.classList.add('open');
-    if (drawerOverlay) drawerOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    if (bookingList) bookingList.innerHTML = '<div class="sp-loading">⏳ Betöltés...</div>';
-    loadMiniStats();
-    loadBookings();
-  };
-
-  window.spCloseDrawer = function() {
-    if (!drawer) return;
-    drawer.classList.remove('open');
-    if (drawerOverlay) drawerOverlay.classList.remove('open');
-    document.body.style.overflow = '';
-    // Tab reset záráskor is
-    document.querySelectorAll('.sp-tab').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.sp-tab-panel').forEach(function(p) { p.classList.remove('active'); });
-    var ft = document.querySelector('[data-tab="foglalasok"]');
-    var fp = el('sp-tab-foglalasok');
-    if (ft) ft.classList.add('active');
-    if (fp) fp.classList.add('active');
-  };
-
-  // ── Login modal ──
-  window.spOpenLoginModal = function() {
-    if (!loginOverlay || !loginIframe) return;
+  function openLoginModal() {
+    if (!loginIframe || !loginModalOverlay) return;
+    // Garantált tiszta állapot: about:blank-re állítjuk először
     loginIframe.onload = null;
     loginIframe.src = 'about:blank';
-    if (loginWrap) loginWrap.style.background = '#f0f7fb';
-    loginOverlay.classList.add('open');
+    if (loginIframeWrap) loginIframeWrap.style.background = '#f0f7fb';
+    loginModalOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
-    var wasExplicit = (sessionStorage.getItem('sp_logged_out') === '1');
     setTimeout(function() {
+      var wasExplicitLogout = explicitLogout;
+      function sendForceLogoutIfNeeded() {
+        if (!wasExplicitLogout) return;
+        try { loginIframe.contentWindow.postMessage({ type: 'sp-force-logout' }, 'https://jatekos.sportingo.hu'); } catch(e) {}
+      }
       loginIframe.onload = function() {
         if (loginIframe.src === 'about:blank') return;
-        if (loginWrap) loginWrap.style.background = 'transparent';
-        if (wasExplicit) {
-          setTimeout(function() {
-            try { loginIframe.contentWindow.postMessage({type:'sp-force-logout'}, 'https://jatekos.sportingo.hu'); } catch(e) {}
-          }, 300);
-        }
+        if (loginIframeWrap) loginIframeWrap.style.background = 'transparent';
+        sendForceLogoutIfNeeded();
+        // Dupla küldés: service worker cache esetén is megérkezzen
+        setTimeout(sendForceLogoutIfNeeded, 300);
       };
       loginIframe.src = 'https://jatekos.sportingo.hu/?modal=1';
+      // Fallback: ha az onload nem tüzel időben (pl. cache)
+      setTimeout(function() {
+        if (loginIframe.src !== 'about:blank' && loginIframe.contentWindow) {
+          if (loginIframeWrap) loginIframeWrap.style.background = 'transparent';
+          sendForceLogoutIfNeeded();
+        }
+      }, 600);
     }, 50);
-  };
-
-  window.spCloseLoginModal = function() {
-    if (!loginOverlay) return;
-    loginOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+  }
+  function closeLoginModal() {
+    if (!loginModalOverlay) return;
+    loginModalOverlay.classList.remove('open'); document.body.style.overflow = '';
     if (loginIframe) { loginIframe.onload = null; loginIframe.src = 'about:blank'; }
-  };
+    if (loginIframeWrap) loginIframeWrap.style.background = '#f0f7fb';
+  }
 
-  // ── Tab váltás ──
+  function openDrawer() {
+    drawer.classList.add('open'); drawerOverlay.classList.add('open'); document.body.style.overflow = 'hidden';
+    document.querySelectorAll('.sp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sp-tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('[data-tab="foglalasok"]').classList.add('active');
+    document.getElementById('sp-tab-foglalasok').classList.add('active');
+    allBookings = []; filteredBookings = []; currentPage = 1; activeFilter = 'mind';
+    document.querySelectorAll('.sp-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.sp-filter-btn[data-filter="mind"]').classList.add('active');
+    bookingList.innerHTML = '<div class="sp-loading">⏳ Betöltés...</div>';
+    waitForReadyThenLoad(); loadMiniStats();
+  }
+  function closeDrawer() { drawer.classList.remove('open'); drawerOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeLoginModal(); } });
+
+  // ── BRIDGE SESSION KÉRÉS ──
+  // Megvárjuk az iframe onload-ját, majd sp-request-session-t küldünk.
+  // Az 'sp-bridge-ready' üzenet is triggereli, ha a bridge korábban tölt be mint az oldal.
+  // Ez kiküszöböli a race condition-t (100ms timeout sokszor kevés volt).
+  // ── BRIDGE SESSION KÉRÉS – handshake + retry ──
+  // Exponenciális retry amíg _bridgeAckd false; ha az első üzenet elvész (race),
+  // a következő próba beérkezik mielőtt a felhasználó észreveszi.
+  (function setupBridgeHandshake(){
+    var _attempts = 0;
+    var _maxAttempts = 10;
+    var _delays = [50,100,200,300,500,1000,1500,2000,2000,2000];
+
+    function askBridge(){
+      if(_bridgeAckd) return;
+      if(_attempts >= _maxAttempts) return;
+      var ai = document.getElementById('sportingo-auth-iframe');
+      if(ai && ai.contentWindow){
+        try{ ai.contentWindow.postMessage({type:'sp-request-session'},'https://jatekos.sportingo.hu'); }catch(e){}
+      }
+      var delay = _delays[_attempts] || 2000;
+      _attempts++;
+      setTimeout(askBridge, delay);
+    }
+
+    var ai = document.getElementById('sportingo-auth-iframe');
+    if(ai){
+      if(ai.complete || ai.contentDocument){ setTimeout(askBridge, 50); }
+      else { ai.addEventListener('load', function(){ setTimeout(askBridge, 50); }); }
+    }
+    setTimeout(function(){ if(!_bridgeAckd) askBridge(); }, 300);
+  })();
+
+  document.getElementById('sp-stat-card-foglalasok').addEventListener('click', () => switchTab('foglalasok'));
+  document.getElementById('sp-stat-card-kedvencek').addEventListener('click',  () => switchTab('kedvencek'));
+
   function switchTab(name) {
-    document.querySelectorAll('.sp-tab').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.sp-tab-panel').forEach(function(p) { p.classList.remove('active'); });
-    var tab = document.querySelector('[data-tab="' + name + '"]');
-    var panel = el('sp-tab-' + name);
+    document.querySelectorAll('.sp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sp-tab-panel').forEach(p => p.classList.remove('active'));
+    const tab = document.querySelector('[data-tab="' + name + '"]');
+    const panel = document.getElementById('sp-tab-' + name);
     if (tab) tab.classList.add('active');
     if (panel) panel.classList.add('active');
+    if (name === 'kedvencek') loadKedvencek();
+    if (name === 'foglalasok' && !allBookings.length) waitForReadyThenLoad();
   }
-
-  // ── Tab kattintások ──
-  document.querySelectorAll('.sp-tab').forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      var name = tab.dataset.tab;
-      switchTab(name);
-      if (name === 'profil') loadProfil();
-      if (name === 'kedvencek') loadKedvencek();
+  document.querySelectorAll('.sp-tab').forEach(tab => {
+    tab.addEventListener('click', () => { switchTab(tab.dataset.tab); if (tab.dataset.tab === 'profil') loadProfil(); });
+  });
+  document.querySelectorAll('.sp-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sp-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); activeFilter = btn.dataset.filter; currentPage = 1; applyFilterAndRender();
     });
   });
+  document.getElementById('sp-prev-page').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderBookingsPage(); } });
+  document.getElementById('sp-next-page').addEventListener('click', () => { if (currentPage < Math.ceil(filteredBookings.length / perPage)) { currentPage++; renderBookingsPage(); } });
 
-  // Stat card kattintások
-  ['foglalasok','kedvencek'].forEach(function(name) {
-    var card = el('sp-stat-card-' + name);
-    if (card) card.addEventListener('click', function() {
-      switchTab(name);
-      if (name === 'kedvencek') loadKedvencek();
+  logoutBtn.addEventListener('click', async function() {
+    logoutBtn.disabled = true;
+    explicitLogout = true; isLoggedIn = false; userEmail = ''; clearAllCache();
+    try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e) {}
+    setLoggedOutUI();
+    if (dName) dName.textContent = '–'; if (dEmail) dEmail.textContent = '–'; if (dAvatar) dAvatar.textContent = '?';
+    ['sp-stat-foglalasok','sp-stat-kedvencek','sp-stat-kovetkezo'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
+    bookingList.innerHTML   = '<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs elérhető foglalás.</div>';
+    kedvencekList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Nincs kedvenc pályád.</div>';
+    closeDrawer();
+    const authIframe = document.getElementById('sportingo-auth-iframe');
+    await new Promise(function(resolve) {
+      const timeout = setTimeout(resolve, 3000);
+      function onMsg(e) { if (!e.origin.includes('jatekos.sportingo.hu')) return; if (e.data && e.data.type === 'sp-logout') { window.removeEventListener('message', onMsg); clearTimeout(timeout); resolve(); } }
+      window.addEventListener('message', onMsg);
+      if (authIframe && authIframe.contentWindow) { try { authIframe.contentWindow.postMessage({ type: 'sp-logout-request' }, 'https://jatekos.sportingo.hu'); } catch(e) {} }
     });
+    if (loginIframe) { loginIframe.onload = null; loginIframe.src = 'about:blank'; }
+    if (loginIframeWrap) loginIframeWrap.style.background = '#f0f7fb';
+    logoutBtn.disabled = false;
   });
 
-  // ── Supabase kliens (csak adat-lekéréshez, NEM auth-hoz!) ──
-  var sb = null;
-  function getSb() {
-    if (!sb && window.supabase) {
-      try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
-    }
+  function initSb() {
+    if (!sb && window.supabase && typeof window.supabase.createClient === 'function') {
+      try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); window._spSb = sb; } catch(e) {} }
     return sb;
   }
-
-  // ── Foglalások ──
-  var allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'mind';
-  var perPage = 5;
-
-  function loadMiniStats() {
-    var email = window.spAuth ? window.spAuth.email() : '';
-    if (!email || !getSb()) return;
-    Promise.all([
-      getSb().from('foglalasok').select('id').eq('ugyfel_email', email),
-      getSb().from('kedvencek').select('id').eq('ugyfel_email', email),
-    ]).then(function(results) {
-      var foglStat = el('sp-stat-foglalasok');
-      var kedvStat = el('sp-stat-kedvencek');
-      if (foglStat) foglStat.textContent = (results[0].data || []).length;
-      if (kedvStat) kedvStat.textContent = (results[1].data || []).length;
-    }).catch(function() {});
+  function waitForReadyThenLoad(retries = 0) {
+    if (retries > 20) { bookingList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">⚠️</div>Nem sikerült betölteni.</div>'; return; }
+    initSb();
+    if (sb && userEmail) { loadBookings(); return; }
+    setTimeout(() => waitForReadyThenLoad(retries + 1), 200);
   }
-
-  function loadBookings() {
-    var email = window.spAuth ? window.spAuth.email() : '';
-    if (!email || !getSb()) {
-      if (bookingList) bookingList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs elérhető foglalás.</div>';
-      return;
-    }
-    getSb().from('foglalasok').select('*,palyas(nev,helyszin_nev,sportag,slug)').eq('ugyfel_email', email).order('created_at', {ascending: false})
-      .then(function(res) {
-        allBookings = res.data || [];
-        filteredBookings = allBookings;
-        currentPage = 1;
-        filterBookings(activeFilter);
-      }).catch(function() {
-        if (bookingList) bookingList.innerHTML = '<div class="sp-empty">Hiba történt.</div>';
-      });
+  async function loadMiniStats() {
+    initSb(); if (!userEmail || !sb) return;
+    const { data: fogl } = await sb.from('foglalasok').select('id').eq('ugyfel_email', userEmail);
+    const { data: kedv } = await sb.from('kedvencek').select('id').eq('ugyfel_email', userEmail);
+    const fEl = document.getElementById('sp-stat-foglalasok'), kEl = document.getElementById('sp-stat-kedvencek');
+    if (fEl) fEl.textContent = fogl ? fogl.length : '0';
+    if (kEl) kEl.textContent = kedv ? kedv.length : '0';
   }
-
-  function filterBookings(filter) {
-    activeFilter = filter;
-    document.querySelectorAll('.sp-filter-btn').forEach(function(b) {
-      b.classList.toggle('active', b.dataset.filter === filter);
-    });
-    filteredBookings = filter === 'mind' ? allBookings : allBookings.filter(function(b) { return b.statusz === filter; });
-    currentPage = 1;
-    renderBookings();
+  const sportEmoji   = { Futball: '⚽', Tenisz: '🎾', Padel: '🎾', Squash: '🟡' };
+  const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva' };
+  async function loadBookings() {
+    const { data, error } = await sb.from('foglalasok').select('*,palyas(nev,helyszin_nev,sportag,slug)').eq('ugyfel_email', userEmail).order('created_at', { ascending: false });
+    if (error || !data) { bookingList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">⚠️</div>Hiba a betöltésnél.</div>'; return; }
+    allBookings = data; applyFilterAndRender();
   }
-
-  function renderBookings() {
-    if (!bookingList) return;
-    if (!filteredBookings.length) {
-      bookingList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs ilyen foglalásod. <a href="https://sportingo.hu" class="sp-link">Keress pályát →</a></div>';
-      var pag = el('sp-pagination'); if (pag) pag.style.display = 'none';
-      return;
-    }
-    var start = (currentPage - 1) * perPage;
-    var page = filteredBookings.slice(start, start + perPage);
-    bookingList.innerHTML = page.map(function(b) {
-      var nev = (b.palyas && b.palyas.nev) ? b.palyas.nev : 'Pálya';
-      var helyszin = (b.palyas && b.palyas.helyszin_nev) ? b.palyas.helyszin_nev : '';
-      var datum = b.idopont_datum ? new Date(b.idopont_datum).toLocaleDateString('hu-HU') : (b.created_at ? new Date(b.created_at).toLocaleDateString('hu-HU') : '');
-      var statuszMap = {jovahagyva:'Jóváhagyva', varakozik:'Várakozik', elutasitva:'Elutasítva'};
-      var st = b.statusz || 'varakozik';
-      return '<div class="sp-booking-card ' + st + '">'
-        + '<div class="sp-booking-name">' + nev + (helyszin ? ' – ' + helyszin : '') + '</div>'
-        + '<div class="sp-booking-meta"><span>' + datum + '</span><span class="sp-status-pill ' + st + '">' + (statuszMap[st]||st) + '</span></div>'
-        + '</div>';
+  function applyFilterAndRender() { filteredBookings = activeFilter === 'mind' ? allBookings : allBookings.filter(f => f.statusz === activeFilter); currentPage = 1; renderBookingsPage(); }
+  function renderBookingsPage() {
+    const pagination = document.getElementById('sp-pagination');
+    if (!filteredBookings.length) { bookingList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">📋</div>Nincs ilyen foglalásod.<br><a href="https://sportingo.hu" style="color:#1a8fc1;font-weight:600;">Keress pályát →</a></div>'; if (pagination) pagination.style.display = 'none'; return; }
+    const maxPage = Math.ceil(filteredBookings.length / perPage), start = (currentPage - 1) * perPage, page = filteredBookings.slice(start, start + perPage);
+    bookingList.innerHTML = page.map(f => {
+      const pNev = f.palyas?.helyszin_nev || f.palyas?.nev || '–', sport = f.palyas?.sportag || '', emoji = sportEmoji[sport] || '🏟';
+      const safe = ['varakozik','jovahagyva','elutasitva'].includes(f.statusz) ? f.statusz : '';
+      const slug = f.palyas?.slug || '';
+      const linkHtml = slug ? `<div style="margin-top:6px;"><a href="https://adatlap.sportingo.hu/palya?slug=${spEsc(slug)}" target="_blank" style="color:#1a8fc1;font-size:.72rem;font-weight:700;text-decoration:none;">Pálya adatlap ↗</a></div>` : '';
+      return `<div class="sp-booking-card ${safe}"><div class="sp-booking-name">${emoji} ${spEsc(pNev)}</div><div class="sp-booking-meta"><span>📅 Foglalás</span><span class="sp-status-pill ${safe}">${statuszLabel[f.statusz] || f.statusz}</span></div>${linkHtml}</div>`;
     }).join('');
-    var totalPages = Math.ceil(filteredBookings.length / perPage);
-    var pag = el('sp-pagination');
-    if (pag) {
-      pag.style.display = totalPages > 1 ? 'flex' : 'none';
-      var info = el('sp-page-info'); if (info) info.textContent = currentPage + ' / ' + totalPages;
-      var prev = el('sp-prev-page'); if (prev) prev.disabled = currentPage <= 1;
-      var next = el('sp-next-page'); if (next) next.disabled = currentPage >= totalPages;
-    }
+    if (maxPage > 1) { pagination.style.display = 'flex'; document.getElementById('sp-page-info').textContent = currentPage + ' / ' + maxPage; document.getElementById('sp-prev-page').disabled = currentPage === 1; document.getElementById('sp-next-page').disabled = currentPage === maxPage; }
+    else { pagination.style.display = 'none'; }
   }
-
-  document.addEventListener('click', function(e) {
-    if (e.target.matches('.sp-filter-btn')) filterBookings(e.target.dataset.filter);
-    if (e.target.matches('#sp-prev-page') && currentPage > 1) { currentPage--; renderBookings(); }
-    if (e.target.matches('#sp-next-page') && currentPage < Math.ceil(filteredBookings.length/perPage)) { currentPage++; renderBookings(); }
-  });
-
-  // ── Kedvencek ──
-  function loadKedvencek() {
-    var email = window.spAuth ? window.spAuth.email() : '';
-    if (!email || !getSb()) {
-      if (kedvencekList) kedvencekList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Nincs kedvenc pályád.</div>';
-      return;
-    }
-    getSb().from('kedvencek').select('id,palya_id,palyas(nev,helyszin_nev,sportag,slug,varos)').eq('ugyfel_email', email).order('created_at', {ascending:false})
-      .then(function(res) {
-        var items = res.data || [];
-        if (!kedvencekList) return;
-        if (!items.length) { kedvencekList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Még nincs kedvenc pályád.</div>'; return; }
-        kedvencekList.innerHTML = items.map(function(k) {
-          var p = k.palyas || {};
-          return '<div class="sp-kedvenc-card"><div><div class="sp-kedvenc-name">' + (p.nev||'Pálya') + '</div>'
-            + '<div class="sp-kedvenc-meta">' + (p.varos||'') + (p.sportag ? ' · ' + p.sportag : '') + '</div></div>'
-            + (p.slug ? '<a href="https://adatlap.sportingo.hu/palya?slug=' + p.slug + '" class="sp-kedvenc-link">→</a>' : '')
-            + '</div>';
-        }).join('');
-      }).catch(function() {});
+  async function loadKedvencek() {
+    if (!userEmail || !sb) { kedvencekList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Nincs kedvenc pályád még.</div>'; return; }
+    kedvencekList.innerHTML = '<div class="sp-loading">⏳ Betöltés...</div>';
+    const { data, error } = await sb.from('kedvencek').select('id,palya_id,palyas(nev,helyszin_nev,sportag,slug,varos)').eq('ugyfel_email', userEmail).order('created_at', { ascending: false });
+    if (error || !data || !data.length) { kedvencekList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Még nincs kedvenc pályád.<br><a href="https://sportingo.hu" style="color:#1a8fc1;font-weight:600;">Fedezz fel pályákat →</a></div>'; return; }
+    kedvencekList.innerHTML = data.map(k => {
+      const p = k.palyas || {}, nev = p.helyszin_nev || p.nev || '–', sport = p.sportag || '', varos = p.varos || '', emoji = sportEmoji[sport] || '🏟', slug = p.slug || '';
+      return `<div class="sp-kedvenc-card"><div class="sp-kedvenc-info"><div class="sp-kedvenc-name">${emoji} ${spEsc(nev)}</div><div class="sp-kedvenc-meta">${varos ? '📍 ' + spEsc(varos) : sport}</div></div>${slug ? `<a href="https://adatlap.sportingo.hu/palya?slug=${spEsc(slug)}" target="_blank" class="sp-kedvenc-link">Foglalás →</a>` : ''}<button class="sp-kedvenc-remove" data-kedvenc-id="${k.id}" data-palya-id="${k.palya_id}">🗑</button></div>`;
+    }).join('');
+    kedvencekList.addEventListener('click', async function(e) {
+      const btn = e.target.closest('.sp-kedvenc-remove'); if (!btn) return;
+      btn.textContent = '⏳';
+      const { error } = await sb.from('kedvencek').delete().eq('id', btn.dataset.kedvencId);
+      if (!error) { btn.closest('.sp-kedvenc-card').remove(); const kEl = document.getElementById('sp-stat-kedvencek'); if (kEl) kEl.textContent = Math.max(0, parseInt(kEl.textContent||'0') - 1); }
+      else btn.textContent = '🗑';
+    }, { once: true });
   }
-
-  // ── Profil ──
-  function loadProfil() {
-    var email = window.spAuth ? window.spAuth.email() : '';
-    var emailDisplay = el('sp-profil-email-display');
-    if (emailDisplay) emailDisplay.textContent = email || '–';
-    if (!email || !getSb()) return;
-    getSb().auth.getUser().then(function(res) {
-      var user = res.data && res.data.user;
-      if (!user) return;
-      var n = el('sp-profil-nev'), t = el('sp-profil-telefon');
+  async function loadProfil() {
+    if (!userEmail || !sb) return;
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      const n = document.getElementById('sp-profil-nev'), t = document.getElementById('sp-profil-telefon');
       if (n) n.value = user.user_metadata?.full_name || user.user_metadata?.name || '';
       if (t) t.value = user.user_metadata?.telefon || user.user_metadata?.phone || '';
-    }).catch(function() {});
+    }
   }
-
-  // ── Jelszó reset ──
-  document.addEventListener('click', function(e) {
-    if (!e.target.matches('#sp-pw-reset-btn')) return;
-    var email = window.spAuth ? window.spAuth.email() : '';
-    if (!email || !getSb()) return;
-    var btn = e.target, msg = el('sp-pw-msg');
-    btn.disabled = true;
-    getSb().auth.resetPasswordForEmail(email, { redirectTo: 'https://jatekos.sportingo.hu/jelszo-reset' })
-      .then(function() {
-        if (msg) { msg.style.display='block'; msg.className='sp-profil-msg ok'; msg.textContent='✅ Email elküldve!'; setTimeout(function(){msg.style.display='none';},4000); }
-        btn.disabled = false;
-      }).catch(function() { btn.disabled = false; });
+  document.getElementById('sp-profil-save-btn').addEventListener('click', async function() {
+    if (!userEmail) return;
+    const btn = this, nev = document.getElementById('sp-profil-nev').value.trim(), tel = document.getElementById('sp-profil-telefon').value.trim(), msg = document.getElementById('sp-profil-msg');
+    btn.disabled = true; btn.textContent = '⏳ Mentés...';
+    const authIframe = document.getElementById('sportingo-auth-iframe');
+    const ok = await new Promise(function(resolve) {
+      const timeout = setTimeout(function(){ resolve(false); }, 4000);
+      function onSaveResp(e) {
+        if (!e.origin.includes('jatekos.sportingo.hu')) return;
+        if (e.data && e.data.type === 'sp-profile-saved') {
+          window.removeEventListener('message', onSaveResp);
+          clearTimeout(timeout);
+          resolve(e.data.ok);
+        }
+      }
+      window.addEventListener('message', onSaveResp);
+      if (authIframe && authIframe.contentWindow) {
+        try { authIframe.contentWindow.postMessage({type:'sp-save-profile', nev, tel}, 'https://jatekos.sportingo.hu'); } catch(e2) {}
+      } else { clearTimeout(timeout); resolve(false); }
+    });
+    btn.disabled = false; btn.textContent = '💾 Adatok mentése'; msg.style.display = 'block';
+    if (ok) {
+      msg.className = 'sp-profil-msg ok'; msg.textContent = '✅ Adatok sikeresen mentve!';
+      if (nev) { if (dAvatar) dAvatar.textContent = nev[0].toUpperCase(); if (dName) dName.textContent = nev; getLabels().forEach(l => l.textContent = nev); const c = JSON.parse(localStorage.getItem('sp_user') || '{}'); c.name = nev; localStorage.setItem('sp_user', JSON.stringify(c)); }
+    } else { msg.className = 'sp-profil-msg err'; msg.textContent = '❌ Hiba a mentés során.'; }
+    setTimeout(() => msg.style.display = 'none', 3000);
   });
-
+  document.getElementById('sp-pw-reset-btn').addEventListener('click', async function() {
+    if (!userEmail || !sb) return;
+    const btn = this, msg = document.getElementById('sp-pw-msg');
+    btn.disabled = true; btn.textContent = '⏳ Küldés...';
+    const { error } = await sb.auth.resetPasswordForEmail(userEmail, { redirectTo: 'https://jatekos.sportingo.hu/jelszo-reset' });
+    btn.disabled = false; btn.textContent = '📧 Jelszóváltoztatási email küldése'; msg.style.display = 'block';
+    if (!error) { msg.className = 'sp-profil-msg ok'; msg.textContent = '✅ Email elküldve!'; }
+    else { msg.className = 'sp-profil-msg err'; msg.textContent = '❌ Nem sikerült az email küldése.'; }
+    setTimeout(() => msg.style.display = 'none', 4000);
+  });
+  function spEsc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 })();
 </script>
 </body>
