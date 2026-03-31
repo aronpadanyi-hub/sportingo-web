@@ -482,6 +482,8 @@ async function spSendContact(){
   const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
   let sb = null, isLoggedIn = false, userEmail = '', explicitLogout = false;
+  // _bridgeAckd: true ha kaptunk legalább egy hiteles sp-auth-state/login-success/logout választ
+  let _bridgeAckd = false;
   let allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'mind';
   const perPage = 5;
 
@@ -536,6 +538,8 @@ async function spSendContact(){
     const validTypes = ['sp-login-success', 'sp-auth-state', 'sp-logout'];
     if (d.type && !validTypes.includes(d.type)) return;
 
+    _bridgeAckd = true; // kaptunk hiteles választ a bridge-től
+
     if (d.loggedIn === true && d.email) {
       // sp-login-success: MINDIG feldolgozzuk – explicit logout után is!
       // sp-auth-state (polling): csak ha nem volt explicit logout
@@ -579,6 +583,7 @@ async function spSendContact(){
       if (d.type === 'sp-login-success' && d.loggedIn && d.email) {
         const email = d.email.trim().toLowerCase();
         const name  = d.name || email.split('@')[0];
+        _bridgeAckd = true;
         isLoggedIn = true; userEmail = email; explicitLogout = false;
         try { sessionStorage.removeItem('sp_logged_out'); } catch(e) {}
         localStorage.setItem('sp_user', JSON.stringify({ email, name }));
