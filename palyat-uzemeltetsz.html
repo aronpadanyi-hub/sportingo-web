@@ -625,6 +625,15 @@
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeLoginModal(); } });
 
+  setTimeout(function requestSessionFromBridge() {
+    const authIframe = document.getElementById('sportingo-auth-iframe');
+    if (authIframe && authIframe.contentWindow) {
+      try { authIframe.contentWindow.postMessage({type:'sp-request-session'}, 'https://jatekos.sportingo.hu'); } catch(e2) {}
+    } else {
+      setTimeout(requestSessionFromBridge, 300);
+    }
+  }, 100);
+
   document.getElementById('sp-stat-card-foglalasok').addEventListener('click', () => switchTab('foglalasok'));
   document.getElementById('sp-stat-card-kedvencek').addEventListener('click',  () => switchTab('kedvencek'));
 
