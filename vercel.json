@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.sportingo.hu" }],
+      "destination": "https://sportingo.hu/$1",
+      "permanent": true
+    }
+  ],
   "routes": [
     { "src": "/hogyan-mukodik", "dest": "/hogyan-mukodik.html" },
     { "src": "/hogyan-mukodik/", "dest": "/hogyan-mukodik.html" },
@@ -6,7 +14,6 @@
     { "src": "/palyat-uzemeltetsz/", "dest": "/palyat-uzemeltetsz.html" },
     { "src": "/kapcsolat", "dest": "/kapcsolat.html" },
     { "src": "/kapcsolat/", "dest": "/kapcsolat.html" },
-    { "src": "/sp-auth-debug", "dest": "/sp-auth-debug.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
