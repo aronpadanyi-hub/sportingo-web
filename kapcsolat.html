@@ -570,6 +570,28 @@ async function spSendContact(){
     if (e.key === 'sp_user' && e.newValue === null) { isLoggedIn = false; userEmail = ''; explicitLogout = true; setLoggedOutUI(); }
   });
 
+  // ── BROADCASTCHANNEL – kereszt-tab szinkron (web ↔ adatlap) ──
+  if (typeof BroadcastChannel !== 'undefined') {
+    const _authBC = new BroadcastChannel('sportingo-auth');
+    _authBC.onmessage = function(ev) {
+      const d = ev.data;
+      if (!d || !d.type) return;
+      if (d.type === 'sp-login-success' && d.loggedIn && d.email) {
+        const email = d.email.trim().toLowerCase();
+        const name  = d.name || email.split('@')[0];
+        isLoggedIn = true; userEmail = email; explicitLogout = false;
+        try { sessionStorage.removeItem('sp_logged_out'); } catch(e) {}
+        localStorage.setItem('sp_user', JSON.stringify({ email, name }));
+        setLoggedInUI(name, email);
+      } else if (d.type === 'sp-logout') {
+        isLoggedIn = false; userEmail = ''; explicitLogout = true;
+        clearAllCache();
+        try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e) {}
+        setLoggedOutUI();
+      }
+    };
+  }
+
   document.addEventListener('click', function(e) {
     const authBtn = e.target.closest('.sportingo-auth-btn');
     if (authBtn) { e.preventDefault(); e.stopPropagation(); isLoggedIn ? openDrawer() : openLoginModal(); return; }
