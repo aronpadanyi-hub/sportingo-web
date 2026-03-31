@@ -6,6 +6,7 @@
     { "src": "/palyat-uzemeltetsz/", "dest": "/palyat-uzemeltetsz.html" },
     { "src": "/kapcsolat", "dest": "/kapcsolat.html" },
     { "src": "/kapcsolat/", "dest": "/kapcsolat.html" },
+    { "src": "/sp-auth-debug", "dest": "/sp-auth-debug.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
