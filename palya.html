@@ -1287,11 +1287,15 @@ init();
         }
       }
     } else {
-      isLoggedIn = false; userEmail = ''; clearAllCache(); setLoggedOutUI();
+      // sp-logout: valódi kilépés – cache törlés, UI reset
       if (d.type === 'sp-logout') {
+        isLoggedIn = false; userEmail = ''; clearAllCache(); setLoggedOutUI();
         explicitLogout = true;
         try { sessionStorage.setItem('sp_logged_out', '1'); } catch(e2) {}
       }
+      // sp-auth-state loggedIn:false: bridge még töltődik vagy nincs session
+      // NEM töröljük a cache-t – a főoldalon beállított sp_user megmarad
+      // A bridge polling 3mp-enként újra küldi, ha van session, az felülírja
     }
   });
 
