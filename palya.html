@@ -406,11 +406,9 @@ const _sbGlobal = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 window._spSb = _sbGlobal;
 
 function getSlug() {
-  // /palya/SLUG URL-ből olvassa a slugot
   const parts = window.location.pathname.split('/');
   const idx = parts.indexOf('palya');
   if (idx >= 0 && parts[idx + 1]) return decodeURIComponent(parts[idx + 1]);
-  // Fallback: ?slug= query param (régi adatlap.sportingo.hu linkekhez)
   return new URLSearchParams(window.location.search).get('slug') || '';
 }
 
@@ -1198,7 +1196,7 @@ init();
   </div>
   <div class="sp-drawer-foot">
     <div class="sp-drawer-foot-row">
-      <button type="button" onclick="spOpenPortal()" class="sp-portal-btn">🎮 Teljes játékos portál ↗</button>
+      <a href="https://jatekos.sportingo.hu" target="_blank" class="sp-portal-btn">🎮 Teljes játékos portál ↗</a>
       <button type="button" class="sp-logout-btn" id="sp-logout-btn">🚪 Kilépés</button>
     </div>
   </div>
@@ -1373,56 +1371,33 @@ init();
 
   // IIFE betöltés után 100ms-el kérjük a session állapotot a bridge-től
   // Ez garantálja hogy megkapjuk a session-t az oldal betöltésekor
-
-  // ── BRIDGE SESSION KÉRÉS – exponenciális retry ──
-  // Megoldja a race condition-t: ha az első kérés elvész (iframe még nem ready),
-  // addig próbálkozik amíg hiteles választ nem kap.
+  // Exponenciális retry – race condition ellen
   (function setupBridgeHandshake(){
-    var _bridgeAckd = false;
+    var _ackd = false;
     var _attempts = 0;
-    var _maxAttempts = 10;
     var _delays = [50,100,200,300,500,1000,1500,2000,2000,2000];
-
-    // Ha bridge válaszol, leállítjuk a retry-t
-    var _origMsgHandler = window._spBridgeMsgHandler;
     window.addEventListener('message', function(e){
-      if(e.origin.includes('jatekos.sportingo.hu') && e.data && e.data.type){
-        _bridgeAckd = true;
-      }
+      if(e.origin.includes('jatekos.sportingo.hu') && e.data && e.data.type) _ackd = true;
     });
-
-    function askBridge(){
-      if(_bridgeAckd) return;
-      if(_attempts >= _maxAttempts) return;
+    function ask(){
+      if(_ackd || _attempts >= 10) return;
       var ai = document.getElementById('sportingo-auth-iframe');
       if(ai && ai.contentWindow){
         try{ ai.contentWindow.postMessage({type:'sp-request-session'},'https://jatekos.sportingo.hu'); }catch(e){}
       }
-      var delay = _delays[_attempts] || 2000;
-      _attempts++;
-      setTimeout(askBridge, delay);
+      setTimeout(ask, _delays[_attempts++] || 2000);
     }
-
     var ai = document.getElementById('sportingo-auth-iframe');
-    if(ai){
-      if(ai.contentDocument){ setTimeout(askBridge, 50); }
-      else { ai.addEventListener('load', function(){ setTimeout(askBridge, 50); }); }
-    }
-    setTimeout(function(){ if(!_bridgeAckd) askBridge(); }, 300);
-
-    // Fókusz/láthatóság visszatéréskor újra lekéri
+    if(ai){ ai.addEventListener('load', function(){ setTimeout(ask, 50); }); }
+    setTimeout(ask, 300);
     window.addEventListener('focus', function(){
       var ai2 = document.getElementById('sportingo-auth-iframe');
-      if(ai2 && ai2.contentWindow){
-        try{ ai2.contentWindow.postMessage({type:'sp-request-session'},'https://jatekos.sportingo.hu'); }catch(e){}
-      }
+      if(ai2 && ai2.contentWindow) try{ ai2.contentWindow.postMessage({type:'sp-request-session'},'https://jatekos.sportingo.hu'); }catch(e){}
     });
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState==='visible'){
         var ai2 = document.getElementById('sportingo-auth-iframe');
-        if(ai2 && ai2.contentWindow){
-          try{ ai2.contentWindow.postMessage({type:'sp-request-session'},'https://jatekos.sportingo.hu'); }catch(e){}
-        }
+        if(ai2 && ai2.contentWindow) try{ ai2.contentWindow.postMessage({type:'sp-request-session'},'https://jatekos.sportingo.hu'); }catch(e){}
       }
     });
   })();
@@ -1579,50 +1554,6 @@ init();
     else { msg.className = 'sp-profil-msg err'; msg.textContent = '❌ Nem sikerült az email küldése.'; }
     setTimeout(() => msg.style.display = 'none', 4000);
   });
-
-  // ── JÁTÉKOS PORTÁL MEGNYITÁS SSO-val ──
-  // Safari privát mód fix: a jatekos.sportingo.hu maga kéri a tokent
-  // window.opener-en keresztül – így saját domainen állítja be a sessiont.
-  window.spOpenPortal = function() {
-    // Ablak megnyitása AZONNAL – közvetlen user interaction, Safari is elfogadja
-    var popup = window.open('https://jatekos.sportingo.hu/?sso=1', '_blank');
-    if (!popup) {
-      // Ha popup blokkolva (nem kellett volna), fallback
-      window.location.href = 'https://jatekos.sportingo.hu/?sso=1';
-      return;
-    }
-
-    // Figyelünk sp-sso-token-request üzenetre a megnyitott ablaktól
-    var authIframe = document.getElementById('sportingo-auth-iframe');
-    window.addEventListener('message', function onSSORequest(e) {
-      if (!e.origin.includes('jatekos.sportingo.hu')) return;
-      if (!e.data || e.data.type !== 'sp-sso-token-request') return;
-      window.removeEventListener('message', onSSORequest);
-
-      // Token lekérése a bridge-től, majd küldés a popupnak
-      if (!authIframe || !authIframe.contentWindow) {
-        try { popup.postMessage({type:'sp-sso-token-response', access_token:null}, 'https://jatekos.sportingo.hu'); } catch(ex) {}
-        return;
-      }
-      var timeout = setTimeout(function() {
-        try { popup.postMessage({type:'sp-sso-token-response', access_token:null}, 'https://jatekos.sportingo.hu'); } catch(ex) {}
-      }, 3000);
-      window.addEventListener('message', function onToken(e2) {
-        if (!e2.origin.includes('jatekos.sportingo.hu')) return;
-        if (!e2.data || e2.data.type !== 'sp-token-response') return;
-        window.removeEventListener('message', onToken);
-        clearTimeout(timeout);
-        try {
-          popup.postMessage({
-            type: 'sp-sso-token-response',
-            access_token: e2.data.access_token || null,
-            refresh_token: e2.data.refresh_token || ''
-          }, 'https://jatekos.sportingo.hu');
-        } catch(ex) {}
-      });
-      try { authIframe.contentWindow.postMessage({type:'sp-get-token'}, 'https://jatekos.sportingo.hu'); } catch(e3) {}
-    });
-  };
   function spEsc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 
   // ── NAVIGÁCIÓ ──
