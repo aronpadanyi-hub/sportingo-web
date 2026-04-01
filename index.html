@@ -762,9 +762,9 @@
           <div class="sfd-stat-val" id="sfd-stat-kedvencek">–</div>
           <div class="sfd-stat-lbl">Kedvenc</div>
         </div>
-        <div class="sfd-stat-card">
-          <div class="sfd-stat-val" id="sfd-stat-kovetkezo">–</div>
-          <div class="sfd-stat-lbl">Köv. nap</div>
+        <div class="sfd-stat-card" style="cursor:default;">
+          <div class="sfd-stat-val" id="sfd-stat-jovahagyott">–</div>
+          <div class="sfd-stat-lbl">Jóváhagyott</div>
         </div>
       </div>
 
@@ -1232,7 +1232,7 @@
 
     const fEl = document.getElementById('sfd-stat-foglalasok');
     const kEl = document.getElementById('sfd-stat-kedvencek');
-    const nEl = document.getElementById('sfd-stat-kovetkezo');
+    const nEl = document.getElementById('sfd-stat-jovahagyott');
     if (fEl) fEl.textContent = fogl ? fogl.length : '0';
     if (kEl) kEl.textContent = kedv ? kedv.length : '0';
 
