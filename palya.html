@@ -681,6 +681,10 @@ async function init() {
       <div class="sp-hero">
         ${kepUrl ? `<img src="${esc(kepUrl)}" alt="${esc(nev)}">` : `<div style="height:320px;"></div>`}
         <div class="sp-hero-overlay"></div>
+        <button class="sp-fav-btn" id="sp-fav-btn" aria-label="Kedvencekhez adás">
+          <span class="sp-fav-icon" id="sp-fav-icon">♡</span>
+          <span class="sp-fav-label" id="sp-fav-label">Kedvencekhez</span>
+        </button>
         <div class="sp-hero-title">
           <h1>${esc(nev)}</h1>
           ${varos ? `<div class="sp-location">📍 ${esc(varos)}</div>` : ''}
@@ -703,7 +707,7 @@ async function init() {
       ${hasNaptar ? `<div id="spf-card"><div id="spf-mount"></div></div>` : formHTML}
     </div>`;
 
-  window._spPalya = { foglalasiEmail, nev, helyszinNev };
+  window._spPalya = { foglalasiEmail, nev, helyszinNev, palyaId: palya.id, sportag };
 
   // Ha van naptár, mountoljuk
   if (hasNaptar) spfMount(palya);
@@ -1715,8 +1719,106 @@ init();
     });
   }
 
+  // PREMIUM KEDVENC GOMB LOGIKA
+  (function() {
+    var favBtn   = document.getElementById('sp-fav-btn');
+    var favIcon  = document.getElementById('sp-fav-icon');
+    var favLabel = document.getElementById('sp-fav-label');
+    var toast    = document.getElementById('sp-fav-toast');
+    if (!favBtn) return;
+
+    var isSaved = false, isLoading = false, savedKedvencId = null, toastTimer = null;
+
+    function showToast(msg) {
+      if (!toast) return;
+      clearTimeout(toastTimer);
+      toast.textContent = msg;
+      toast.classList.add('show');
+      toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2400);
+    }
+
+    function setFavUI(saved, animate) {
+      isSaved = saved;
+      if (animate) {
+        favBtn.classList.remove('pop');
+        void favBtn.offsetWidth;
+        favBtn.classList.add('pop');
+        setTimeout(function() { favBtn.classList.remove('pop'); }, 400);
+      }
+      if (saved) {
+        favBtn.classList.add('saved');
+        if (favIcon)  favIcon.textContent  = '\u2764\uFE0F';
+        if (favLabel) favLabel.textContent = 'Mentve';
+      } else {
+        favBtn.classList.remove('saved');
+        if (favIcon)  favIcon.textContent  = '\u2661';
+        if (favLabel) favLabel.textContent = 'Kedvencekhez';
+      }
+    }
+
+    function setLoading(val) {
+      isLoading = val;
+      favBtn.classList.toggle('loading', val);
+    }
+
+    function updateDrawerKedvencStat(delta) {
+      var el = document.getElementById('sfd-stat-kedvencek') || document.getElementById('sp-stat-kedvencek');
+      if (el) { var cur = parseInt(el.textContent) || 0; el.textContent = Math.max(0, cur + delta); }
+    }
+
+    async function initFavState() {
+      var sb = window._spSb;
+      if (!sb) return;
+      var res = await sb.auth.getSession();
+      var user = res && res.data && res.data.session && res.data.session.user;
+      if (!user) return;
+      var palyaId = window._spPalya && window._spPalya.palyaId;
+      if (!palyaId) return;
+      var check = await sb.from('kedvencek').select('id').eq('ugyfel_email', user.email).eq('palya_id', palyaId).maybeSingle();
+      if (check.data) { savedKedvencId = check.data.id; setFavUI(true, false); }
+    }
+
+    favBtn.addEventListener('click', async function() {
+      if (isLoading) return;
+      var sb = window._spSb;
+      if (!sb) return;
+      var res = await sb.auth.getSession();
+      var user = res && res.data && res.data.session && res.data.session.user;
+      if (!user) {
+        // Login modal megnyitása
+        var lmoFn = window.openLoginModal;
+        if (typeof lmoFn === 'function') { lmoFn(); return; }
+        var authBtn = document.querySelector('.sportingo-auth-btn');
+        if (authBtn) authBtn.click();
+        return;
+      }
+      var palyaId = window._spPalya && window._spPalya.palyaId;
+      if (!palyaId) return;
+      setLoading(true);
+      if (isSaved && savedKedvencId) {
+        var del = await sb.from('kedvencek').delete().eq('id', savedKedvencId);
+        setLoading(false);
+        if (!del.error) { savedKedvencId = null; setFavUI(false, true); showToast('\uD83D\uDC94 Elt\u00e1vol\u00edtva a kedvencek k\u00f6z\u00fcl'); updateDrawerKedvencStat(-1); }
+      } else {
+        var ins = await sb.from('kedvencek').insert({ ugyfel_email: user.email, palya_id: palyaId }).select('id').single();
+        setLoading(false);
+        if (!ins.error && ins.data) { savedKedvencId = ins.data.id; setFavUI(true, true); showToast('\u2764\uFE0F Hozz\u00e1adva a kedvencekhez'); updateDrawerKedvencStat(+1); }
+      }
+    });
+
+    var sbInst = window._spSb;
+    if (sbInst && sbInst.auth) {
+      sbInst.auth.onAuthStateChange(function(event) {
+        if (event === 'SIGNED_IN') initFavState();
+        if (event === 'SIGNED_OUT') { savedKedvencId = null; setFavUI(false, false); }
+      });
+    }
+    initFavState();
+  })();
+
 })();
 
 </script>
+<div class="sp-fav-toast" id="sp-fav-toast"></div>
 </body>
 </html>
