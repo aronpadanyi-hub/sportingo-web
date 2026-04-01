@@ -731,7 +731,7 @@
     injectLoginModal(); // DOM-ba kerül csak most – iOS nem látja korábban
     var overlay = document.getElementById('sp-login-modal-overlay');
     if (!overlay) return;
-    loginWasOpen = true;
+    window._spLoginWasOpen = true;
     setLoginView('login');
     var alertEl = document.getElementById('sp-login-alert');
     if (alertEl) alertEl.style.display = 'none';
@@ -743,8 +743,9 @@
   }
 
   function closeLoginModal() {
-    var loginModalOverlay = document.getElementById('sp-login-modal-overlay'); if (!loginModalOverlay) return;
-    var _lmo = document.getElementById('sp-login-modal-overlay'); if(_lmo) _lmo.classList.remove('open');
+    var lmo = document.getElementById('sp-login-modal-overlay');
+    if (!lmo) return;
+    lmo.classList.remove('open');
     document.body.style.overflow = '';
   }
 
