@@ -473,7 +473,176 @@
 </div>
 
 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
+
+  // ── HAMBURGER ──
+  window.spToggleMenu = function(){
+    var btn = document.getElementById('sp-hamburger');
+    var menu = document.getElementById('sp-mobile-menu');
+    if(!btn||!menu) return;
+    var isOpen = btn.classList.toggle('is-open');
+    menu.classList.toggle('is-open', isOpen);
+    btn.setAttribute('aria-expanded', isOpen);
+    menu.setAttribute('aria-hidden', !isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  };
+
+  // ── PÁLYA NAV ──
+  function handlePalyaClick(e){
+    e.preventDefault();
+    var filters = document.getElementById('sp-filters');
+    if(filters){ filters.scrollIntoView({behavior:'smooth', block:'start'}); setTimeout(function(){ var s=document.getElementById('sp-search'); if(s) s.focus(); }, 400); }
+  }
+  document.getElementById('sp-nav-palya').addEventListener('click', handlePalyaClick);
+  document.getElementById('sp-mobile-palya').addEventListener('click', function(e){ handlePalyaClick(e); spToggleMenu(); });
+
+  // ── LISTÁZÓ ──
+  const SPORT_FILTERS = {
+    'Futball': [
+      { id:'boritas', label:'🌿 Borítás', options:[{value:'',label:'Összes borítás'},{value:'Műfű',label:'Műfű'},{value:'Élő fű',label:'Élő fű'},{value:'Parketta / PVC',label:'Parketta'},{value:'Homok',label:'Homok'}] },
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+      { id:'jatekforma', label:'⚽ Pályaméret', options:[{value:'',label:'Minden méret'},{value:'Kispálya',label:'Kispálya'},{value:'Nagypálya',label:'Nagypálya'}] },
+    ],
+    'Tenisz': [
+      { id:'boritas', label:'🌿 Borítás', options:[{value:'',label:'Összes borítás'},{value:'Salak',label:'Salak'},{value:'Kemény pálya',label:'Kemény pálya'},{value:'Műfű',label:'Műfű'},{value:'Szőnyeg',label:'Szőnyeg'}] },
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Padel': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Squash': [],
+  };
+
+  let allHelyszinek=[], filtered=[], activeFilters={}, activeSport='', debounceTimer=null;
+  const grid=document.getElementById('sp-grid'), countEl=document.getElementById('sp-count');
+  const searchEl=document.getElementById('sp-search'), clearBtn=document.getElementById('sp-search-clear');
+  const resetBtn=document.getElementById('sp-reset'), dynPanel=document.getElementById('sp-dynamic-filters');
+  const selectsWrap=document.getElementById('sp-selects-wrap');
+
+  async function loadHelyszinek(){
+    try {
+      const url = SUPABASE_URL+'/rest/v1/helyszinek?statusz=eq.jovahagyva&select=id,nev,slug,varos,helyszin,palyas(id,slug,sportag,boritas,fedett,jatekforma,ar_per_ora,kep_url,statusz)&order=nev.asc&limit=300';
+      const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer '+SUPABASE_KEY } });
+      if(!res.ok) throw new Error();
+      const data = await res.json();
+      const PRIO = ['Futball','Tenisz','Padel','Squash'];
+      allHelyszinek = data.map(h => {
+        const jov = (h.palyas||[]).filter(p => p.statusz==='jovahagyva');
+        const sportok = [...new Set(jov.map(p=>p.sportag).filter(Boolean))];
+        let kep = '';
+        for(const sp of PRIO){ const t=jov.find(p=>p.sportag===sp&&p.kep_url); if(t){kep=t.kep_url;break;} }
+        if(!kep) kep = jov.find(p=>p.kep_url)?.kep_url||'';
+        const kepekSportag={};
+        for(const sp of PRIO){ const t=jov.find(p=>p.sportag===sp&&p.kep_url); if(t) kepekSportag[sp]=t.kep_url; }
+        return {...h, _palyas:jov, _sportok:sportok, _kep:kep, _kepekSportag:kepekSportag};
+      }).filter(h=>h._palyas.length>0);
+      applyFilters();
+    } catch(e) {
+      grid.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">⚠️</div><div class="sp-empty-title">Betöltési hiba</div><div class="sp-empty-sub">Kérjük próbáld újra később.</div></div>';
+    }
+  }
+
+  document.querySelectorAll('.sp-sportag-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.sp-sportag-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      activeSport=btn.dataset.sport; activeFilters={};
+      renderDynamicFilters(); applyFilters();
+    });
+  });
+
+  function renderDynamicFilters(){
+    const filters=SPORT_FILTERS[activeSport]||[];
+    if(!filters.length){ dynPanel.style.display='none'; selectsWrap.innerHTML=''; return; }
+    dynPanel.style.display='flex';
+    selectsWrap.innerHTML=filters.map(f=>`
+      <select class="sp-select" data-filter-id="${f.id}">
+        ${f.options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
+      </select>`).join('');
+    selectsWrap.querySelectorAll('.sp-select').forEach(sel=>{
+      sel.addEventListener('change',()=>{ activeFilters[sel.dataset.filterId]=sel.value; applyFilters(); });
+    });
+  }
+
+  function applyFilters(){
+    const search=searchEl.value.trim().toLowerCase();
+    clearBtn.style.display=search?'flex':'none';
+    const hasAnyFilter=search||activeSport||Object.values(activeFilters).some(v=>v);
+    resetBtn.style.display=hasAnyFilter?'flex':'none';
+    filtered=allHelyszinek.filter(h=>{
+      if(search){ const t=[(h.nev||''),(h.varos||'')].join(' ').toLowerCase(); if(!t.includes(search)) return false; }
+      if(activeSport){ if(!h._palyas.some(p=>p.sportag===activeSport)) return false; }
+      const rel=activeSport?h._palyas.filter(p=>p.sportag===activeSport):h._palyas;
+      for(const [id,val] of Object.entries(activeFilters)){
+        if(!val) continue;
+        if(!rel.some(p=>(p[id]||'').toLowerCase().includes(val.toLowerCase()))) return false;
+      }
+      return true;
+    });
+    renderCards();
+  }
+
+  function renderCards(){
+    countEl.innerHTML='<strong>'+filtered.length+'</strong> helyszín található';
+    if(!filtered.length){
+      grid.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">🔍</div><div class="sp-empty-title">Nincs találat</div><div class="sp-empty-sub">Próbálj más szűrési feltételeket.</div></div>';
+      return;
+    }
+    grid.innerHTML=filtered.map(h=>{
+      const rel=activeSport?h._palyas.filter(p=>p.sportag===activeSport):h._palyas;
+      let url;
+      if(rel.length===1&&rel[0].slug) url='https://sportingo.hu/palya/'+rel[0].slug;
+      else if(h.slug) url='https://sportingo.hu/helyszin/'+h.slug;
+      else url='#';
+      const sportok=activeSport?(h._sportok.includes(activeSport)?[activeSport]:h._sportok.slice(0,3)):h._sportok.slice(0,3);
+      const badges=sportok.map(s=>`<span class="sp-card-sport-badge">${esc(s)}</span>`).join('');
+      const egyPalya=rel.length===1;
+      const kep=(activeSport&&h._kepekSportag[activeSport])?h._kepekSportag[activeSport]:h._kep;
+      return `<a href="${url}" class="sp-card-link">
+        <div class="sp-card">
+          <div class="sp-card-thumb">
+            ${kep?`<img src="${esc(kep)}" alt="${esc(h.nev||'')}" loading="lazy">`:'<div class="sp-card-thumb-placeholder">🏟</div>'}
+            ${badges?`<div class="sp-card-sport-badges">${badges}</div>`:''}
+          </div>
+          <div class="sp-card-body">
+            <h3 class="sp-card-nev">${esc(h.nev||'Névtelen helyszín')}</h3>
+            ${h.varos?`<div class="sp-card-location">📍 ${esc(h.varos)}</div>`:''}
+            <div class="sp-card-footer">
+              <div class="${egyPalya?'sp-card-cta':'sp-card-palya-count'}">${egyPalya?'📧 Foglalási kérés küldése':'⚽ '+rel.length+' pálya'}</div>
+              <div class="sp-card-arrow">→</div>
+            </div>
+          </div>
+        </div>
+      </a>`;
+    }).join('');
+  }
+
+  function esc(s){ const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
+  function debounce(fn,ms){ clearTimeout(debounceTimer); debounceTimer=setTimeout(fn,ms); }
+
+  searchEl.addEventListener('input',()=>{ clearBtn.style.display=searchEl.value?'flex':'none'; debounce(applyFilters,280); });
+  clearBtn.addEventListener('click',()=>{ searchEl.value=''; clearBtn.style.display='none'; searchEl.focus(); applyFilters(); });
+  resetBtn.addEventListener('click',()=>{
+    searchEl.value=''; clearBtn.style.display='none'; activeFilters={}; activeSport='';
+    document.querySelectorAll('.sp-sportag-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    dynPanel.style.display='none'; selectsWrap.innerHTML=''; applyFilters();
+  });
+
+  loadHelyszinek();
+
+  // sessionStorage scroll
+  if (sessionStorage.getItem('sp_scroll_to_results')) {
+    sessionStorage.removeItem('sp_scroll_to_results');
+    setTimeout(() => { const app = document.getElementById('sp-filters-section'); if (app) app.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 600);
+  }
+})();
+</script>
+
 <script>
 // ══════════════════════════════════════════════════════════════════
 // SPORTINGO AUTH BLOKK – saját Supabase kliens, nincs bridge iframe
@@ -641,8 +810,6 @@
 
   // Google OAuth
   window.spGoogleLogin = async function() {
-    // Visszairányítási cél mentése – auth-callback.html ide küld vissza
-    try { sessionStorage.setItem('sp_return_to', window.location.href); } catch(e) {}
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: 'https://sportingo.hu/auth-callback' }
