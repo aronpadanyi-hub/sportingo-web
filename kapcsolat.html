@@ -585,6 +585,12 @@ async function spSendContact(){
     if (session) {
       currentUser = session.user;
       setLoggedInUI(session.user);
+      // iOS kulcstartó megakadályozása: ha be van jelentkezve, a password inputok ne legyenek aktívak
+      document.querySelectorAll('input[type="password"]').forEach(function(el) {
+        el.setAttribute('type', 'text');
+        el.setAttribute('autocomplete', 'off');
+        el.style.display = 'none';
+      });
     }
   });
 
