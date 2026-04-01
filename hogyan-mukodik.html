@@ -1024,6 +1024,12 @@
     });
   }
 
+  // ── Pályák navigáció ──
+  var _navPalya = document.getElementById('sp-nav-palya');
+  var _mobPalya = document.getElementById('sp-mobile-palya');
+  if (_navPalya) _navPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
+  if (_mobPalya) _mobPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
+
 })();
 
 </script>
