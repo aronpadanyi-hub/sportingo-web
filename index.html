@@ -413,7 +413,7 @@
 /* ── Áttekintés ── */
 .sfd-overview-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -681,7 +681,7 @@
   .sfd-nav { padding: 12px 16px 0; overflow-x: auto; }
   .sfd-nav-btn { padding: 8px 12px; font-size: .75rem; }
   .sfd-body { padding: 16px; }
-  .sfd-overview-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .sfd-overview-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .sfd-stat-card { padding: 14px 10px; }
   .sfd-stat-val { font-size: 1.3rem; }
   .sfd-quick-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -762,10 +762,7 @@
           <div class="sfd-stat-val" id="sfd-stat-kedvencek">–</div>
           <div class="sfd-stat-lbl">Kedvenc</div>
         </div>
-        <div class="sfd-stat-card" style="cursor:default;">
-          <div class="sfd-stat-val" id="sfd-stat-jovahagyott">–</div>
-          <div class="sfd-stat-lbl">Jóváhagyott</div>
-        </div>
+
       </div>
 
       <!-- Gyors akciók -->
@@ -1232,7 +1229,6 @@
 
     const fEl = document.getElementById('sfd-stat-foglalasok');
     const kEl = document.getElementById('sfd-stat-kedvencek');
-    const nEl = document.getElementById('sfd-stat-jovahagyott');
     if (fEl) fEl.textContent = fogl ? fogl.length : '0';
     if (kEl) kEl.textContent = kedv ? kedv.length : '0';
 
@@ -1249,10 +1245,8 @@
             <div class="sfd-next-val">${spEsc(nev)}</div>
             <div class="sfd-next-sub">${sportEmoji[next.palyas?.sportag] || '🏟'} ${next.palyas?.sportag || ''}</div>
           </div>`;
-        if (nEl) nEl.textContent = jovahagyott.length;
       } else {
         nextWrap.innerHTML = '';
-        if (nEl) nEl.textContent = '0';
       }
     } else if (nextWrap) {
       nextWrap.innerHTML = '';
