@@ -2106,7 +2106,9 @@ async function spfMount(origPalya) {
         ugyfel_telefon: SPF.guestInfo.tel || null,
         megjegyzes: SPF.guestInfo.megjegyzes || null,
         statusz: 'varakozik',
-        idopont_id: slotIds[0] || null
+        idopont_id:     slotIds[0] || null,
+        idopont_kezdes: kezdes,
+        idopont_veg:    veg
       });
       if (error) { errors.push(error.message); }
       else { for (const id of slotIds) await sb2.from('idopontok').update({foglalt:true}).eq('id',id); }
