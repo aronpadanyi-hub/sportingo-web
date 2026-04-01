@@ -410,7 +410,7 @@
   </div>
   <div class="sp-drawer-foot">
     <div class="sp-drawer-foot-row">
-      <a href="https://jatekos.sportingo.hu" target="_blank" class="sp-portal-btn">🎮 Teljes játékos portál ↗</a>
+      <button type="button" onclick="spOpenPortal()" class="sp-portal-btn">🎮 Teljes játékos portál ↗</button>
       <button type="button" class="sp-logout-btn" id="sp-logout-btn">🚪 Kilépés</button>
     </div>
   </div>
@@ -1005,6 +1005,35 @@
     setTimeout(() => msg.style.display = 'none', 4000);
   });
 
+
+  // ── JÁTÉKOS PORTÁL MEGNYITÁS SSO-val ──
+  window.spOpenPortal = async function() {
+    const authIframe = document.getElementById('sportingo-auth-iframe');
+    if (!authIframe || !authIframe.contentWindow) {
+      window.open('https://jatekos.sportingo.hu', '_blank'); return;
+    }
+    const token = await new Promise(function(resolve) {
+      const timeout = setTimeout(function(){ resolve(null); }, 3000);
+      function onToken(e) {
+        if (!e.origin.includes('jatekos.sportingo.hu')) return;
+        if (e.data && e.data.type === 'sp-token-response') {
+          window.removeEventListener('message', onToken);
+          clearTimeout(timeout);
+          resolve(e.data.access_token ? e.data : null);
+        }
+      }
+      window.addEventListener('message', onToken);
+      try { authIframe.contentWindow.postMessage({type:'sp-get-token'}, 'https://jatekos.sportingo.hu'); } catch(e2) {}
+    });
+    if (token && token.access_token) {
+      const url = 'https://jatekos.sportingo.hu/#access_token=' + encodeURIComponent(token.access_token)
+        + '&refresh_token=' + encodeURIComponent(token.refresh_token)
+        + '&type=magiclink';
+      window.open(url, '_blank');
+    } else {
+      window.open('https://jatekos.sportingo.hu', '_blank');
+    }
+  };
   function spEsc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 
   // sessionStorage scroll
