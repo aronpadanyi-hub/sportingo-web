@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bejelentkezés... | Sportingo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: sans-serif; background: #0a1628; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .box { text-align: center; color: white; padding: 20px; }
+    .spinner { width: 44px; height: 44px; border: 3px solid rgba(255,255,255,.2); border-top-color: #2dbf7e; border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .msg { font-size: .95rem; color: rgba(255,255,255,.65); margin-top: 8px; }
+    .logo { font-weight: 900; font-size: 1.3rem; letter-spacing: 4px; color: white; margin-bottom: 32px; }
+    .logo span { color: #2dbf7e; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">SPORTING<span>O</span></div>
+  <div class="spinner"></div>
+  <div class="msg" id="msg">Bejelentkezés folyamatban...</div>
+</div>
+<script>
+(function() {
+  const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
+
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var msgEl = document.getElementById('msg');
+
+  function getReturnUrl() {
+    try { return sessionStorage.getItem('sp_return_to') || 'https://sportingo.hu'; }
+    catch(e) { return 'https://sportingo.hu'; }
+  }
+
+  function doRedirect(url) {
+    msgEl.textContent = 'Sikeres bejelentkezés! Visszairányítás...';
+    try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
+    setTimeout(function() { window.location.replace(url); }, 700);
+  }
+
+  function doError() {
+    msgEl.textContent = 'Hiba történt. Visszairányítás a főoldalra...';
+    setTimeout(function() { window.location.replace('https://sportingo.hu'); }, 2500);
+  }
+
+  async function handleCallback() {
+    var returnUrl = getReturnUrl();
+
+    // ── 1. PKCE flow (mobilon ez az alapértelmezett Supabase v2-ben) ──
+    // URL: /auth-callback?code=XXXX
+    var search = window.location.search;
+    var code = new URLSearchParams(search).get('code');
+
+    if (code) {
+      try {
+        var result = await sb.auth.exchangeCodeForSession(code);
+        if (result.error) throw result.error;
+        if (result.data && result.data.session) {
+          doRedirect(returnUrl);
+          return;
+        }
+      } catch(err) {
+        console.error('exchangeCodeForSession hiba:', err);
+        // Továbblépünk a fallback-re
+      }
+    }
+
+    // ── 2. Implicit flow (desktop, régebbi viselkedés) ──
+    // URL: /auth-callback#access_token=XXXX
+    if (window.location.hash && window.location.hash.indexOf('access_token') !== -1) {
+      // Az SDK automatikusan kezeli a hash-t – kis delay kell
+      await new Promise(function(r) { setTimeout(r, 300); });
+    }
+
+    // ── 3. Ellenőrizzük van-e már session (pl. frissen beállított) ──
+    var retries = 0;
+    var maxRetries = 25; // 5 másodperc összesen
+
+    function checkSession() {
+      sb.auth.getSession().then(function(res) {
+        if (res.data && res.data.session) {
+          doRedirect(returnUrl);
+        } else if (retries < maxRetries) {
+          retries++;
+          setTimeout(checkSession, 200);
+        } else {
+          // Nincs session 5 másodperc után sem – hiba
+          doError();
+        }
+      }).catch(function() {
+        if (retries < maxRetries) {
+          retries++;
+          setTimeout(checkSession, 200);
+        } else {
+          doError();
+        }
+      });
+    }
+
+    checkSession();
+  }
+
+  // Várjuk meg a Supabase SDK betöltését
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', handleCallback);
+  } else {
+    handleCallback();
+  }
+})();
+</script>
+</body>
+</html>
