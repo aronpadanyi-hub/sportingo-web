@@ -175,6 +175,24 @@
     @media(max-width:560px) { .sp-form-grid { grid-template-columns: 1fr; } }
     .sp-submit-btn { margin-top: 14px; padding: 13px 28px; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; border: none; border-radius: 12px; font-weight: 800; font-size: .92rem; cursor: pointer; font-family: inherit; }
     .sp-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+    .sp-autofill-btn {
+      display: none; /* alapból rejtve, JS mutatja ha be van jelentkezve */
+      align-items: center; gap: 7px;
+      margin-bottom: 14px;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, rgba(26,143,193,.08), rgba(45,191,126,.07));
+      border: 1.5px solid rgba(26,143,193,.25);
+      border-radius: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .8rem; font-weight: 700;
+      color: #1a8fc1; cursor: pointer;
+      transition: all .2s;
+    }
+    .sp-autofill-btn:hover {
+      background: linear-gradient(135deg, rgba(26,143,193,.14), rgba(45,191,126,.12));
+      border-color: rgba(26,143,193,.45);
+    }
+    .sp-autofill-btn:disabled { opacity: .6; cursor: not-allowed; }
 
     /* Loading / 404 */
     .sp-loading { text-align: center; padding: 100px 20px; color: #6b8a9a; font-size: .95rem; }
@@ -1743,6 +1761,9 @@ async function init() {
       <h2>📋 Foglalási kérés küldése</h2>
       <p style="font-size:.85rem;color:#6b8a9a;margin-bottom:16px;line-height:1.6;">Küldd el a foglalási kérésed, és mi azonnal továbbítjuk a pálya üzemeltetőjének.</p>
       <div id="sp-form-wrap">
+        <button type="button" id="sp-autofill-btn" class="sp-autofill-btn" onclick="spAutofillForm()">
+          ✨ Kitöltés a profilomból
+        </button>
         <div class="sp-form-grid">
           <div><label class="sp-form-label">Neved *</label><input type="text" id="sp-nev" class="sp-form-input" placeholder="pl. Kiss János"></div>
           <div><label class="sp-form-label">Email *</label><input type="email" id="sp-email" class="sp-form-input" placeholder="pl. kiss.janos@gmail.com"></div>
@@ -2211,6 +2232,87 @@ async function spfMount(origPalya) {
 }
 
 // ── EMAIL FOGLALÁS (régi módszer, email alapú) ──────────
+
+// ── Profil autofill a foglalási formhoz ──────────────────────────
+// Megmutatja a gombot ha be van jelentkezve, és kitölti az üres mezőket.
+// Nem írja felül a user által már kitöltött mezőket.
+// Nem hoz létre új Supabase klienst – a meglévő _sbGlobal-t használja.
+(function() {
+  function showAutofillBtn() {
+    var btn = document.getElementById('sp-autofill-btn');
+    if (btn) btn.style.display = 'flex';
+  }
+
+  function hideAutofillBtn() {
+    var btn = document.getElementById('sp-autofill-btn');
+    if (btn) btn.style.display = 'none';
+  }
+
+  // Figyelje az auth állapotot – ha be van jelentkezve, mutassa a gombot
+  var sb = window._spSb || window._sbGlobal;
+  if (!sb) return;
+
+  // Oldalbetöltésnél ellenőrzés (a form akkor kerül DOM-ba amikor init() renderel)
+  // Ezért MutationObserver-rel figyeljük a form megjelenését
+  var observer = new MutationObserver(function() {
+    var btn = document.getElementById('sp-autofill-btn');
+    if (!btn) return;
+    observer.disconnect();
+    // Form megjelent – ellenőrizzük a session-t
+    sb.auth.getSession().then(function(res) {
+      if (res.data && res.data.session) showAutofillBtn();
+    });
+  });
+  observer.observe(document.getElementById('sp-root') || document.body, { childList: true, subtree: true });
+
+  // Auth állapotváltozás figyelése
+  sb.auth.onAuthStateChange(function(event) {
+    if (event === 'SIGNED_IN')  showAutofillBtn();
+    if (event === 'SIGNED_OUT') hideAutofillBtn();
+  });
+})();
+
+window.spAutofillForm = async function() {
+  var sb  = window._spSb || window._sbGlobal;
+  if (!sb) return;
+
+  var btn = document.getElementById('sp-autofill-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Betöltés...'; }
+
+  try {
+    var res  = await sb.auth.getUser();
+    var user = res && res.data && res.data.user;
+
+    if (!user) {
+      // Nincs bejelentkezett user – gombot elrejtjük
+      if (btn) btn.style.display = 'none';
+      return;
+    }
+
+    var meta  = user.user_metadata || {};
+    var name  = meta.full_name || meta.name || '';
+    var email = user.email || '';
+    var phone = meta.telefon || meta.phone || '';
+
+    // Csak üres mezőket töltjük ki
+    var nevEl    = document.getElementById('sp-nev');
+    var emailEl  = document.getElementById('sp-email');
+    var telEl    = document.getElementById('sp-telefon');
+
+    if (nevEl   && !nevEl.value.trim()   && name)  nevEl.value  = name;
+    if (emailEl && !emailEl.value.trim() && email)  emailEl.value = email;
+    if (telEl   && !telEl.value.trim()   && phone)  telEl.value  = phone;
+
+    if (btn) { btn.textContent = '✅ Kitöltve!'; }
+    setTimeout(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '✨ Kitöltés a profilomból'; }
+    }, 2000);
+
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Kitöltés a profilomból'; }
+  }
+};
+
 async function spSendFoglalas() {
   const { foglalasiEmail, nev, helyszinNev } = window._spPalya || {};
   const nevVal     = document.getElementById('sp-nev').value.trim();
