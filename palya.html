@@ -2008,9 +2008,9 @@ async function spfMount(origPalya) {
     // Gyorskitöltés gomb: csak ha vannak adatok
     if (qwrap) qwrap.style.display = 'block';
 
-    // Email előtöltés (mindig, ha van)
+    // Email előtöltés (mindig, ha van) – nem tiltjuk le, szerkeszthető marad
     const eEl = document.getElementById('spf-email');
-    if (eEl && email) { eEl.value = email; eEl.disabled = true; }
+    if (eEl && email && !eEl.value.trim()) { eEl.value = email; }
   }
 
   window.spfQuickFill = function() {
@@ -2024,9 +2024,10 @@ async function spfMount(origPalya) {
     const eEl = document.getElementById('spf-email');
     const tEl = document.getElementById('spf-tel');
 
-    if (nEl) nEl.value = name;
-    if (eEl) { eEl.value = email; eEl.disabled = true; }
-    if (tEl) tEl.value = tel;
+    // Csak üres mezőket töltjük ki – nem írjuk felül a már beírt adatokat
+    if (nEl && !nEl.value.trim() && name)  nEl.value = name;
+    if (eEl && !eEl.value.trim() && email) eEl.value = email; // nem disabled, szerkeszthető marad
+    if (tEl && !tEl.value.trim() && tel)   tEl.value = tel;
 
     // Gomb eltüntetése kitöltés után
     const qwrap = document.getElementById('spf-quickfill-wrap');
@@ -2189,7 +2190,7 @@ async function spfMount(origPalya) {
           </div>
           <div id="spf-user-chip" class="spf-user-chip" style="display:none;"></div>
           <div id="spf-quickfill-wrap" style="display:none;margin-bottom:14px;">
-            <button class="spf-quickfill-btn" onclick="spfQuickFill()">⚡ Adataim automatikus kitöltése</button>
+            <button class="spf-quickfill-btn" onclick="spfQuickFill()">✨ Kitöltés a profilomból</button>
           </div>
           <div class="spf-form-row">
             <div><label class="spf-form-label">Teljes név *</label><input type="text" id="spf-nev" class="spf-form-input" placeholder="pl. Kiss János"></div>
