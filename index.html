@@ -540,8 +540,8 @@
     grid.innerHTML=filtered.map(h=>{
       const rel=activeSport?h._palyas.filter(p=>p.sportag===activeSport):h._palyas;
       let url;
-      if(rel.length===1&&rel[0].slug) url='https://adatlap.sportingo.hu/palya?slug='+rel[0].slug;
-      else if(h.slug) url='https://adatlap.sportingo.hu/helyszin?slug='+h.slug;
+      if(rel.length===1&&rel[0].slug) url='https://sportingo.hu/palya/'+rel[0].slug;
+      else if(h.slug) url='https://sportingo.hu/helyszin/'+h.slug;
       else url='#';
       const sportok=activeSport?(h._sportok.includes(activeSport)?[activeSport]:h._sportok.slice(0,3)):h._sportok.slice(0,3);
       const badges=sportok.map(s=>`<span class="sp-card-sport-badge">${esc(s)}</span>`).join('');
@@ -692,31 +692,6 @@
     }
   });
 
-  // Cross-tab szinkron BroadcastChannel-en – adatlap ↔ sportingo.hu valós idejű szinkron
-  (function(){
-    if(typeof BroadcastChannel === 'undefined') return;
-    const _bc = new BroadcastChannel('sportingo-auth');
-    _bc.onmessage = function(evt){
-      const d = evt.data;
-      if(!d || !d.type) return;
-      const validTypes = ['sp-login-success','sp-auth-state','sp-logout'];
-      if(!validTypes.includes(d.type)) return;
-      if(d.loggedIn === true && d.email){
-        if(d.type === 'sp-auth-state' && explicitLogout) return;
-        const email = d.email.trim().toLowerCase();
-        const name  = d.name || email.split('@')[0];
-        isLoggedIn = true; userEmail = email; explicitLogout = false;
-        try{ sessionStorage.removeItem('sp_logged_out'); }catch(e2){}
-        localStorage.setItem('sp_user', JSON.stringify({email, name}));
-        setLoggedInUI(name, email);
-      } else if(d.type === 'sp-logout'){
-        isLoggedIn = false; userEmail = ''; explicitLogout = true;
-        clearAllCache(); setLoggedOutUI();
-        try{ sessionStorage.setItem('sp_logged_out','1'); }catch(e){}
-      }
-    };
-  })();
-
   // Cross-tab logout: másik tabban történt kilépés
   window.addEventListener('storage', function(e) {
     if (e.key === 'sp_user' && e.newValue === null) {
@@ -724,16 +699,6 @@
       userEmail  = '';
       explicitLogout = true;
       setLoggedOutUI();
-    }
-    // Cross-tab bejelentkezés szinkron
-    if (e.key === 'sp_user' && e.newValue) {
-      try {
-        const u = JSON.parse(e.newValue);
-        if (u && u.email && !isLoggedIn) {
-          isLoggedIn = true; userEmail = u.email; explicitLogout = false;
-          setLoggedInUI(u.name || u.email.split('@')[0], u.email);
-        }
-      } catch(ex) {}
     }
   });
 
@@ -959,7 +924,7 @@
       const pNev = f.palyas?.helyszin_nev || f.palyas?.nev || '–', sport = f.palyas?.sportag || '', emoji = sportEmoji[sport] || '🏟';
       const safe = ['varakozik', 'jovahagyva', 'elutasitva'].includes(f.statusz) ? f.statusz : '';
       const slug = f.palyas?.slug || '';
-      const linkHtml = slug ? `<div style="margin-top:6px;"><a href="https://adatlap.sportingo.hu/palya?slug=${spEsc(slug)}" target="_blank" style="color:#1a8fc1;font-size:.72rem;font-weight:700;text-decoration:none;">Pálya adatlap ↗</a></div>` : '';
+      const linkHtml = slug ? `<div style="margin-top:6px;"><a href="https://sportingo.hu/palya/${spEsc(slug)}" target="_blank" style="color:#1a8fc1;font-size:.72rem;font-weight:700;text-decoration:none;">Pálya adatlap ↗</a></div>` : '';
       return `<div class="sp-booking-card ${safe}"><div class="sp-booking-name">${emoji} ${spEsc(pNev)}</div><div class="sp-booking-meta"><span>📅 Foglalás</span><span class="sp-status-pill ${safe}">${statuszLabel[f.statusz] || f.statusz}</span></div>${linkHtml}</div>`;
     }).join('');
     if (maxPage > 1) {
@@ -979,7 +944,7 @@
     if (error || !data || !data.length) { kedvencekList.innerHTML = '<div class="sp-empty"><div class="sp-empty-icon">❤️</div>Még nincs kedvenc pályád.<br><a href="/" style="color:#1a8fc1;font-weight:600;">Fedezz fel pályákat →</a></div>'; return; }
     kedvencekList.innerHTML = data.map(k => {
       const p = k.palyas || {}, nev = p.helyszin_nev || p.nev || '–', sport = p.sportag || '', varos = p.varos || '', emoji = sportEmoji[sport] || '🏟', slug = p.slug || '';
-      return `<div class="sp-kedvenc-card"><div class="sp-kedvenc-info"><div class="sp-kedvenc-name">${emoji} ${spEsc(nev)}</div><div class="sp-kedvenc-meta">${varos ? '📍 ' + spEsc(varos) : sport}</div></div>${slug ? `<a href="https://adatlap.sportingo.hu/palya?slug=${spEsc(slug)}" target="_blank" class="sp-kedvenc-link">Foglalás →</a>` : ''}<button class="sp-kedvenc-remove" data-kedvenc-id="${k.id}" data-palya-id="${k.palya_id}">🗑</button></div>`;
+      return `<div class="sp-kedvenc-card"><div class="sp-kedvenc-info"><div class="sp-kedvenc-name">${emoji} ${spEsc(nev)}</div><div class="sp-kedvenc-meta">${varos ? '📍 ' + spEsc(varos) : sport}</div></div>${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" target="_blank" class="sp-kedvenc-link">Foglalás →</a>` : ''}<button class="sp-kedvenc-remove" data-kedvenc-id="${k.id}" data-palya-id="${k.palya_id}">🗑</button></div>`;
     }).join('');
     kedvencekList.addEventListener('click', async function(e) {
       const btn = e.target.closest('.sp-kedvenc-remove');
