@@ -770,6 +770,88 @@
       .sp-confirm-actions { flex-direction: column-reverse; }
       .sp-confirm-cancel-btn, .sp-confirm-ok-btn { width: 100%; text-align: center; }
     }
+    /* ════════════════════════════════════════════
+       REVIEW BLOKK – prémium UI
+    ════════════════════════════════════════════ */
+
+    /* Összesítő sor */
+    .sp-review-summary {
+      display: flex; align-items: center; gap: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #edf2f7;
+      margin-bottom: 2px;
+    }
+    .sp-review-score {
+      font-size: 3.2rem; font-weight: 900; color: #0a1628;
+      line-height: 1; letter-spacing: -.05em; flex-shrink: 0;
+    }
+    .sp-review-score-details { display: flex; flex-direction: column; gap: 5px; }
+    .sp-review-stars-row { display: flex; gap: 3px; }
+    .sp-star { font-size: 1.1rem; color: #f59e0b; }
+    .sp-star.empty { color: #dde8f0; }
+    .sp-review-count { font-size: .78rem; color: #94a3b8; font-weight: 600; letter-spacing: .01em; }
+
+    /* Review item */
+    .sp-review-item {
+      padding: 20px 0;
+      border-bottom: 1px solid #f0f4f8;
+    }
+    .sp-review-item:first-of-type { padding-top: 18px; }
+    .sp-review-item:last-child { border-bottom: none; padding-bottom: 6px; }
+
+    /* Item fejléc: bal=meta, jobb=csillagok */
+    .sp-review-item-top {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px;
+      margin-bottom: 10px;
+    }
+    .sp-review-meta { display: flex; flex-direction: column; gap: 2px; }
+    .sp-review-user {
+      font-size: .88rem; font-weight: 800;
+      color: #0a1628; letter-spacing: -.01em;
+    }
+    .sp-review-date {
+      font-size: .72rem; color: #b0bec5; font-weight: 500;
+    }
+
+    /* Csillagok az item jobb oldalán */
+    .sp-review-stars-sm { display: flex; gap: 3px; padding-top: 2px; flex-shrink: 0; }
+    .sp-review-star-sm { font-size: .9rem; color: #f59e0b; line-height: 1; }
+    .sp-review-star-sm.empty { color: #dde8f0; }
+
+    /* Szöveg */
+    .sp-review-szoveg {
+      font-size: .875rem; color: #3a5060; line-height: 1.7;
+      display: -webkit-box; -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    /* Cimkék */
+    .sp-review-cimkek { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .sp-review-cimke {
+      font-size: .7rem; font-weight: 700; color: #4a7c8e;
+      background: #f0f7fb; border: 1px solid #d0e8f2;
+      padding: 3px 10px; border-radius: 20px;
+      letter-spacing: .02em;
+    }
+
+    /* Tulajdonos válasz */
+    .sp-review-tulaj {
+      margin-top: 12px; padding: 11px 14px;
+      background: #f7fbfe;
+      border-left: 2.5px solid #93c5d6;
+      border-radius: 0 10px 10px 0;
+    }
+    .sp-review-tulaj-label {
+      font-size: .68rem; font-weight: 800; color: #1a8fc1;
+      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 4px;
+    }
+    .sp-review-tulaj-text { font-size: .82rem; color: #3a5060; line-height: 1.6; }
+
+    /* Üres állapot */
+    .sp-review-empty { text-align: center; padding: 2.5rem 0; }
+    .sp-review-empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: .5; }
+    .sp-review-empty-text { font-size: .85rem; font-weight: 600; color: #94a3b8; }
 </style>
 </head>
 <body>
@@ -2685,7 +2767,9 @@ function renderReviewItem(r) {
       '</div>' +
       '<div class="sp-review-stars-sm">' + spStars(r.rating, 'sm') + '</div>' +
     '</div>' +
-    (r.szoveg ? '<div class="sp-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
+    (r.szoveg
+      ? '<p class="sp-review-szoveg">' + esc(r.szoveg) + '</p>'
+      : '') +
     cimkekHTML + tulajHTML +
   '</div>';
 }
@@ -2749,7 +2833,7 @@ async function loadPalyaReviews(palyaId) {
     return renderReviewItem(r);
   }).join('');
 
-  el.innerHTML = '<div class="sp-card"><h2>⭐ Értékelések</h2>' +
+  el.innerHTML = '<div class="sp-card">' +
     '<div class="sp-review-summary">' +
       '<div class="sp-review-score">' + atlag + '</div>' +
       '<div class="sp-review-score-details">' +
