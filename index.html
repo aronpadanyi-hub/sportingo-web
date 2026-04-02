@@ -1683,8 +1683,8 @@
 
       // Review gomb logika – azonos a jatekos.html javított verziójával
       const today = new Date().toISOString().split('T')[0];
-      const rIdopont = f.idopontok?.datum || (f.idopont_kezdes ? f.idopont_kezdes.split('T')[0] : null);
-      const rVegIdo  = f.idopontok?.veg?.substring(0,5) || (f.idopont_veg ? f.idopont_veg.substring(0,5) : null);
+      const rIdopont = f.idopontok?.datum || (f.idopont_kezdes ? (f.idopont_kezdes.includes('T') ? f.idopont_kezdes.split('T')[0] : f.idopont_kezdes.substring(0,10)) : null);
+      const rVegIdo  = f.idopontok?.veg?.substring(0,5) || (f.idopont_veg ? (f.idopont_veg.includes('T') ? f.idopont_veg.split('T')[1].substring(0,5) : f.idopont_veg.substring(0,5)) : null);
       let rElmult = false;
       if (rIdopont && rVegIdo) {
         rElmult = new Date(rIdopont + 'T' + rVegIdo + ':00') < new Date();
