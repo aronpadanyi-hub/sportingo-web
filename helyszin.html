@@ -515,6 +515,25 @@ function spFmtUpdated(letrehozas, updated) {
   return 'Frissítve: ' + new Date(updated).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+// renderReviewItem – egységes preview helper
+function renderReviewItem(r) {
+  var nev        = spFormatNev(r.user_nev);
+  var datumStr   = r.letrehozas_datum
+    ? new Date(r.letrehozas_datum).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
+    : '';
+  var updatedStr = spFmtUpdated(r.letrehozas_datum, r.updated_at);
+  var displayDatum = updatedStr || datumStr;
+  return '<div class="sh-review-preview">' +
+    '<div class="sh-review-preview-header">' +
+      '<div class="sh-review-stars-sm">' + shStars(r.rating) + '</div>' +
+      '<span class="sh-review-date">' + displayDatum + '</span>' +
+    '</div>' +
+    '<span class="sh-review-user-sm">' + esc(nev) + '</span>' +
+    (r.palyas && r.palyas.nev ? '<div class="sh-review-palya-nev">' + esc(r.palyas.nev) + '</div>' : '') +
+    (r.szoveg ? '<div class="sh-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
+  '</div>';
+}
+
 function shStars(rating) {
   var s = '';
   for (var i = 1; i <= 5; i++) {
@@ -568,21 +587,7 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
   var countText = totalCount + ' értékelés alapján';
 
   var previewHTML = previewData.map(function(r) {
-    var palyaNev   = r.palyas ? (r.palyas.nev || '') : '';
-    var nev        = spFormatNev(r.user_nev);
-    var datum      = r.letrehozas_datum
-      ? new Date(r.letrehozas_datum).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' })
-      : '';
-    var updatedStr = spFmtUpdated(r.letrehozas_datum, r.updated_at);
-    return '<div class="sh-review-preview">' +
-      '<div class="sh-review-preview-header">' +
-        '<div class="sh-review-stars-sm">' + shStars(r.rating) + '</div>' +
-        '<span class="sh-review-date">' + datum + (updatedStr ? ' · ' + updatedStr : '') + '</span>' +
-      '</div>' +
-      '<span class="sh-review-user-sm">' + esc(nev) + '</span>' +
-      (palyaNev ? '<div class="sh-review-palya-nev">' + esc(palyaNev) + '</div>' : '') +
-      (r.szoveg ? '<div class="sh-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
-    '</div>';
+    return renderReviewItem(r);
   }).join('');
 
   el.innerHTML = '<div class="sh-card"><div class="sh-card-title">⭐ Értékelések</div>' +
