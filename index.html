@@ -243,6 +243,63 @@
       font-size: .7rem; font-weight: 700; color: #64748b;
       border: 1.5px solid #e4eef5; border-radius: 8px;
     }
+    /* ── Véleményeim tab ── */
+    .sfd-rv-card {
+      background: white;
+      border: 1.5px solid #e8f0f5;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      transition: box-shadow .18s;
+    }
+    .sfd-rv-card:last-child { margin-bottom: 0; }
+    .sfd-rv-card:hover { box-shadow: 0 4px 16px rgba(10,22,40,.07); }
+    .sfd-rv-card-head {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .sfd-rv-palya {
+      font-size: .88rem; font-weight: 800;
+      color: #0a1628; line-height: 1.2;
+    }
+    .sfd-rv-helyszin {
+      font-size: .73rem; color: #6b8a9a;
+      font-weight: 500; margin-top: 2px;
+    }
+    .sfd-rv-meta {
+      display: flex; align-items: center;
+      gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .sfd-rv-stars { display: flex; gap: 2px; }
+    .sfd-rv-star { font-size: .82rem; color: #f59e0b; }
+    .sfd-rv-star.e { color: #dde8f0; }
+    .sfd-rv-date { font-size: .7rem; color: #b0bec5; font-weight: 500; }
+    .sfd-rv-szoveg {
+      font-size: .82rem; color: #3a5060; line-height: 1.6;
+      margin-bottom: 8px;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .sfd-rv-cimkek { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .sfd-rv-cimke {
+      font-size: .68rem; font-weight: 700; color: #4a7c8e;
+      background: #f0f7fb; border: 1px solid #d0e8f2;
+      padding: 2px 9px; border-radius: 20px;
+    }
+    .sfd-rv-edit-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 13px; font-size: .75rem; font-weight: 700;
+      color: #1a8fc1; background: rgba(26,143,193,.07);
+      border: 1.5px solid rgba(26,143,193,.25);
+      border-radius: 8px; cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .18s;
+    }
+    .sfd-rv-edit-btn:hover {
+      background: rgba(26,143,193,.13);
+      border-color: #1a8fc1;
+    }
   </style>
 </head>
 <body>
@@ -855,6 +912,9 @@
       <button class="sfd-nav-btn" data-sfd-tab="profil" role="tab">
         <span class="nav-icon">👤</span> Profil
       </button>
+      <button class="sfd-nav-btn" data-sfd-tab="velemenyek" role="tab">
+        <span class="nav-icon">⭐</span> Véleményeim
+      </button>
       <button class="sfd-nav-btn" data-sfd-tab="statisztika" role="tab">
         <span class="nav-icon">📊</span> Statisztika
       </button>
@@ -969,6 +1029,14 @@
     </div>
 
     <!-- ── STATISZTIKA ── -->
+    <!-- ── VÉLEMÉNYEIM ── -->
+    <div class="sfd-panel" id="sfd-panel-velemenyek">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Véleményeim</div>
+      </div>
+      <div id="sfd-velemenyek-list"></div>
+    </div>
+
     <div class="sfd-panel" id="sfd-panel-statisztika">
       <div class="sfd-section-head">
         <div class="sfd-section-title">Személyes statisztika</div>
@@ -1273,6 +1341,7 @@
     if (name === 'profil')     loadProfil();
     if (name === 'statisztika') loadStatisztika();
     if (name === 'attekintes') loadAttekintes();
+    if (name === 'velemenyek') loadVelemenyek();
   };
 
   document.querySelectorAll('.sfd-nav-btn').forEach(btn => {
@@ -1322,6 +1391,105 @@
   window.sfdCloseConfirm  = sfdCloseConfirm;
   window.sfdNyitReview    = sfdNyitReview;
   window.sfdZarjReview    = sfdZarjReview;
+  // ── VÉLEMÉNYEIM TAB ─────────────────────────────────────────
+  async function loadVelemenyek() {
+    var el = document.getElementById('sfd-velemenyek-list');
+    if (!el || !currentUser) return;
+
+    el.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
+
+    var res = await sb.from('ertekelesek')
+      .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at, palyas(nev, helyszin_nev, slug)')
+      .eq('user_id', currentUser.id)
+      .order('letrehozas_datum', { ascending: false });
+
+    // updated_at fallback: ha a mező nem létezik
+    var data = res.data || [];
+    if (!data.length && res.error) {
+      var res2 = await sb.from('ertekelesek')
+        .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, palyas(nev, helyszin_nev, slug)')
+        .eq('user_id', currentUser.id)
+        .order('letrehozas_datum', { ascending: false });
+      data = res2.data || [];
+    }
+
+    if (!data.length) {
+      el.innerHTML =
+        '<div class="sfd-empty">' +
+          '<div class="sfd-empty-icon">⭐</div>' +
+          '<div class="sfd-empty-title">Még nincsenek véleményeid</div>' +
+          '<div class="sfd-empty-sub">Lezajlott foglalás után értékelheted a pályát. A véleményeid itt jelennek meg.</div>' +
+          '<button class="sfd-empty-cta" onclick="sfdSwitchTab(&quot;foglalasok&quot;)">📅 Foglalásaim</button>' +
+        '</div>';
+      return;
+    }
+
+    el.innerHTML = data.map(function(r) {
+      var palyaNev    = r.palyas ? (r.palyas.nev || '–') : '–';
+      var helyszinNev = r.palyas ? (r.palyas.helyszin_nev || '') : '';
+      var datum       = r.updated_at || r.letrehozas_datum;
+      var datumStr    = datum
+        ? new Date(datum).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
+        : '';
+
+      // Csillagok
+      var starsHtml = '';
+      for (var i = 1; i <= 5; i++) {
+        starsHtml += '<span class="sfd-rv-star' + (i <= r.rating ? '' : ' e') + '">★</span>';
+      }
+
+      // Cimkék
+      var cimkekHtml = '';
+      if (r.cimkek && r.cimkek.length) {
+        cimkekHtml = '<div class="sfd-rv-cimkek">' +
+          r.cimkek.map(function(ck) {
+            return '<span class="sfd-rv-cimke">' + spEsc(ck) + '</span>';
+          }).join('') +
+        '</div>';
+      }
+
+      // Szerkesztés gomb – a meglévő sfdNyitReview újrahasználása
+      // A foglalas_id-t nem tárolják a review-ban visszaolvashatóan a drawerben,
+      // de az UPDATE-hez csak a review.id kell (_sfdRv.meglevoId).
+      // A sfdNyitReview meghívjuk egy virtuális foglalas_id-val (''),
+      // az UPDATE path a meglevoId alapján megy.
+      var rvJson = JSON.stringify({
+        id: r.id, rating: r.rating,
+        szoveg: r.szoveg || '', cimkek: r.cimkek || []
+      }).replace(/"/g, '&quot;');
+
+      var pid = (r.palya_id || '');
+      var editBtn = '<button class="sfd-rv-edit-btn" data-pid="' + pid + '" data-nev="' + spEsc(palyaNev) + '" data-rv="' + rvJson + '" onclick="sfdVelNyitSzerkesztes(this)">✏️ Szerkesztés</button>';
+
+      return '<div class="sfd-rv-card">' +
+        '<div class="sfd-rv-card-head">' +
+          '<div>' +
+            '<div class="sfd-rv-palya">' + spEsc(palyaNev) + '</div>' +
+            (helyszinNev ? '<div class="sfd-rv-helyszin">' + spEsc(helyszinNev) + '</div>' : '') +
+          '</div>' +
+          editBtn +
+        '</div>' +
+        '<div class="sfd-rv-meta">' +
+          '<div class="sfd-rv-stars">' + starsHtml + '</div>' +
+          (datumStr ? '<span class="sfd-rv-date">' + datumStr + '</span>' : '') +
+        '</div>' +
+        (r.szoveg ? '<div class="sfd-rv-szoveg">' + spEsc(r.szoveg) + '</div>' : '') +
+        cimkekHtml +
+      '</div>';
+    }).join('');
+  }
+  window.loadVelemenyek = loadVelemenyek;
+  // Véleményeim tab: szerkesztés gomb handler
+  function sfdVelNyitSzerkesztes(btn) {
+    var pid    = btn.dataset.pid || '';
+    var nev    = btn.dataset.nev || '';
+    var rvRaw  = btn.dataset.rv  || '';
+    // sfdNyitReview újrahasználása: foglalas_id '' (UPDATE path meglevoId-t használ)
+    sfdNyitReview('', pid, '', nev, rvRaw);
+  }
+  window.sfdVelNyitSzerkesztes = sfdVelNyitSzerkesztes;
+
+
 
   async function sfdDoCancel() {
     if (!_cancelTargetId) return;
@@ -1570,6 +1738,9 @@
       sfdZarjReview();
       showSfdToast(isUpdate || wasUniqueConflict ? '✏️ Értékelés módosítva!' : '⭐ Köszönjük az értékelést!');
       await loadBookings();
+      // Ha a Véleményeim tab aktív, azt is frissítsük
+      var velPanel = document.getElementById('sfd-panel-velemenyek');
+      if (velPanel && velPanel.classList.contains('active')) loadVelemenyek();
     });
   }
 
