@@ -1990,6 +1990,7 @@ async function init() {
           ${metaItems.length ? `<div class="sp-card"><h2>📊 Alapadatok</h2><div class="sp-meta-grid">${metaHTML}</div></div>` : ''}
           ${leirasHTML}
           ${terképHTML}
+          <div id="sp-review-blokk"></div>
         </div>
         <div class="sp-sidebar">
           ${hasNaptar ? '' : ctaHTML}
@@ -2005,6 +2006,9 @@ async function init() {
 
   // Kedvenc gomb – render UTÁN
   initFavButton();
+
+  // Review blokk betöltése
+  loadPalyaReviews(palya.id);
 
   // Ha van naptár, mountoljuk
   if (hasNaptar) spfMount(palya);
@@ -2607,6 +2611,93 @@ function initFavButton() {
     });
   }
   loadFavState();
+}
+
+
+// ── REVIEW MEGJELENÍTÉS – PÁLYAOLDAL ────────────────────────
+function spStars(rating, size) {
+  var cls = size === 'sm' ? 'sp-review-star-sm' : 'sp-star';
+  var s = '';
+  for (var i = 1; i <= 5; i++) {
+    s += '<span class="' + cls + (i <= rating ? '' : ' empty') + '">★</span>';
+  }
+  return s;
+}
+
+function spFmtDatum(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+async function loadPalyaReviews(palyaId) {
+  var el = document.getElementById('sp-review-blokk');
+  if (!el || !palyaId) return;
+  var sb = window._spSb;
+  if (!sb) return;
+
+  // ── Valódi aggregáció: az összes review az egész pályára ──
+  var aggRes = await sb.from('ertekelesek')
+    .select('rating', { count: 'exact', head: false })
+    .eq('palya_id', palyaId);
+
+  var allRatings = aggRes.data || [];
+  var totalCount = aggRes.count || allRatings.length;
+
+  if (!totalCount) {
+    el.innerHTML = '<div class="sp-card"><h2>⭐ Értékelések</h2>' +
+      '<div class="sp-review-empty">' +
+      '<div class="sp-review-empty-icon">💬</div>' +
+      '<div class="sp-review-empty-text">Még nincs értékelés ennél a pályánál.</div>' +
+      '</div></div>';
+    return;
+  }
+
+  var sum = allRatings.reduce(function(a, r) { return a + r.rating; }, 0);
+  var atlag = (sum / allRatings.length).toFixed(1);
+
+  // ── Preview lista: top 5 legfrissebb ──
+  var listRes = await sb.from('ertekelesek')
+    .select('id, rating, szoveg, cimkek, tulaj_valasz, letrehozas_datum')
+    .eq('palya_id', palyaId)
+    .order('letrehozas_datum', { ascending: false })
+    .limit(5);
+
+  var listData = listRes.data || [];
+
+  var listHTML = listData.map(function(r) {
+    var cimkekHTML = (r.cimkek && r.cimkek.length)
+      ? '<div class="sp-review-cimkek">' +
+          r.cimkek.map(function(cc) {
+            return '<span class="sp-review-cimke">' + esc(cc) + '</span>';
+          }).join('') +
+        '</div>'
+      : '';
+    var tulajHTML = r.tulaj_valasz
+      ? '<div class="sp-review-tulaj">' +
+          '<div class="sp-review-tulaj-label">🏟 Tulajdonos válasza</div>' +
+          '<div class="sp-review-tulaj-text">' + esc(r.tulaj_valasz) + '</div>' +
+        '</div>'
+      : '';
+    return '<div class="sp-review-item">' +
+      '<div class="sp-review-item-header">' +
+        '<span class="sp-review-user">👤 Sportingo játékos</span>' +
+        '<span class="sp-review-date">' + spFmtDatum(r.letrehozas_datum) + '</span>' +
+      '</div>' +
+      '<div class="sp-review-stars-sm">' + spStars(r.rating, 'sm') + '</div>' +
+      (r.szoveg ? '<div class="sp-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
+      cimkekHTML + tulajHTML +
+    '</div>';
+  }).join('');
+
+  el.innerHTML = '<div class="sp-card"><h2>⭐ Értékelések</h2>' +
+    '<div class="sp-review-summary">' +
+      '<div class="sp-review-score">' + atlag + '</div>' +
+      '<div class="sp-review-score-details">' +
+        '<div class="sp-review-stars-row">' + spStars(Math.round(parseFloat(atlag)), 'lg') + '</div>' +
+        '<div class="sp-review-count">' + totalCount + ' értékelés alapján</div>' +
+      '</div>' +
+    '</div>' +
+    listHTML + '</div>';
 }
 
 </script>
