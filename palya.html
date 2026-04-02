@@ -2721,32 +2721,19 @@ async function loadPalyaReviews(palyaId) {
   var sum = allRatings.reduce(function(a, r) { return a + r.rating; }, 0);
   var atlag = (sum / allRatings.length).toFixed(1);
 
-  // ── Preview lista: szövegesek elsőként (max 3), fallback rating-only ──
-  var REVIEW_SELECT = 'id, rating, szoveg, cimkek, tulaj_valasz, user_nev, letrehozas_datum, updated_at';
-  var textRes = await sb.from('ertekelesek')
-    .select(REVIEW_SELECT)
+  // ── Preview lista: top 3 legfrissebb, szövegesek előnyben ──
+  // Egyszerű, megbízható: updated_at DESC, limit 5 → szövegeset előre rendezzük JS-ben
+  var listRes = await sb.from('ertekelesek')
+    .select('id, rating, szoveg, cimkek, tulaj_valasz, user_nev, letrehozas_datum, updated_at')
     .eq('palya_id', palyaId)
-    .not('szoveg', 'is', null)
     .order('updated_at', { ascending: false })
-    .limit(3);
+    .limit(5);
 
-  var listData = textRes.data || [];
-
-  // Ha kevesebb mint 3 szöveges van, rating-only review-kkal töltjük fel
-  if (listData.length < 3) {
-    var textIds = listData.map(function(r){ return r.id; });
-    var needed  = 3 - listData.length;
-    var fallbackQ = sb.from('ertekelesek')
-      .select(REVIEW_SELECT)
-      .eq('palya_id', palyaId)
-      .order('updated_at', { ascending: false })
-      .limit(needed + textIds.length); // kicsit többet kérünk, majd szűrünk
-    var fbRes = await fallbackQ;
-    var fbData = (fbRes.data || []).filter(function(r){
-      return r.szoveg === null || r.szoveg === '' || r.szoveg === undefined;
-    }).slice(0, needed);
-    listData = listData.concat(fbData);
-  }
+  var allItems = listRes.data || [];
+  // Szövegesek előre, maradék után – max 3 elemet mutatunk
+  var withText    = allItems.filter(function(r){ return r.szoveg && r.szoveg.trim(); });
+  var withoutText = allItems.filter(function(r){ return !r.szoveg || !r.szoveg.trim(); });
+  var listData = withText.concat(withoutText).slice(0, 3);
 
   var listHTML = listData.map(function(r) {
     return renderReviewItem(r);
