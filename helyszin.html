@@ -244,8 +244,10 @@
       margin-bottom: 4px; gap: 8px;
     }
     .sh-review-stars-sm { display: flex; gap: 2px; }
-    .sh-review-star-sm { font-size: .78rem; color: #f59e0b; }
-    .sh-review-star-sm.empty { color: #d4e8f0; }
+    .sh-review-star-sm { font-size: .82rem; color: #f59e0b; }
+    .sh-review-star-sm.empty { color: #e2edf4; }
+    .sh-review-user-sm { font-size: .75rem; font-weight: 700; color: #0a1628; }
+    .sh-review-updated { font-size: .7rem; color: #94a3b8; font-style: italic; }
     .sh-review-palya-nev { font-size: .72rem; font-weight: 700; color: #1a8fc1; }
     .sh-review-date { font-size: .72rem; color: #94a3b8; }
     .sh-review-szoveg {
@@ -492,6 +494,27 @@ async function init() {
 init();
 
 // ── REVIEW MEGJELENÍTÉS – HELYSZÍNOLDAL ─────────────────────
+// Névformázó – azonos logika mint palya.html-ben
+function spFormatNev(nev) {
+  var FALLBACK = 'Sportingo játékos';
+  if (!nev || typeof nev !== 'string') return FALLBACK;
+  var s = nev.trim();
+  if (!s) return FALLBACK;
+  if (s.indexOf('@') !== -1) return FALLBACK;
+  if (!/[a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]/.test(s)) return FALLBACK;
+  var parts = s.split(/\s+/).filter(function(p){ return p.length > 0; });
+  if (parts.length === 0) return FALLBACK;
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return parts[1] + ' ' + parts[0][0].toUpperCase() + '.';
+  return parts[parts.length - 1];
+}
+
+function spFmtUpdated(letrehozas, updated) {
+  if (!updated || !letrehozas) return '';
+  if (new Date(updated) - new Date(letrehozas) < 60000) return '';
+  return 'Frissítve: ' + new Date(updated).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function shStars(rating) {
   var s = '';
   for (var i = 1; i <= 5; i++) {
@@ -525,17 +548,17 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
 
   // ── Preview lista: top 3 szöveges értékelés ──
   var previewRes = await sb.from('ertekelesek')
-    .select('rating, szoveg, letrehozas_datum, palyas(nev)')
+    .select('rating, szoveg, user_nev, letrehozas_datum, updated_at, palyas(nev)')
     .eq('helyszin_id', helyszinId)
     .not('szoveg', 'is', null)
-    .order('letrehozas_datum', { ascending: false })
+    .order('updated_at', { ascending: false })
     .limit(3);
 
   var previewData = previewRes.data || [];
   // Ha nincs szöveges review, esés nélkül fallback: bármilyen top 3
   if (!previewData.length) {
     var fbRes = await sb.from('ertekelesek')
-      .select('rating, szoveg, letrehozas_datum, palyas(nev)')
+      .select('rating, szoveg, user_nev, letrehozas_datum, updated_at, palyas(nev)')
       .eq('helyszin_id', helyszinId)
       .order('letrehozas_datum', { ascending: false })
       .limit(3);
@@ -545,15 +568,18 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
   var countText = totalCount + ' értékelés alapján';
 
   var previewHTML = previewData.map(function(r) {
-    var palyaNev = r.palyas ? (r.palyas.nev || '') : '';
-    var datum = r.letrehozas_datum
+    var palyaNev   = r.palyas ? (r.palyas.nev || '') : '';
+    var nev        = spFormatNev(r.user_nev);
+    var datum      = r.letrehozas_datum
       ? new Date(r.letrehozas_datum).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' })
       : '';
+    var updatedStr = spFmtUpdated(r.letrehozas_datum, r.updated_at);
     return '<div class="sh-review-preview">' +
       '<div class="sh-review-preview-header">' +
         '<div class="sh-review-stars-sm">' + shStars(r.rating) + '</div>' +
-        '<span class="sh-review-date">' + datum + '</span>' +
+        '<span class="sh-review-date">' + datum + (updatedStr ? ' · ' + updatedStr : '') + '</span>' +
       '</div>' +
+      '<span class="sh-review-user-sm">' + esc(nev) + '</span>' +
       (palyaNev ? '<div class="sh-review-palya-nev">' + esc(palyaNev) + '</div>' : '') +
       (r.szoveg ? '<div class="sh-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
     '</div>';
