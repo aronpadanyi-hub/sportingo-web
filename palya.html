@@ -2441,7 +2441,7 @@ async function spfMount(origPalya) {
       // Badge szöveg
       var badgeText = '';
       if (ad && ad.akcio_tipus === 'szazalek' && ad.ertek) badgeText = '-' + ad.ertek + '%';
-      else if (ad && ad.akcio_tipus === 'fix_kedvezmeny' && ad.ertek) badgeText = '-' + parseInt(ad.ertek) + 'Ft';
+      else if (ad && ad.akcio_tipus === 'fix_kedvezmeny' && ad.ertek) badgeText = '-' + parseInt(ad.ertek) + ' Ft';
       else badgeText = '🔥';
 
       // Idősáv percben
