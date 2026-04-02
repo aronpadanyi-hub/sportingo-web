@@ -2244,7 +2244,7 @@ async function spfMount(origPalya) {
       var ertekStr = '';
       if (a.akcio_tipus === 'szazalek' && a.ertek)
         ertekStr = '-' + a.ertek + '% kedvezmény';
-      else if (a.akcio_tipus === 'fix_osszeg' && a.ertek)
+      else if (a.akcio_tipus === 'fix_kedvezmeny' && a.ertek)
         ertekStr = '-' + parseInt(a.ertek).toLocaleString('hu') + ' Ft kedvezmény';
       else if (a.akcio_tipus === 'fix_ar' && a.ertek)
         ertekStr = 'Akciós ár: ' + parseInt(a.ertek).toLocaleString('hu') + ' Ft/óra';
@@ -2258,7 +2258,7 @@ async function spfMount(origPalya) {
       if (badgeEl) {
         if (a.akcio_tipus === 'szazalek' && a.ertek)
           badgeEl.textContent = '🔥 -' + a.ertek + '%';
-        else if (a.akcio_tipus === 'fix_osszeg' && a.ertek)
+        else if (a.akcio_tipus === 'fix_kedvezmeny' && a.ertek)
           badgeEl.textContent = '🔥 -' + parseInt(a.ertek).toLocaleString('hu') + ' Ft';
         else if (a.akcio_tipus === 'last_minute')
           badgeEl.textContent = '⚡ Last minute';
@@ -3047,7 +3047,7 @@ async function loadAkcioGlobal(palyaId) {
 
     var ertekStr = '';
     if (a.akcio_tipus === 'szazalek' && a.ertek) ertekStr = '-' + a.ertek + '% kedvezmény';
-    else if (a.akcio_tipus === 'fix_osszeg' && a.ertek) ertekStr = '-' + parseInt(a.ertek).toLocaleString('hu') + ' Ft kedvezmény';
+    else if (a.akcio_tipus === 'fix_kedvezmeny' && a.ertek) ertekStr = '-' + parseInt(a.ertek).toLocaleString('hu') + ' Ft kedvezmény';
     else if (a.akcio_tipus === 'fix_ar' && a.ertek) ertekStr = 'Akciós ár: ' + parseInt(a.ertek).toLocaleString('hu') + ' Ft/óra';
     else if (a.akcio_tipus === 'last_minute') ertekStr = 'Last minute akció!';
     else ertekStr = 'Akció elérhető!';
