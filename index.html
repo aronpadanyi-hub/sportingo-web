@@ -1269,10 +1269,6 @@
     _cancelTargetId = null;
   }
 
-  // Globális elérhetőség az inline onclick-hez (IIFE miatt szükséges)
-  window.sfdConfirmCancel = sfdConfirmCancel;
-  window.sfdCloseConfirm  = sfdCloseConfirm;
-
   async function sfdDoCancel() {
     if (!_cancelTargetId) return;
     const id = _cancelTargetId;
@@ -1438,7 +1434,7 @@
     if (!currentUser || !list) return;
     list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
     const { data, error } = await sb.from('foglalasok')
-      .select('*,palyas(nev,helyszin_nev,sportag,slug)')
+      .select('*,palyas(nev,helyszin_nev,sportag,slug),idopontok(datum)')
       .eq('ugyfel_email', currentUser.email)
       .order('created_at', { ascending: false });
     if (error || !data) {
@@ -1480,7 +1476,17 @@
       const emoji = sportEmoji[sport] || '🏟';
       const safe  = ['varakozik','jovahagyva','elutasitva','lemondva'].includes(f.statusz) ? f.statusz : '';
       const slug  = f.palyas?.slug || '';
-      const date  = f.created_at ? new Date(f.created_at).toLocaleDateString('hu-HU', { year:'numeric', month:'short', day:'numeric' }) : '';
+      // Tényleges foglalt dátum és időintervallum megjelenítése (nem a created_at)
+      const foglDatum = f.idopontok?.datum || null;
+      let dateStr = '';
+      if (foglDatum && f.idopont_kezdes && f.idopont_veg) {
+        const d = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
+        dateStr = `${d} ${f.idopont_kezdes}–${f.idopont_veg}`;
+      } else if (foglDatum) {
+        dateStr = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
+      } else if (f.created_at) {
+        dateStr = new Date(f.created_at).toLocaleDateString('hu-HU', { year:'numeric', month:'short', day:'numeric' });
+      }
       const canCancel = f.statusz === 'varakozik' || f.statusz === 'jovahagyva';
       const cancelBtn = canCancel
         ? `<button class="sfd-cancel-btn" onclick="sfdConfirmCancel('${f.id}')">🚫 Foglalás lemondása</button>`
@@ -1490,7 +1496,7 @@
           <div class="sfd-booking-name">${emoji} ${spEsc(nev)}</div>
           <span class="sfd-status-pill ${safe}">${statuszLabel[f.statusz] || f.statusz}</span>
         </div>
-        <div class="sfd-booking-meta">${date ? '📅 ' + date : ''} ${sport ? '· ' + sport : ''}</div>
+        <div class="sfd-booking-meta">${dateStr ? '📅 ' + dateStr : ''} ${sport ? '· ' + sport : ''}</div>
         ${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" class="sfd-booking-link">Pálya megtekintése ↗</a>` : ''}
         ${cancelBtn}
       </div>`;
