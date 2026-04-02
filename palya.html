@@ -898,6 +898,118 @@
       .spf-promo-ertek { font-size: .85rem; }
       .spf-promo-badge { font-size: .68rem; padding: 2px 8px; }
     }
+    /* ══════════════════════════════════════════════════════
+       MOBIL NAPTÁR UX – max-width: 600px
+       CSAK vizuális finomítás, logika érintetlen
+       ══════════════════════════════════════════════════════ */
+    @media (max-width: 600px) {
+
+      /* Booking kártya belső padding csökkentése */
+      .sp-booking-inner { padding: 14px 12px; }
+
+      /* Promo sáv kompaktabb mobilon */
+      #spf-promo-sav { margin-bottom: 10px; }
+
+      /* Naptár fejléc: stack mobilon */
+      .spf-cal-header {
+        padding: 8px 0 10px;
+        gap: 8px;
+      }
+      .spf-week-nav { gap: 6px; }
+
+      /* Hét navigáció gombok: nagyobb tap target */
+      .spf-week-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        font-size: 1.2rem;
+      }
+
+      /* Hét felirat kompaktabb */
+      .spf-week-label {
+        font-size: .82rem;
+        min-width: 110px;
+      }
+
+      /* Legenda: kisebb, tömörebb */
+      .spf-cal-legend {
+        font-size: .68rem;
+        gap: 7px;
+      }
+      .spf-legend-dot { width: 8px; height: 8px; }
+
+      /* Grid: kisebb időoszlop, kisebb min-width */
+      .spf-cal-grid {
+        grid-template-columns: 34px repeat(7, 1fr);
+        min-width: 320px;
+      }
+
+      /* Nap fejléc: kompaktabb */
+      .spf-cal-dayhdr {
+        padding: 7px 2px 6px;
+      }
+      .spf-cal-dayhdr .dn {
+        font-size: .58rem;
+        letter-spacing: .3px;
+      }
+      .spf-cal-dayhdr .dd {
+        font-size: .8rem;
+        margin-top: 1px;
+      }
+      /* Today kör mobilon kicsit kisebb */
+      .spf-cal-dayhdr.today .dd {
+        width: 22px;
+        height: 22px;
+        font-size: .72rem;
+      }
+
+      /* Időcímke: kisebb */
+      .spf-time-lbl {
+        font-size: .52rem;
+        padding-right: 4px;
+      }
+
+      /* Szabad slot: erősebb kontrast mobilon */
+      .spf-slot.open {
+        background: rgba(45,191,126,.16);
+      }
+      .spf-slot.open:hover,
+      .spf-slot.open:active {
+        background: rgba(45,191,126,.32);
+      }
+
+      /* Foglalt slot: kicsit hangsúlyosabb */
+      .spf-slot.booked::after {
+        background: rgba(245,158,11,.22);
+      }
+
+      /* Kiválasztott slot: erősebb gradient */
+      .spf-slot.selected {
+        background: linear-gradient(180deg,rgba(26,143,193,.9),rgba(45,191,126,.9));
+      }
+
+      /* Akcio slot mobilon */
+      .spf-slot.akcio-slot {
+        background: rgba(45,191,126,.18) !important;
+      }
+
+      /* Kiválasztott summary bar */
+      .spf-selected-bar {
+        padding: 10px 12px;
+        margin-top: 10px;
+      }
+      .spf-slot-tag {
+        font-size: .7rem;
+        padding: 3px 10px;
+      }
+      .spf-dur-label { font-size: .72rem; }
+
+      /* Tovább gomb mobilon full-width, kicsit kisebb */
+      .spf-tovabb-btn {
+        padding: 13px;
+        font-size: .9rem;
+      }
+    }
     /* ── Akciós slot jelölés ── */
     .spf-slot.akcio-slot { background: rgba(45,191,126,.13) !important; }
     .spf-slot.akcio-slot:hover { background: rgba(45,191,126,.25) !important; }
