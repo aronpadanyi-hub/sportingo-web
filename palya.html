@@ -2116,6 +2116,7 @@ async function init() {
 
       <div class="sp-body">
         <div class="sp-main">
+          <div id="spf-promo-sav-global"></div>
           ${metaItems.length ? `<div class="sp-card"><h2>📊 Alapadatok</h2><div class="sp-meta-grid">${metaHTML}</div></div>` : ''}
           ${leirasHTML}
           ${terképHTML}
@@ -2139,8 +2140,13 @@ async function init() {
   // Review blokk betöltése
   loadPalyaReviews(palya.id);
 
-  // Ha van naptár, mountoljuk
-  if (hasNaptar) spfMount(palya);
+  // Ha van naptár, mountoljuk (loadAkciok a spfMount-on belül fut)
+  if (hasNaptar) {
+    spfMount(palya);
+  } else if (palya.id) {
+    // Naptár nélküli pályánál is betöltjük az akciós sávot
+    loadAkcioGlobal(palya.id);
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -2170,7 +2176,8 @@ async function spfMount(origPalya) {
   // Aktív akció logika: aktiv=true ÉS datum_ig >= ma (vagy nincs datum_ig)
   // ÉS datum_tol <= ma (vagy nincs datum_tol) → most érvényes
   async function loadAkciok() {
-    var promosav = document.getElementById('spf-promo-sav');
+    var promosav = document.getElementById('spf-promo-sav') ||
+                   document.getElementById('spf-promo-sav-global');
     if (!promosav) return;
     promosav.classList.remove('lathato');
     SPF.aktioNapok = null;  // highlight reset
@@ -2895,6 +2902,70 @@ function initFavButton() {
   loadFavState();
 }
 
+
+
+// ── AKCIÓS PROMO SÁV – naptár nélküli pályáknál ────────────
+async function loadAkcioGlobal(palyaId) {
+  var promosav = document.getElementById('spf-promo-sav-global');
+  if (!promosav || !palyaId) return;
+
+  var todayStr = new Date().toISOString().split('T')[0];
+  var sb = window._spSb;
+  if (!sb) return;
+
+  try {
+    var res = await sb.from('akciok')
+      .select('id, nev, akcio_tipus, ertek, datum_tol, datum_ig, idosav_kezdes, idosav_veg')
+      .eq('palya_id', palyaId)
+      .eq('aktiv', true);
+
+    var akciok = (res.data || []).filter(function(a) {
+      if (a.datum_ig  && a.datum_ig  < todayStr) return false;
+      if (a.datum_tol && a.datum_tol > todayStr) return false;
+      return true;
+    });
+    if (!akciok.length) return;
+
+    akciok.sort(function(x, y) {
+      var ex = x.ertek != null ? parseFloat(x.ertek) : -Infinity;
+      var ey = y.ertek != null ? parseFloat(y.ertek) : -Infinity;
+      return ey - ex;
+    });
+    var a = akciok[0];
+
+    var ertekStr = '';
+    if (a.akcio_tipus === 'szazalek' && a.ertek) ertekStr = '-' + a.ertek + '% kedvezmény';
+    else if (a.akcio_tipus === 'fix_osszeg' && a.ertek) ertekStr = '-' + parseInt(a.ertek).toLocaleString('hu') + ' Ft kedvezmény';
+    else if (a.akcio_tipus === 'fix_ar' && a.ertek) ertekStr = 'Akciós ár: ' + parseInt(a.ertek).toLocaleString('hu') + ' Ft/óra';
+    else if (a.akcio_tipus === 'last_minute') ertekStr = 'Last minute akció!';
+    else ertekStr = 'Akció elérhető!';
+
+    var badgeStr = (a.akcio_tipus === 'szazalek' && a.ertek) ? '🔥 -' + a.ertek + '%'
+                 : (a.akcio_tipus === 'last_minute') ? '⚡ Last minute' : '🔥 Akció';
+
+    var meta = [];
+    var datTol = a.datum_tol || '', datIg = a.datum_ig || '';
+    if (datTol && datIg) meta.push('📅 ' + datTol + ' – ' + datIg);
+    else if (datIg)      meta.push('📅 ' + datIg + '-ig');
+    else if (datTol)     meta.push('📅 ' + datTol + '-tól visszavonásig');
+    else                 meta.push('📅 Visszavonásig érvényes');
+    if (a.idosav_kezdes && a.idosav_veg)
+      meta.push('🕐 ' + a.idosav_kezdes.substring(0,5) + '–' + a.idosav_veg.substring(0,5));
+
+    promosav.innerHTML =
+      '<div id="spf-promo-sav" class="lathato">' +
+        '<div class="spf-promo-icon">🔥</div>' +
+        '<div class="spf-promo-tartalom">' +
+          '<div class="spf-promo-badge">' + badgeStr + '</div>' +
+          '<div class="spf-promo-ertek">' + esc(ertekStr) + '</div>' +
+          '<div class="spf-promo-nev">' + esc(a.nev || '') + '</div>' +
+          '<div class="spf-promo-meta">' + meta.join('  ') + '</div>' +
+        '</div>' +
+      '</div>';
+
+    console.log('[Akciók global] palyaId:', palyaId, 'akció:', a.nev, 'ertek:', a.ertek);
+  } catch(e) { /* fail-closed */ }
+}
 
 // ── REVIEW MEGJELENÍTÉS – PÁLYAOLDAL ────────────────────────
 // Névformázó: keresztnév [+ monogram] – soha nem jelenik meg teljes név
