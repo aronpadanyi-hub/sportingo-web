@@ -3006,24 +3006,13 @@ async function loadPalyaReviews(palyaId) {
   var atlag = (sum / allRatings.length).toFixed(1);
 
   // ── Preview lista: top 3 legfrissebb, szövegesek előnyben ──
-  // Egyszerű, megbízható: updated_at DESC, limit 5 → szövegeset előre rendezzük JS-ben
-  // updated_at-ra rendezünk ha van, különben letrehozas_datum
   var listRes = await sb.from('ertekelesek')
-    .select('id, rating, szoveg, cimkek, tulaj_valasz, user_nev, letrehozas_datum, updated_at')
+    .select('id, rating, szoveg, cimkek, tulaj_valasz, letrehozas_datum')
     .eq('palya_id', palyaId)
     .order('letrehozas_datum', { ascending: false })
     .limit(5);
 
-  // Ha updated_at nem létezik a táblában, a query hibát dob – fallback
   var allItems = listRes.data || [];
-  if (!allItems.length && listRes.error) {
-    var listRes2 = await sb.from('ertekelesek')
-      .select('id, rating, szoveg, cimkek, tulaj_valasz, user_nev, letrehozas_datum')
-      .eq('palya_id', palyaId)
-      .order('letrehozas_datum', { ascending: false })
-      .limit(5);
-    allItems = listRes2.data || [];
-  }
   // Szövegesek előre, maradék után – max 3 elemet mutatunk
   var withText    = allItems.filter(function(r){ return r.szoveg && r.szoveg.trim(); });
   var withoutText = allItems.filter(function(r){ return !r.szoveg || !r.szoveg.trim(); });
