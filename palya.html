@@ -1918,7 +1918,9 @@ const SPF_SLOTS = spfGenSlots();
 
 // ── MAIN INIT ──────────────────────────────────────────
 async function init() {
+  console.log('[INIT DEBUG 0] init() elindult');
   const slug = getSlug();
+  console.log('[INIT DEBUG 1] slug:', slug);
   if (!slug) { render404(); return; }
 
   let palya;
@@ -2153,6 +2155,7 @@ async function init() {
   loadPalyaReviews(palya.id);
 
   // Ha van naptár, mountoljuk (loadAkciok a spfMount-on belül fut)
+  console.log('[INIT DEBUG 2] hasNaptar:', hasNaptar, '| palya.id:', palya && palya.id);
   if (hasNaptar) {
     spfMount(palya);
   } else if (palya.id) {
