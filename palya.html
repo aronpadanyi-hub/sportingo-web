@@ -2157,7 +2157,10 @@ async function init() {
     spfMount(palya);
   } else if (palya.id) {
     // Naptár nélküli pályánál is betöltjük az akciós sávot
+    console.log('[AKCIO DEBUG 0] hasNaptar=false, loadAkcioGlobal hívás palya.id:', palya.id);
     loadAkcioGlobal(palya.id);
+  } else {
+    console.log('[AKCIO DEBUG 0] FIGYELEM: palya.id hiányzik!', palya);
   }
 }
 
@@ -3014,11 +3017,14 @@ function initFavButton() {
 
 // ── AKCIÓS PROMO SÁV – naptár nélküli pályáknál ────────────
 async function loadAkcioGlobal(palyaId) {
+  console.log('[AKCIO DEBUG 1] loadAkcioGlobal hívva, palyaId:', palyaId);
   var promosav = document.getElementById('spf-promo-sav-global');
-  if (!promosav || !palyaId) return;
+  console.log('[AKCIO DEBUG 2] promosav DOM elem:', promosav ? 'MEGVAN' : 'HIÁNYZIK');
+  if (!promosav || !palyaId) { console.log('[AKCIO DEBUG] KILÉP: promosav vagy palyaId hiányzik'); return; }
 
   var todayStr = new Date().toISOString().split('T')[0];
   var sb = window._spSb;
+  console.log('[AKCIO DEBUG 3] todayStr:', todayStr, '| sb kliens:', sb ? 'MEGVAN' : 'HIÁNYZIK');
   if (!sb) return;
 
   try {
@@ -3027,11 +3033,16 @@ async function loadAkcioGlobal(palyaId) {
       .eq('palya_id', palyaId)
       .eq('aktiv', true);
 
+    console.log('[AKCIO DEBUG 4] query eredmény:', res.data ? res.data.length + ' sor' : 'null', '| hiba:', res.error || 'nincs');
+    if (res.data) res.data.forEach(function(a, i) {
+      console.log('[AKCIO DEBUG 4.' + i + ']', a.nev, '| aktiv:', a.aktiv, '| datum_tol:', a.datum_tol, '| datum_ig:', a.datum_ig);
+    });
     var akciok = (res.data || []).filter(function(a) {
       if (a.datum_ig  && a.datum_ig  < todayStr) return false;
       if (a.datum_tol && a.datum_tol > todayStr) return false;
       return true;
     });
+    console.log('[AKCIO DEBUG 5] szűrés után aktív akciók:', akciok.length);
     if (!akciok.length) return;
 
     akciok.sort(function(x, y) {
