@@ -2183,15 +2183,25 @@ async function spfMount(origPalya) {
     var todayStr = spfFmtDate(new Date());
 
     try {
+      // Egyszerű query: aktiv + palya_id – a datum szűrés JS oldalon
+      // (A láncoló .or() hívások Supabase JS-ben csak az utolsót érvényesítik)
       var res = await sb2.from('akciok')
         .select('id, nev, akcio_tipus, ertek, datum_tol, datum_ig, nap_tipus, idosav_kezdes, idosav_veg')
         .eq('palya_id', palyaId)
-        .eq('aktiv', true)
-        .or('datum_ig.is.null,datum_ig.gte.' + todayStr)  // nem járt le
-        .or('datum_tol.is.null,datum_tol.lte.' + todayStr); // már elkezdődött
+        .eq('aktiv', true);
 
-      var akciok = res.data || [];
+      // Datum szűrés JS oldalon: nem járt le ÉS már elkezdődött
+      var akciok = (res.data || []).filter(function(a) {
+        if (a.datum_ig  && a.datum_ig  < todayStr) return false; // lejárt
+        if (a.datum_tol && a.datum_tol > todayStr) return false; // még nem kezdődött
+        return true;
+      });
       if (!akciok.length) return;
+
+      // DEBUG: konzolba írjuk az akció lekérés eredményét
+      console.log('[Akciók debug] palyaId:', palyaId, 'today:', todayStr,
+        'db adat:', (res.data||[]).length, 'aktív (szűrt):', akciok.length,
+        'error:', res.error);
 
       // Determinisztikus kiválasztás: 1) legnagyobb ertek DESC, 2) legkorábbi datum_tol, 3) id DESC
       akciok.sort(function(x, y) {
