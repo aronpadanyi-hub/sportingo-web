@@ -2198,108 +2198,113 @@ async function spfMount(origPalya) {
                    document.getElementById('spf-promo-sav-global');
     if (!promosav) return;
     promosav.classList.remove('lathato');
-    SPF.aktioNapok = null;  // highlight reset
+    SPF.aktioNapok = null;
+    SPF.aktioAdat  = null;
     spfRenderAkcioHighlight();
 
-    // Az aktív pálya ID-ja
     var palyaId = SPF.csoportPalyak[SPF.aktivIdx] && SPF.csoportPalyak[SPF.aktivIdx].id;
     if (!palyaId) return;
 
     var todayStr = spfFmtDate(new Date());
 
     try {
-      // Egyszerű query: aktiv + palya_id – a datum szűrés JS oldalon
-      // (A láncoló .or() hívások Supabase JS-ben csak az utolsót érvényesítik)
       var res = await sb2.from('akciok')
         .select('id, nev, akcio_tipus, ertek, datum_tol, datum_ig, nap_tipus, idosav_kezdes, idosav_veg')
         .eq('palya_id', palyaId)
         .eq('aktiv', true);
 
-      // Datum szűrés JS oldalon: nem járt le ÉS már elkezdődött
-      var akciok = (res.data || []).filter(function(a) {
-        if (a.datum_ig  && a.datum_ig  < todayStr) return false; // lejárt
-        if (a.datum_tol && a.datum_tol > todayStr) return false; // még nem kezdődött
+      var osszes = (res.data || []).filter(function(a) {
+        // Lejárt → kizárjuk mindkét célból
+        if (a.datum_ig && a.datum_ig < todayStr) return false;
         return true;
       });
-      if (!akciok.length) return;
 
-      // DEBUG: konzolba írjuk az akció lekérés eredményét
-      console.log('[Akciók debug] palyaId:', palyaId, 'today:', todayStr,
-        'db adat:', (res.data||[]).length, 'aktív (szűrt):', akciok.length,
-        'error:', res.error);
+      console.log('[AKCIO DEBUG] összes lekért akció:', (res.data||[]).length);
 
-      // Determinisztikus kiválasztás: 1) legnagyobb ertek DESC, 2) legkorábbi datum_tol, 3) id DESC
-      akciok.sort(function(x, y) {
-        var ex = x.ertek != null ? parseFloat(x.ertek) : -Infinity;
-        var ey = y.ertek != null ? parseFloat(y.ertek) : -Infinity;
-        if (ey !== ex) return ey - ex;                           // 1. nagyobb ertek előre
-        var dx = x.datum_tol || '9999-12-31';
-        var dy = y.datum_tol || '9999-12-31';
-        if (dx !== dy) return dx < dy ? -1 : 1;                 // 2. korábbi datum_tol előre
-        return x.id < y.id ? 1 : x.id > y.id ? -1 : 0;         // 3. nagyobb id (frissebb) előre
+      // A) promoAkciok: csak a ma aktív (datum_tol <= ma)
+      var promoAkciok = osszes.filter(function(a) {
+        if (a.datum_tol && a.datum_tol > todayStr) return false;
+        return true;
       });
-      var a = akciok[0];
+      console.log('[AKCIO DEBUG] promo-ra aktív:', promoAkciok.length);
 
-      // Érték megjelenítés
-      var ertekStr = '';
-      if (a.akcio_tipus === 'szazalek' && a.ertek)
-        ertekStr = '-' + a.ertek + '% kedvezmény';
-      else if (a.akcio_tipus === 'fix_kedvezmeny' && a.ertek)
-        ertekStr = '-' + parseInt(a.ertek).toLocaleString('hu') + ' Ft kedvezmény';
-      else
-        ertekStr = 'Akció elérhető!';
+      // B) highlightAkciok: nem lejárt (jövőbeli is mehet)
+      var highlightAkciok = osszes;
+      console.log('[AKCIO DEBUG] highlight-ra alkalmas:', highlightAkciok.length);
 
-      // Badge szöveg
-      var badgeEl = document.getElementById('spf-promo-badge');
-      if (badgeEl) {
+      // Determinisztikus rendezés mindkét listán
+      function sortAkciok(list) {
+        return list.slice().sort(function(x, y) {
+          var ex = x.ertek != null ? parseFloat(x.ertek) : -Infinity;
+          var ey = y.ertek != null ? parseFloat(y.ertek) : -Infinity;
+          if (ey !== ex) return ey - ex;
+          var dx = x.datum_tol || '9999-12-31';
+          var dy = y.datum_tol || '9999-12-31';
+          if (dx !== dy) return dx < dy ? -1 : 1;
+          return x.id < y.id ? 1 : x.id > y.id ? -1 : 0;
+        });
+      }
+
+      // ── PROMO SÁV: csak ma aktív akció ──────────────────────
+      if (promoAkciok.length) {
+        var a = sortAkciok(promoAkciok)[0];
+
+        var ertekStr = '';
         if (a.akcio_tipus === 'szazalek' && a.ertek)
-          badgeEl.textContent = '🔥 -' + a.ertek + '%';
+          ertekStr = '-' + a.ertek + '% kedvezmény';
         else if (a.akcio_tipus === 'fix_kedvezmeny' && a.ertek)
-          badgeEl.textContent = '🔥 -' + parseInt(a.ertek).toLocaleString('hu') + ' Ft';
+          ertekStr = '-' + parseInt(a.ertek).toLocaleString('hu') + ' Ft kedvezmény';
         else
-          badgeEl.textContent = '🔥 Akció';
+          ertekStr = 'Akció elérhető!';
+
+        var badgeEl = document.getElementById('spf-promo-badge');
+        if (badgeEl) {
+          if (a.akcio_tipus === 'szazalek' && a.ertek)
+            badgeEl.textContent = '🔥 -' + a.ertek + '%';
+          else if (a.akcio_tipus === 'fix_kedvezmeny' && a.ertek)
+            badgeEl.textContent = '🔥 -' + parseInt(a.ertek).toLocaleString('hu') + ' Ft';
+          else
+            badgeEl.textContent = '🔥 Akció';
+        }
+
+        var metaReszek = [];
+        var datTol = a.datum_tol || '';
+        var datIg  = a.datum_ig  || '';
+        if (datTol && datIg)       metaReszek.push('📅 ' + datTol + ' – ' + datIg);
+        else if (datIg)            metaReszek.push('📅 ' + datIg + '-ig');
+        else if (datTol)           metaReszek.push('📅 ' + datTol + '-tól visszavonásig');
+        else                       metaReszek.push('📅 Visszavonásig érvényes');
+        if (a.idosav_kezdes && a.idosav_veg)
+          metaReszek.push('🕐 ' + a.idosav_kezdes.substring(0,5) + '–' + a.idosav_veg.substring(0,5));
+
+        document.getElementById('spf-promo-ertek').textContent = ertekStr;
+        document.getElementById('spf-promo-nev').textContent = a.nev || '';
+        document.getElementById('spf-promo-meta').textContent = metaReszek.join('  ');
+        promosav.classList.add('lathato');
       }
 
-      // Meta sor finomítás: datum_ig hiány → "Visszavonásig"
-      var metaReszek = [];
-      var datTol = a.datum_tol || '';
-      var datIg  = a.datum_ig  || '';
-      if (datTol && datIg)
-        metaReszek.push('📅 ' + datTol + ' – ' + datIg);
-      else if (datIg)
-        metaReszek.push('📅 ' + datIg + '-ig');
-      else if (datTol)
-        metaReszek.push('📅 ' + datTol + '-tól visszavonásig');
-      else
-        metaReszek.push('📅 Visszavonásig érvényes');
-
-      if (a.idosav_kezdes && a.idosav_veg)
-        metaReszek.push('🕐 ' + a.idosav_kezdes.substring(0,5) + '–' + a.idosav_veg.substring(0,5));
-
-      // Feltöltés
-      document.getElementById('spf-promo-ertek').textContent = ertekStr;
-      document.getElementById('spf-promo-nev').textContent = a.nev || '';
-      document.getElementById('spf-promo-meta').textContent = metaReszek.join('  ');
-      promosav.classList.add('lathato');
-
-      // Naptár highlight: teljes akció tárolása (slot szintű jelöléshez is)
-      SPF.aktioNapok = null;
-      SPF.aktioAdat  = null;
-      if (datTol && datIg) {
-        SPF.aktioNapok = { tol: datTol, ig: datIg };
-        SPF.aktioAdat  = {
-          tol: datTol, ig: datIg,
-          idosav_kezdes: a.idosav_kezdes || null,
-          idosav_veg:    a.idosav_veg    || null,
-          ertek:         a.ertek         || null,
-          akcio_tipus:   a.akcio_tipus   || null
-        };
+      // ── NAPTÁR HIGHLIGHT: jövőbeli akció is mehet ───────────
+      if (highlightAkciok.length) {
+        var h = sortAkciok(highlightAkciok)[0];
+        var hTol = h.datum_tol || '';
+        var hIg  = h.datum_ig  || '';
+        console.log('[AKCIO DEBUG] kiválasztott highlight akció:', h.nev, '| tol:', hTol, '| ig:', hIg);
+        if (hTol && hIg) {
+          SPF.aktioNapok = { tol: hTol, ig: hIg };
+          SPF.aktioAdat  = {
+            tol: hTol, ig: hIg,
+            idosav_kezdes: h.idosav_kezdes || null,
+            idosav_veg:    h.idosav_veg    || null,
+            ertek:         h.ertek         || null,
+            akcio_tipus:   h.akcio_tipus   || null
+          };
+        }
       }
-      // Ha a naptár már renderelt, frissítjük a highlight-ot
+
       spfRenderAkcioHighlight();
 
     } catch(e) {
-      // Fail-closed: hiba esetén a promo sáv nem jelenik meg
+      console.warn('[AKCIO DEBUG] hiba:', e);
     }
   }
 
