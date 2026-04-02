@@ -1010,6 +1010,16 @@
         font-size: .9rem;
       }
     }
+    /* ── Sticky időoszlop mobilon ── */
+    @media (max-width: 768px) {
+      .spf-time-lbl, .spf-cal-corner {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        /* Háttér: ne látsszon át a scrollozó tartalom */
+        background: #fafcfe;
+      }
+    }
     /* ── Akciós slot jelölés ── */
     .spf-slot.akcio-slot { background: rgba(45,191,126,.13) !important; }
     .spf-slot.akcio-slot:hover { background: rgba(45,191,126,.25) !important; }
