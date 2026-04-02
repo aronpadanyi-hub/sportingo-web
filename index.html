@@ -1525,13 +1525,15 @@
       if (isUpdate) {
         var upd = await sb.from('ertekelesek').update({
           rating: _sfdRv.rating, szoveg: szoveg || null,
-          cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null
+          cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
+          user_nev: (currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||null)
         }).eq('id', _sfdRv.meglevoId).eq('user_id', currentUser.id);
         dbErr = upd.error;
       } else {
         var ins = await sb.from('ertekelesek').insert({
           foglalas_id: _sfdRv.foglalasId, palya_id: _sfdRv.palyaId,
           helyszin_id: _sfdRv.helyszinId || null, user_id: currentUser.id,
+          user_nev: (currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||null),
           rating: _sfdRv.rating, szoveg: szoveg || null,
           cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null
         });
@@ -1543,7 +1545,8 @@
           if (exist.data && exist.data.id) {
             var upd2 = await sb.from('ertekelesek').update({
               rating: _sfdRv.rating, szoveg: szoveg || null,
-              cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null
+              cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
+              user_nev: (currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||null)
             }).eq('id', exist.data.id).eq('user_id', currentUser.id);
             dbErr = upd2.error;
           }
