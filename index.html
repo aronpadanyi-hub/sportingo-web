@@ -225,81 +225,14 @@
       .sp-confirm-actions { flex-direction: column-reverse; }
       .sp-confirm-cancel-btn, .sp-confirm-ok-btn { width: 100%; text-align: center; }
     }
-
-    /* ── Review gomb a drawerben ── */
-    .sfd-review-btn {
-      display: inline-flex; align-items: center; gap: 5px;
-      margin-top: 6px; padding: 4px 11px;
-      background: transparent;
-      border: 1.5px solid rgba(26,143,193,.35);
-      border-radius: 8px; color: #1a8fc1;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: .7rem; font-weight: 700; cursor: pointer;
-      transition: all .2s;
-    }
-    .sfd-review-btn:hover { background: rgba(26,143,193,.07); border-color: #1a8fc1; }
-    .sfd-review-already {
-      display: inline-block; margin-top: 6px; padding: 4px 11px;
-      font-size: .7rem; font-weight: 700; color: #64748b;
-      border: 1.5px solid #e4eef5; border-radius: 8px;
-    }
-    /* ── Véleményeim tab ── */
-    .sfd-rv-card {
-      background: white;
-      border: 1.5px solid #e8f0f5;
-      border-radius: 14px;
-      padding: 16px 18px;
-      margin-bottom: 12px;
-      transition: box-shadow .18s;
-    }
-    .sfd-rv-card:last-child { margin-bottom: 0; }
-    .sfd-rv-card:hover { box-shadow: 0 4px 16px rgba(10,22,40,.07); }
-    .sfd-rv-card-head {
-      display: flex; align-items: flex-start;
-      justify-content: space-between; gap: 10px;
-      margin-bottom: 8px;
-    }
-    .sfd-rv-palya {
-      font-size: .88rem; font-weight: 800;
-      color: #0a1628; line-height: 1.2;
-    }
-    .sfd-rv-helyszin {
-      font-size: .73rem; color: #6b8a9a;
-      font-weight: 500; margin-top: 2px;
-    }
-    .sfd-rv-meta {
-      display: flex; align-items: center;
-      gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
-    }
-    .sfd-rv-stars { display: flex; gap: 2px; }
-    .sfd-rv-star { font-size: .82rem; color: #f59e0b; }
-    .sfd-rv-star.e { color: #dde8f0; }
-    .sfd-rv-date { font-size: .7rem; color: #b0bec5; font-weight: 500; }
-    .sfd-rv-szoveg {
-      font-size: .82rem; color: #3a5060; line-height: 1.6;
-      margin-bottom: 8px;
-      display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .sfd-rv-cimkek { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-    .sfd-rv-cimke {
-      font-size: .68rem; font-weight: 700; color: #4a7c8e;
-      background: #f0f7fb; border: 1px solid #d0e8f2;
-      padding: 2px 9px; border-radius: 20px;
-    }
-    .sfd-rv-edit-btn {
+    /* ── Review trust signal a listaoldali kártyán ── */
+    .sp-card-review {
       display: inline-flex; align-items: center; gap: 4px;
-      padding: 5px 13px; font-size: .75rem; font-weight: 700;
-      color: #1a8fc1; background: rgba(26,143,193,.07);
-      border: 1.5px solid rgba(26,143,193,.25);
-      border-radius: 8px; cursor: pointer;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      transition: all .18s;
+      font-size: .75rem; font-weight: 700; color: #3a5060;
     }
-    .sfd-rv-edit-btn:hover {
-      background: rgba(26,143,193,.13);
-      border-color: #1a8fc1;
-    }
+    .sp-card-review-star { color: #f59e0b; font-size: .8rem; }
+    .sp-card-review-score { color: #0a1628; }
+    .sp-card-review-count { color: #94a3b8; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -833,35 +766,6 @@
 
 <!-- DRAWER HTML -->
 
-
-<div id="sfd-review-modal-overlay" style="position:fixed;inset:0;background:rgba(10,22,40,.55);backdrop-filter:blur(4px);z-index:20001;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;">
-  <div id="sfd-review-modal" style="background:white;border-radius:20px;width:440px;max-width:92vw;max-height:90vh;overflow-y:auto;padding:26px 26px 22px;box-shadow:0 30px 80px rgba(0,0,0,.22);">
-    <div style="font-weight:800;font-size:1.05rem;color:#0a1628;margin-bottom:3px;">⭐ Pálya értékelése</div>
-    <div id="sfd-review-palya-nev" style="font-size:.82rem;color:#6b8a9a;margin-bottom:18px;">–</div>
-    <div id="sfd-review-stars" style="display:flex;gap:8px;margin-bottom:8px;">
-      <span class="sfd-rstar" data-val="1" style="font-size:1.8rem;cursor:pointer;color:#d4e8f0;transition:color .15s,transform .15s;user-select:none;">★</span>
-      <span class="sfd-rstar" data-val="2" style="font-size:1.8rem;cursor:pointer;color:#d4e8f0;transition:color .15s,transform .15s;user-select:none;">★</span>
-      <span class="sfd-rstar" data-val="3" style="font-size:1.8rem;cursor:pointer;color:#d4e8f0;transition:color .15s,transform .15s;user-select:none;">★</span>
-      <span class="sfd-rstar" data-val="4" style="font-size:1.8rem;cursor:pointer;color:#d4e8f0;transition:color .15s,transform .15s;user-select:none;">★</span>
-      <span class="sfd-rstar" data-val="5" style="font-size:1.8rem;cursor:pointer;color:#d4e8f0;transition:color .15s,transform .15s;user-select:none;">★</span>
-    </div>
-    <div id="sfd-review-rating-lbl" style="font-size:.8rem;color:#6b8a9a;margin-bottom:14px;min-height:16px;">Kattints egy csillagra az értékeléshez</div>
-    <textarea id="sfd-review-szoveg" style="width:100%;padding:10px 13px;border:1.5px solid #e4eef5;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;resize:vertical;min-height:72px;outline:none;box-sizing:border-box;transition:border-color .2s;margin-bottom:14px;" placeholder="Tapasztalatod a pályáról... (opcionális)"></textarea>
-    <div style="font-size:.75rem;font-weight:700;color:#1a2e3b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Cimkék (max 3)</div>
-    <div id="sfd-review-cimkek" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;">
-      <span class="sfd-rcimke" data-cimke="Jó borítás" style="padding:4px 11px;border-radius:20px;border:1.5px solid #d4e8f0;background:white;font-size:.76rem;font-weight:600;color:#6b8a9a;cursor:pointer;transition:all .18s;user-select:none;">Jó borítás</span>
-      <span class="sfd-rcimke" data-cimke="Könnyű megközelítés" style="padding:4px 11px;border-radius:20px;border:1.5px solid #d4e8f0;background:white;font-size:.76rem;font-weight:600;color:#6b8a9a;cursor:pointer;transition:all .18s;user-select:none;">Könnyű megközelítés</span>
-      <span class="sfd-rcimke" data-cimke="Korrekt ár" style="padding:4px 11px;border-radius:20px;border:1.5px solid #d4e8f0;background:white;font-size:.76rem;font-weight:600;color:#6b8a9a;cursor:pointer;transition:all .18s;user-select:none;">Korrekt ár</span>
-      <span class="sfd-rcimke" data-cimke="Jó hangulat" style="padding:4px 11px;border-radius:20px;border:1.5px solid #d4e8f0;background:white;font-size:.76rem;font-weight:600;color:#6b8a9a;cursor:pointer;transition:all .18s;user-select:none;">Jó hangulat</span>
-      <span class="sfd-rcimke" data-cimke="Tiszta öltöző" style="padding:4px 11px;border-radius:20px;border:1.5px solid #d4e8f0;background:white;font-size:.76rem;font-weight:600;color:#6b8a9a;cursor:pointer;transition:all .18s;user-select:none;">Tiszta öltöző</span>
-    </div>
-    <div id="sfd-review-error" style="font-size:.8rem;color:#ef4444;margin-bottom:8px;display:none;"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;">
-      <button id="sfd-review-cancel-btn" style="padding:9px 16px;background:#f1f5f9;color:#1a2e3b;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;">Mégse</button>
-      <button id="sfd-review-submit-btn" disabled style="padding:9px 18px;background:linear-gradient(135deg,#1a8fc1,#2dbf7e);color:white;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;opacity:.55;">Értékelés küldése</button>
-    </div>
-  </div>
-</div>
 <div id="sp-confirm-modal-overlay">
   <div id="sp-confirm-modal">
     <div class="sp-confirm-icon">⚠️</div>
@@ -911,9 +815,6 @@
       </button>
       <button class="sfd-nav-btn" data-sfd-tab="profil" role="tab">
         <span class="nav-icon">👤</span> Profil
-      </button>
-      <button class="sfd-nav-btn" data-sfd-tab="velemenyek" role="tab">
-        <span class="nav-icon">⭐</span> Véleményeim
       </button>
       <button class="sfd-nav-btn" data-sfd-tab="statisztika" role="tab">
         <span class="nav-icon">📊</span> Statisztika
@@ -1029,14 +930,6 @@
     </div>
 
     <!-- ── STATISZTIKA ── -->
-    <!-- ── VÉLEMÉNYEIM ── -->
-    <div class="sfd-panel" id="sfd-panel-velemenyek">
-      <div class="sfd-section-head">
-        <div class="sfd-section-title">Véleményeim</div>
-      </div>
-      <div id="sfd-velemenyek-list"></div>
-    </div>
-
     <div class="sfd-panel" id="sfd-panel-statisztika">
       <div class="sfd-section-head">
         <div class="sfd-section-title">Személyes statisztika</div>
@@ -1153,10 +1046,40 @@
         for(const sp of PRIO){ const t=jov.find(p=>p.sportag===sp&&p.kep_url); if(t) kepekSportag[sp]=t.kep_url; }
         return {...h, _palyas:jov, _sportok:sportok, _kep:kep, _kepekSportag:kepekSportag};
       }).filter(h=>h._palyas.length>0);
+      // Review összesítő lekérése – helyszín szinten
+      await loadReviewMap(allHelyszinek.map(h=>h.id));
       applyFilters();
     } catch(e) {
       grid.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">⚠️</div><div class="sp-empty-title">Betöltési hiba</div><div class="sp-empty-sub">Kérjük próbáld újra később.</div></div>';
     }
+  }
+
+  // Review aggregáció helyszín szinten – egy külön lekérdezés
+  let reviewMap = {}; // helyszin_id → { atlag, count }
+
+  async function loadReviewMap(helyszinIds) {
+    if (!helyszinIds || !helyszinIds.length) return;
+    try {
+      // Az összes review-t lekérjük csak rating + helyszin_id mezőkkel
+      const rvUrl = SUPABASE_URL + '/rest/v1/ertekelesek?select=helyszin_id,rating&helyszin_id=in.(' +
+        helyszinIds.map(id => encodeURIComponent(id)).join(',') + ')&limit=2000';
+      const rvRes = await fetch(rvUrl, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
+      if (!rvRes.ok) return;
+      const rvData = await rvRes.json();
+      // Aggregáció JS-ben
+      const tmp = {};
+      rvData.forEach(function(r) {
+        if (!r.helyszin_id) return;
+        if (!tmp[r.helyszin_id]) tmp[r.helyszin_id] = { sum: 0, count: 0 };
+        tmp[r.helyszin_id].sum   += r.rating;
+        tmp[r.helyszin_id].count += 1;
+      });
+      reviewMap = {};
+      Object.keys(tmp).forEach(function(id) {
+        var t = tmp[id];
+        reviewMap[id] = { atlag: (t.sum / t.count).toFixed(1), count: t.count };
+      });
+    } catch(e) { /* csendben hibázik, review nélkül fut */ }
   }
 
   document.querySelectorAll('.sp-sportag-btn').forEach(btn=>{
@@ -1215,6 +1138,10 @@
       const badges=sportok.map(s=>`<span class="sp-card-sport-badge">${esc(s)}</span>`).join('');
       const egyPalya=rel.length===1;
       const kep=(activeSport&&h._kepekSportag[activeSport])?h._kepekSportag[activeSport]:h._kep;
+      const rv = reviewMap[h.id];
+      const rvBadge = rv
+        ? `<span class="sp-card-review"><span class="sp-card-review-star">★</span><span class="sp-card-review-score">${rv.atlag}</span><span class="sp-card-review-count">(${rv.count})</span></span>`
+        : '';
       return `<a href="${url}" class="sp-card-link">
         <div class="sp-card">
           <div class="sp-card-thumb">
@@ -1226,6 +1153,7 @@
             ${h.varos?`<div class="sp-card-location">📍 ${esc(h.varos)}</div>`:''}
             <div class="sp-card-footer">
               <div class="${egyPalya?'sp-card-cta':'sp-card-palya-count'}">${egyPalya?'📧 Foglalási kérés küldése':'⚽ '+rel.length+' pálya'}</div>
+              ${rvBadge}
               <div class="sp-card-arrow">→</div>
             </div>
           </div>
@@ -1271,7 +1199,6 @@
   // ── State ──
   let currentUser = null;
   let allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'mind';
-  let sfdPalyaReviewMap = new Map(); // palya_id → {id, rating, szoveg, cimkek}
   const perPage = 10;
   const sportEmoji = { Futball: '⚽', Tenisz: '🎾', Padel: '🎾', Squash: '🟡' };
   const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva', lemondva: '🚫 Lemondva' };
@@ -1341,7 +1268,6 @@
     if (name === 'profil')     loadProfil();
     if (name === 'statisztika') loadStatisztika();
     if (name === 'attekintes') loadAttekintes();
-    if (name === 'velemenyek') loadVelemenyek();
   };
 
   document.querySelectorAll('.sfd-nav-btn').forEach(btn => {
@@ -1389,107 +1315,6 @@
   // Globális elérhetőség az inline onclick-hez (IIFE miatt szükséges)
   window.sfdConfirmCancel = sfdConfirmCancel;
   window.sfdCloseConfirm  = sfdCloseConfirm;
-  window.sfdNyitReview    = sfdNyitReview;
-  window.sfdZarjReview    = sfdZarjReview;
-  // ── VÉLEMÉNYEIM TAB ─────────────────────────────────────────
-  async function loadVelemenyek() {
-    var el = document.getElementById('sfd-velemenyek-list');
-    if (!el || !currentUser) return;
-
-    el.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
-
-    var res = await sb.from('ertekelesek')
-      .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at, palyas(nev, helyszin_nev, slug)')
-      .eq('user_id', currentUser.id)
-      .order('letrehozas_datum', { ascending: false });
-
-    // updated_at fallback: ha a mező nem létezik
-    var data = res.data || [];
-    if (!data.length && res.error) {
-      var res2 = await sb.from('ertekelesek')
-        .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, palyas(nev, helyszin_nev, slug)')
-        .eq('user_id', currentUser.id)
-        .order('letrehozas_datum', { ascending: false });
-      data = res2.data || [];
-    }
-
-    if (!data.length) {
-      el.innerHTML =
-        '<div class="sfd-empty">' +
-          '<div class="sfd-empty-icon">⭐</div>' +
-          '<div class="sfd-empty-title">Még nincsenek véleményeid</div>' +
-          '<div class="sfd-empty-sub">Lezajlott foglalás után értékelheted a pályát. A véleményeid itt jelennek meg.</div>' +
-          '<button class="sfd-empty-cta" onclick="sfdSwitchTab(&quot;foglalasok&quot;)">📅 Foglalásaim</button>' +
-        '</div>';
-      return;
-    }
-
-    el.innerHTML = data.map(function(r) {
-      var palyaNev    = r.palyas ? (r.palyas.nev || '–') : '–';
-      var helyszinNev = r.palyas ? (r.palyas.helyszin_nev || '') : '';
-      var datum       = r.updated_at || r.letrehozas_datum;
-      var datumStr    = datum
-        ? new Date(datum).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
-        : '';
-
-      // Csillagok
-      var starsHtml = '';
-      for (var i = 1; i <= 5; i++) {
-        starsHtml += '<span class="sfd-rv-star' + (i <= r.rating ? '' : ' e') + '">★</span>';
-      }
-
-      // Cimkék
-      var cimkekHtml = '';
-      if (r.cimkek && r.cimkek.length) {
-        cimkekHtml = '<div class="sfd-rv-cimkek">' +
-          r.cimkek.map(function(ck) {
-            return '<span class="sfd-rv-cimke">' + spEsc(ck) + '</span>';
-          }).join('') +
-        '</div>';
-      }
-
-      // Szerkesztés gomb – a meglévő sfdNyitReview újrahasználása
-      // A foglalas_id-t nem tárolják a review-ban visszaolvashatóan a drawerben,
-      // de az UPDATE-hez csak a review.id kell (_sfdRv.meglevoId).
-      // A sfdNyitReview meghívjuk egy virtuális foglalas_id-val (''),
-      // az UPDATE path a meglevoId alapján megy.
-      var rvJson = JSON.stringify({
-        id: r.id, rating: r.rating,
-        szoveg: r.szoveg || '', cimkek: r.cimkek || []
-      }).replace(/"/g, '&quot;');
-
-      var pid = (r.palya_id || '');
-      var editBtn = '<button class="sfd-rv-edit-btn" data-pid="' + pid + '" data-nev="' + spEsc(palyaNev) + '" data-rv="' + rvJson + '" onclick="sfdVelNyitSzerkesztes(this)">✏️ Szerkesztés</button>';
-
-      return '<div class="sfd-rv-card">' +
-        '<div class="sfd-rv-card-head">' +
-          '<div>' +
-            '<div class="sfd-rv-palya">' + spEsc(palyaNev) + '</div>' +
-            (helyszinNev ? '<div class="sfd-rv-helyszin">' + spEsc(helyszinNev) + '</div>' : '') +
-          '</div>' +
-          editBtn +
-        '</div>' +
-        '<div class="sfd-rv-meta">' +
-          '<div class="sfd-rv-stars">' + starsHtml + '</div>' +
-          (datumStr ? '<span class="sfd-rv-date">' + datumStr + '</span>' : '') +
-        '</div>' +
-        (r.szoveg ? '<div class="sfd-rv-szoveg">' + spEsc(r.szoveg) + '</div>' : '') +
-        cimkekHtml +
-      '</div>';
-    }).join('');
-  }
-  window.loadVelemenyek = loadVelemenyek;
-  // Véleményeim tab: szerkesztés gomb handler
-  function sfdVelNyitSzerkesztes(btn) {
-    var pid    = btn.dataset.pid || '';
-    var nev    = btn.dataset.nev || '';
-    var rvRaw  = btn.dataset.rv  || '';
-    // sfdNyitReview újrahasználása: foglalas_id '' (UPDATE path meglevoId-t használ)
-    sfdNyitReview('', pid, '', nev, rvRaw);
-  }
-  window.sfdVelNyitSzerkesztes = sfdVelNyitSzerkesztes;
-
-
 
   async function sfdDoCancel() {
     if (!_cancelTargetId) return;
@@ -1575,175 +1400,6 @@
     }
   });
 
-
-  // ── SFD REVIEW MODAL ─────────────────────────────────────────
-  var _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[] };
-  var SFD_RATING_LBL = {1:'Rossz élmény',2:'Alap elvárások alatt',3:'Átlagos',4:'Jó, ajánlom',5:'Kiváló!'};
-
-  function sfdNyitReview(foglalasId, palyaId, helyszinId, palyaNev, meglevoRvRaw) {
-    var meglevo = null;
-    if (meglevoRvRaw) {
-      try { meglevo = JSON.parse(meglevoRvRaw.replace(/&quot;/g, '"')); } catch(e) {}
-    }
-    _sfdRv = {
-      foglalasId: foglalasId, palyaId: palyaId, helyszinId: helyszinId,
-      rating:     meglevo ? meglevo.rating : 0,
-      cimkek:     meglevo && meglevo.cimkek ? meglevo.cimkek.slice() : [],
-      meglevoId:  meglevo ? meglevo.id : null
-    };
-    var ov = document.getElementById('sfd-review-modal-overlay');
-    if (!ov) return;
-    var el = function(id){ return document.getElementById(id); };
-
-    el('sfd-review-palya-nev').textContent = palyaNev || 'Pálya értékelése';
-    el('sfd-review-error').style.display = 'none';
-    el('sfd-review-szoveg').value = meglevo && meglevo.szoveg ? meglevo.szoveg : '';
-
-    // Csillagok
-    document.querySelectorAll('.sfd-rstar').forEach(function(s){
-      s.style.color = (_sfdRv.rating > 0 && parseInt(s.dataset.val) <= _sfdRv.rating) ? '#f59e0b' : '#d4e8f0';
-    });
-    el('sfd-review-rating-lbl').textContent = _sfdRv.rating > 0
-      ? _sfdRv.rating + ' csillag – ' + (SFD_RATING_LBL[_sfdRv.rating] || '')
-      : 'Kattints egy csillagra az értékeléshez';
-
-    // Submit gomb
-    var subBtn = el('sfd-review-submit-btn');
-    if (subBtn) {
-      subBtn.disabled = _sfdRv.rating === 0;
-      subBtn.style.opacity = _sfdRv.rating > 0 ? '1' : '.55';
-      subBtn.textContent = meglevo ? 'Értékelés módosítása' : 'Értékelés küldése';
-    }
-
-    // Cimkék
-    document.querySelectorAll('.sfd-rcimke').forEach(function(ck){
-      var sel = _sfdRv.cimkek.indexOf(ck.dataset.cimke) >= 0;
-      ck.style.background  = sel ? 'rgba(26,143,193,.1)' : 'white';
-      ck.style.color       = sel ? '#1a8fc1' : '#6b8a9a';
-      ck.style.borderColor = sel ? 'rgba(26,143,193,.3)' : '#d4e8f0';
-      ck.style.opacity     = (!sel && _sfdRv.cimkek.length >= 3) ? '0.45' : '1';
-    });
-
-    ov.style.opacity = '1'; ov.style.pointerEvents = 'all';
-    document.body.style.overflow = 'hidden';
-  }
-
-  function sfdZarjReview() {
-    var ov = document.getElementById('sfd-review-modal-overlay');
-    if (ov) { ov.style.opacity = '0'; ov.style.pointerEvents = 'none'; }
-    document.body.style.overflow = '';
-    _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[] };
-  }
-
-  document.querySelectorAll('.sfd-rstar').forEach(function(star) {
-    star.addEventListener('click', function() {
-      var val = parseInt(this.dataset.val);
-      _sfdRv.rating = val;
-      document.querySelectorAll('.sfd-rstar').forEach(function(s) {
-        s.style.color = parseInt(s.dataset.val) <= val ? '#f59e0b' : '#d4e8f0';
-      });
-      var lbl = document.getElementById('sfd-review-rating-lbl');
-      if (lbl) lbl.textContent = val + ' csillag – ' + (SFD_RATING_LBL[val] || '');
-      var btn = document.getElementById('sfd-review-submit-btn');
-      if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-    });
-  });
-
-  document.querySelectorAll('.sfd-rcimke').forEach(function(el) {
-    el.addEventListener('click', function() {
-      if (this.style.opacity === '0.45') return;
-      var cimke = this.dataset.cimke;
-      var sel = this.style.color === 'rgb(26, 143, 193)';
-      if (sel) {
-        this.style.background = 'white'; this.style.color = '#6b8a9a'; this.style.borderColor = '#d4e8f0';
-        _sfdRv.cimkek = _sfdRv.cimkek.filter(function(c) { return c !== cimke; });
-      } else {
-        if (_sfdRv.cimkek.length >= 3) return;
-        this.style.background = 'rgba(26,143,193,.1)'; this.style.color = '#1a8fc1'; this.style.borderColor = 'rgba(26,143,193,.3)';
-        _sfdRv.cimkek.push(cimke);
-      }
-      var max = _sfdRv.cimkek.length >= 3;
-      document.querySelectorAll('.sfd-rcimke').forEach(function(c) {
-        if (c.style.color !== 'rgb(26, 143, 193)') c.style.opacity = max ? '0.45' : '1';
-      });
-    });
-  });
-
-  var sfdRvCancelBtn = document.getElementById('sfd-review-cancel-btn');
-  if (sfdRvCancelBtn) sfdRvCancelBtn.addEventListener('click', sfdZarjReview);
-  var sfdRvOverlay = document.getElementById('sfd-review-modal-overlay');
-  if (sfdRvOverlay) sfdRvOverlay.addEventListener('click', function(e) { if (e.target === this) sfdZarjReview(); });
-
-  var _sfdRvSubmitting = false; // dupla submit védelem
-  var sfdRvSubmit = document.getElementById('sfd-review-submit-btn');
-  if (sfdRvSubmit) {
-    sfdRvSubmit.addEventListener('click', async function() {
-      if (_sfdRvSubmitting) return;
-      var errEl = document.getElementById('sfd-review-error');
-      errEl.style.display = 'none';
-      if (!_sfdRv.rating) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; return; }
-      if (!_sfdRv.foglalasId || !currentUser) return;
-
-      _sfdRvSubmitting = true;
-      this.disabled = true; this.textContent = '⏳ Küldés...';
-      var szoveg = (document.getElementById('sfd-review-szoveg').value || '').trim();
-      var isUpdate = !!_sfdRv.meglevoId;
-      var dbErr, wasUniqueConflict = false;
-
-      if (isUpdate) {
-        var upd = await sb.from('ertekelesek').update({
-          rating: _sfdRv.rating, szoveg: szoveg || null,
-          cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
-          user_nev: (currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||null)
-        }).eq('id', _sfdRv.meglevoId).eq('user_id', currentUser.id);
-        dbErr = upd.error;
-      } else {
-        var ins = await sb.from('ertekelesek').insert({
-          foglalas_id: _sfdRv.foglalasId, palya_id: _sfdRv.palyaId,
-          helyszin_id: _sfdRv.helyszinId || null, user_id: currentUser.id,
-          user_nev: (currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||null),
-          rating: _sfdRv.rating, szoveg: szoveg || null,
-          cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null
-        });
-        dbErr = ins.error;
-        // Unique conflict fallback: INSERT meghiúsult mert már létezik → UPDATE-re váltás
-        if (dbErr && (dbErr.code === '23505' || (dbErr.message && dbErr.message.includes('egy_user_egy_palya')))) {
-          wasUniqueConflict = true;
-          var exist = await sb.from('ertekelesek').select('id').eq('user_id', currentUser.id).eq('palya_id', _sfdRv.palyaId).single();
-          if (exist.data && exist.data.id) {
-            var upd2 = await sb.from('ertekelesek').update({
-              rating: _sfdRv.rating, szoveg: szoveg || null,
-              cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
-              user_nev: (currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||null)
-            }).eq('id', exist.data.id).eq('user_id', currentUser.id);
-            dbErr = upd2.error;
-          }
-        }
-      }
-
-      _sfdRvSubmitting = false;
-
-      if (dbErr) {
-        var uzenet = 'Hiba történt. Próbáld újra!';
-        if (dbErr.message) {
-          if (dbErr.message.includes('nem a te foglalásod')) uzenet = 'Ez a foglalás nem a te foglalásod.';
-          else if (dbErr.message.includes('lezajlott')) uzenet = 'Csak már lezajlott foglaláshoz lehet értékelést írni.';
-        }
-        errEl.textContent = uzenet; errEl.style.display = 'block';
-        this.disabled = false;
-        this.textContent = isUpdate ? 'Értékelés módosítása' : 'Értékelés küldése';
-        this.style.opacity = '1';
-        return;
-      }
-      sfdZarjReview();
-      showSfdToast(isUpdate || wasUniqueConflict ? '✏️ Értékelés módosítva!' : '⭐ Köszönjük az értékelést!');
-      await loadBookings();
-      // Ha a Véleményeim tab aktív, azt is frissítsük
-      var velPanel = document.getElementById('sfd-panel-velemenyek');
-      if (velPanel && velPanel.classList.contains('active')) loadVelemenyek();
-    });
-  }
-
   // ── Logout ──
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
@@ -1825,28 +1481,13 @@
     if (!currentUser || !list) return;
     list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
     const { data, error } = await sb.from('foglalasok')
-      .select('*,idopont_kezdes,idopont_veg,palyas(nev,helyszin_nev,helyszin_id,sportag,slug),idopontok(datum,veg)')
+      .select('*,palyas(nev,helyszin_nev,sportag,slug),idopontok(datum)')
       .eq('ugyfel_email', currentUser.email)
       .order('created_at', { ascending: false });
     if (error || !data) {
       list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⚠️</div><div class="sfd-empty-title">Hiba történt</div><div class="sfd-empty-sub">Nem sikerült betölteni a foglalásokat.</div></div>';
       return;
     }
-
-    // Review státusz lekérése: 1 user / 1 pálya / 1 review modell
-    const palyaIds = [...new Set(data.map(f => f.palya_id).filter(Boolean))];
-    sfdPalyaReviewMap = new Map();
-
-    if (palyaIds.length) {
-      try {
-        const { data: ertData, error: ertErr } = await sb.from('ertekelesek')
-          .select('id, palya_id, rating, szoveg, cimkek')
-          .eq('user_id', currentUser.id)
-          .in('palya_id', palyaIds);
-        if (!ertErr && ertData) ertData.forEach(e => sfdPalyaReviewMap.set(e.palya_id, e));
-      } catch(e) { /* map üres marad, submit fallback kezeli */ }
-    }
-
     allBookings = data;
     applyBookingFilter();
   }
@@ -1897,33 +1538,6 @@
       const cancelBtn = canCancel
         ? `<button class="sfd-cancel-btn" onclick="sfdConfirmCancel('${f.id}')">🚫 Foglalás lemondása</button>`
         : '';
-
-      // Review gomb logika – 1 user / 1 pálya / 1 review modell
-      const today = new Date().toISOString().split('T')[0];
-      const rIdopont = f.idopontok?.datum || (f.idopont_kezdes ? (f.idopont_kezdes.includes('T') ? f.idopont_kezdes.split('T')[0] : f.idopont_kezdes.substring(0,10)) : null);
-      const rVegIdo  = f.idopontok?.veg?.substring(0,5) || (f.idopont_veg ? (f.idopont_veg.includes('T') ? f.idopont_veg.split('T')[1].substring(0,5) : f.idopont_veg.substring(0,5)) : null);
-      let rElmult = false;
-      if (rIdopont && rVegIdo) {
-        rElmult = new Date(rIdopont + 'T' + rVegIdo + ':00') < new Date();
-      } else if (rIdopont) {
-        rElmult = rIdopont < today;
-      }
-      const rMeglevo = sfdPalyaReviewMap.get(f.palya_id) || null;
-      const rMutat   = f.statusz === 'jovahagyva' && rElmult;
-
-      let reviewBtn = '';
-      if (rMutat) {
-        const rPalyaId    = f.palya_id || '';
-        const rHelyszinId = f.palyas?.helyszin_id || '';
-        const rPalyaNev   = spEsc(f.palyas?.helyszin_nev || f.palyas?.nev || '');
-        if (rMeglevo) {
-          const rvJson = JSON.stringify(rMeglevo).replace(/"/g, '&quot;');
-          reviewBtn = `<button class="sfd-review-btn" onclick="sfdNyitReview('${f.id}','${rPalyaId}','${rHelyszinId}','${rPalyaNev}','${rvJson}')">✏️ Értékelés módosítása</button>`;
-        } else {
-          reviewBtn = `<button class="sfd-review-btn" onclick="sfdNyitReview('${f.id}','${rPalyaId}','${rHelyszinId}','${rPalyaNev}')">⭐ Értékeld a pályát</button>`;
-        }
-      }
-
       return `<div class="sfd-booking-card ${safe}">
         <div class="sfd-booking-top">
           <div class="sfd-booking-name">${emoji} ${spEsc(nev)}</div>
@@ -1932,7 +1546,6 @@
         <div class="sfd-booking-meta">${dateStr ? '📅 ' + dateStr : ''} ${sport ? '· ' + sport : ''}</div>
         ${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" class="sfd-booking-link">Pálya megtekintése ↗</a>` : ''}
         ${cancelBtn}
-        ${reviewBtn}
       </div>`;
     }).join('');
 
