@@ -1169,8 +1169,9 @@
           // Tartomány metszet: pálya[min,max] metszi a kiválasztott [letszamMin, letszamMax]-ot
           // 14+ esetén letszamMax === null → csak a pMax >= 14 feltétel kell
           if (letszamMax === null) {
-            // 14+ fő: pálya max >= 14
-            return pMax >= letszamMin;
+            // 14+ fő: pálya max_letszam szigorúan nagyobb mint 14
+            // (pMax === 14 azt jelenti a pálya max 14 főre való, nem 14+ főre)
+            return pMax > letszamMin;
           }
           // Normál tartomány: pMin <= letszamMax AND pMax >= letszamMin
           return pMin <= letszamMax && pMax >= letszamMin;
