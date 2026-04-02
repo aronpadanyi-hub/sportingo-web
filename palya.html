@@ -477,7 +477,22 @@
 .sfd-status-pill.jovahagyva { background: rgba(45,191,126,.12); color: #1a9960; }
 .sfd-status-pill.varakozik  { background: rgba(245,158,11,.12); color: #b45309; }
 .sfd-status-pill.elutasitva { background: rgba(239,68,68,.1);   color: #ef4444; }
+.sfd-status-pill.lemondva   { background: #f1f5f9; color: #64748b; }
+.sfd-booking-card.lemondva  { border-left: 3px solid #94a3b8; opacity: .75; }
 .sfd-booking-meta { font-size: .75rem; color: #6b8a9a; }
+/* ── Lemondás gomb ── */
+.sfd-cancel-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 8px; padding: 5px 12px;
+  background: transparent;
+  border: 1.5px solid rgba(239,68,68,.35);
+  border-radius: 8px;
+  color: #ef4444; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: .72rem; font-weight: 700; cursor: pointer;
+  transition: all .2s;
+}
+.sfd-cancel-btn:hover { background: #fff5f5; border-color: #ef4444; }
+.sfd-cancel-btn:disabled { opacity: .5; cursor: not-allowed; }
 .sfd-booking-link {
   display: inline-block; margin-top: 6px;
   font-size: .73rem; font-weight: 700; color: #1a8fc1;
@@ -716,6 +731,45 @@
     @media (max-width: 600px) {
       .sp-fav-btn { top: 14px; right: 14px; height: 48px; padding: 0 16px 0 12px; font-size: .8rem; gap: 6px; }
     }
+    /* ── Lemondás confirm modal ── */
+    #sp-confirm-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,22,40,.55); backdrop-filter: blur(4px);
+      z-index: 20000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .22s;
+    }
+    #sp-confirm-modal-overlay.open { opacity: 1; pointer-events: all; }
+    #sp-confirm-modal {
+      background: white; border-radius: 20px;
+      width: 400px; max-width: 92vw;
+      padding: 28px 28px 24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.22);
+    }
+    .sp-confirm-icon { font-size: 2rem; margin-bottom: 12px; }
+    .sp-confirm-title { font-weight: 800; font-size: 1.05rem; color: #0a1628; margin-bottom: 8px; }
+    .sp-confirm-body  { font-size: .85rem; color: #6b8a9a; line-height: 1.6; margin-bottom: 24px; }
+    .sp-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .sp-confirm-cancel-btn {
+      padding: 10px 18px; background: #f1f5f9; color: #1a2e3b;
+      border: none; border-radius: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: .85rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .sp-confirm-cancel-btn:hover { background: #e2e8f0; }
+    .sp-confirm-ok-btn {
+      padding: 10px 18px;
+      background: white; color: #ef4444;
+      border: 1.5px solid #ef4444; border-radius: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: .85rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .sp-confirm-ok-btn:hover { background: #fff5f5; }
+    .sp-confirm-ok-btn:disabled { opacity: .5; cursor: not-allowed; }
+    @media (max-width: 600px) {
+      #sp-confirm-modal { padding: 22px 18px 20px; }
+      .sp-confirm-actions { flex-direction: column-reverse; }
+      .sp-confirm-cancel-btn, .sp-confirm-ok-btn { width: 100%; text-align: center; }
+    }
 </style>
 </head>
 <body>
@@ -750,6 +804,17 @@
   </div>
 </header>
 
+<div id="sp-confirm-modal-overlay">
+  <div id="sp-confirm-modal">
+    <div class="sp-confirm-icon">⚠️</div>
+    <div class="sp-confirm-title">Biztosan lemondod ezt a foglalást?</div>
+    <div class="sp-confirm-body">A lemondás után a foglalás felszabadulhat más játékosok számára, és ezt már nem lehet egy kattintással visszavonni.</div>
+    <div class="sp-confirm-actions">
+      <button class="sp-confirm-cancel-btn" id="sp-confirm-no">Mégse</button>
+      <button class="sp-confirm-ok-btn" id="sp-confirm-yes">Foglalás lemondása</button>
+    </div>
+  </div>
+</div>
 <div id="sp-drawer-overlay"></div>
 <div id="sp-drawer">
 
@@ -848,6 +913,7 @@
         <button class="sfd-filter-chip" data-sfd-filter="jovahagyva">✅ Jóváhagyva</button>
         <button class="sfd-filter-chip" data-sfd-filter="varakozik">⏳ Várakozik</button>
         <button class="sfd-filter-chip" data-sfd-filter="elutasitva">❌ Elutasítva</button>
+        <button class="sfd-filter-chip" data-sfd-filter="lemondva">🚫 Lemondva</button>
       </div>
       <div id="sfd-bookings-list"></div>
       <div class="sfd-pagination" id="sfd-pagination" style="display:none;">
@@ -979,7 +1045,7 @@
   let allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'mind';
   const perPage = 10;
   const sportEmoji = { Futball: '⚽', Tenisz: '🎾', Padel: '🎾', Squash: '🟡' };
-  const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva' };
+  const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva', lemondva: '🚫 Lemondva' };
 
   function spEsc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 
@@ -1072,6 +1138,110 @@
 
   window.closeDrawerGlobal = closeDrawer;
 
+  // ── Foglalás lemondás – confirm modal + DB update ──────────────
+  let _cancelTargetId = null;
+
+  function sfdConfirmCancel(foglalasId) {
+    _cancelTargetId = foglalasId;
+    const overlay = document.getElementById('sp-confirm-modal-overlay');
+    if (overlay) overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function sfdCloseConfirm() {
+    const overlay = document.getElementById('sp-confirm-modal-overlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    _cancelTargetId = null;
+  }
+
+  async function sfdDoCancel() {
+    if (!_cancelTargetId) return;
+    const id = _cancelTargetId;
+    const okBtn = document.getElementById('sp-confirm-yes');
+    if (okBtn) { okBtn.disabled = true; okBtn.textContent = '⏳ Lemondás...'; }
+    try {
+      // 1. Foglalás adatai – idopont_kezdes + idopont_veg a biztonságos időablakhoz
+      const { data: fogl } = await sb.from('foglalasok')
+        .select('palya_id, idopont_id, idopont_kezdes, idopont_veg, idopontok(datum)')
+        .eq('id', id)
+        .single();
+
+      // 2. Státusz: lemondva
+      const { error } = await sb.from('foglalasok').update({ statusz: 'lemondva' }).eq('id', id);
+      if (error) throw error;
+
+      // 3. Slot felszabadítás – kizárólag az eltárolt időablak alapján (biztonságos)
+      const datum = fogl?.idopontok?.datum;
+      if (fogl?.palya_id && datum && fogl?.idopont_kezdes && fogl?.idopont_veg) {
+        await sb.from('idopontok')
+          .update({ foglalt: false })
+          .eq('palya_id', fogl.palya_id)
+          .eq('datum', datum)
+          .gte('kezdes', fogl.idopont_kezdes)
+          .lt('kezdes', fogl.idopont_veg);
+      } else if (fogl?.idopont_id) {
+        // Fallback régi foglalásokhoz (migráció előttiekhez)
+        await sb.from('idopontok').update({ foglalt: false }).eq('id', fogl.idopont_id);
+      }
+
+      sfdCloseConfirm();
+      showSfdToast('🚫 Foglalás lemondva');
+      await loadBookings();
+      if (typeof loadAttekintes === 'function') await loadAttekintes();
+    } catch(e) {
+      if (okBtn) { okBtn.disabled = false; okBtn.textContent = 'Foglalás lemondása'; }
+      showSfdToast('❌ Hiba történt a lemondásnál');
+    }
+  }
+
+  function showSfdToast(msg) {
+    let toast = document.getElementById('sfd-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'sfd-toast';
+      var ts = toast.style;
+      ts.position = 'fixed'; ts.bottom = '24px'; ts.left = '50%';
+      ts.transform = 'translateX(-50%) translateY(12px)';
+      ts.background = '#0a1628'; ts.color = 'white';
+      ts.padding = '10px 20px'; ts.borderRadius = '100px';
+      ts.fontFamily = 'Plus Jakarta Sans, sans-serif';
+      ts.fontSize = '.82rem'; ts.fontWeight = '700';
+      ts.boxShadow = '0 8px 32px rgba(0,0,0,.22)';
+      ts.opacity = '0'; ts.transition = 'opacity .22s, transform .22s';
+      ts.zIndex = '99999'; ts.pointerEvents = 'none'; ts.whiteSpace = 'nowrap';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(12px)';
+    }, 2600);
+  }
+
+  // Globális elérhetőség az inline onclick-hez (IIFE miatt szükséges)
+  window.sfdConfirmCancel = sfdConfirmCancel;
+  window.sfdCloseConfirm  = sfdCloseConfirm;
+
+  // Confirm modal gombok
+  document.addEventListener('click', function(e) {
+    if (e.target.id === 'sp-confirm-no' || e.target === document.getElementById('sp-confirm-modal-overlay')) {
+      sfdCloseConfirm();
+    }
+    if (e.target.id === 'sp-confirm-yes') {
+      sfdDoCancel();
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('sp-confirm-modal-overlay')?.classList.contains('open')) {
+      sfdCloseConfirm();
+    }
+  });
+
   // ── Logout ──
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
@@ -1152,7 +1322,7 @@
     if (!currentUser || !list) return;
     list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
     const { data, error } = await sb.from('foglalasok')
-      .select('*,palyas(nev,helyszin_nev,sportag,slug)')
+      .select('*,palyas(nev,helyszin_nev,sportag,slug),idopontok(datum)')
       .eq('ugyfel_email', currentUser.email)
       .order('created_at', { ascending: false });
     if (error || !data) {
@@ -1192,16 +1362,31 @@
       const nev   = f.palyas?.helyszin_nev || f.palyas?.nev || '–';
       const sport = f.palyas?.sportag || '';
       const emoji = sportEmoji[sport] || '🏟';
-      const safe  = ['varakozik','jovahagyva','elutasitva'].includes(f.statusz) ? f.statusz : '';
+      const safe  = ['varakozik','jovahagyva','elutasitva','lemondva'].includes(f.statusz) ? f.statusz : '';
       const slug  = f.palyas?.slug || '';
-      const date  = f.created_at ? new Date(f.created_at).toLocaleDateString('hu-HU', { year:'numeric', month:'short', day:'numeric' }) : '';
+      // Tényleges foglalt dátum és időintervallum megjelenítése (nem a created_at)
+      const foglDatum = f.idopontok?.datum || null;
+      let dateStr = '';
+      if (foglDatum && f.idopont_kezdes && f.idopont_veg) {
+        const d = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
+        dateStr = `${d} ${f.idopont_kezdes}–${f.idopont_veg}`;
+      } else if (foglDatum) {
+        dateStr = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
+      } else if (f.created_at) {
+        dateStr = new Date(f.created_at).toLocaleDateString('hu-HU', { year:'numeric', month:'short', day:'numeric' });
+      }
+      const canCancel = f.statusz === 'varakozik' || f.statusz === 'jovahagyva';
+      const cancelBtn = canCancel
+        ? `<button class="sfd-cancel-btn" onclick="sfdConfirmCancel('${f.id}')">🚫 Foglalás lemondása</button>`
+        : '';
       return `<div class="sfd-booking-card ${safe}">
         <div class="sfd-booking-top">
           <div class="sfd-booking-name">${emoji} ${spEsc(nev)}</div>
           <span class="sfd-status-pill ${safe}">${statuszLabel[f.statusz] || f.statusz}</span>
         </div>
-        <div class="sfd-booking-meta">${date ? '📅 ' + date : ''} ${sport ? '· ' + sport : ''}</div>
+        <div class="sfd-booking-meta">${dateStr ? '📅 ' + dateStr : ''} ${sport ? '· ' + sport : ''}</div>
         ${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" class="sfd-booking-link">Pálya megtekintése ↗</a>` : ''}
+        ${cancelBtn}
       </div>`;
     }).join('');
 
