@@ -2307,18 +2307,20 @@ async function spfMount(origPalya) {
 
       if (hetiHighlightAkciok.length) {
         var h = sortAkciok(hetiHighlightAkciok)[0];
-        var hTol = h.datum_tol || '';
-        var hIg  = h.datum_ig  || '';
-        console.log('[AKCIO DEBUG] kiválasztott heti highlight akció:', h.nev, '| tol:', hTol, '| ig:', hIg);
+        console.log('[AKCIO DEBUG] kiválasztott heti highlight akció:', h.nev, '| tol:', h.datum_tol, '| ig:', h.datum_ig);
+
+        // Közvetlen string értékek – NE konvertáld Date-té, a highlight string összehasonlítással dolgozik
+        var hTol = h.datum_tol;
+        var hIg  = h.datum_ig;
+
         if (hTol && hIg) {
           SPF.aktioNapok = { tol: hTol, ig: hIg };
-          SPF.aktioAdat  = {
-            tol: hTol, ig: hIg,
-            idosav_kezdes: h.idosav_kezdes || null,
-            idosav_veg:    h.idosav_veg    || null,
-            ertek:         h.ertek         || null,
-            akcio_tipus:   h.akcio_tipus   || null
-          };
+          SPF.aktioAdat  = h; // teljes akció objektum – minden mező elérhető
+          console.log('[AKCIO DEBUG] SPF.aktioNapok:', JSON.stringify(SPF.aktioNapok));
+        } else {
+          SPF.aktioNapok = null;
+          SPF.aktioAdat  = null;
+          console.log('[AKCIO DEBUG] SPF.aktioNapok: null (hiányzó datum_tol vagy datum_ig)');
         }
       }
 
@@ -2447,6 +2449,8 @@ async function spfMount(origPalya) {
 
     var an = SPF.aktioNapok;
     var ad = SPF.aktioAdat;
+
+    console.log('[AKCIO HIGHLIGHT] aktioNapok:', an ? JSON.stringify(an) : 'null');
 
     if (!an || !an.tol || !an.ig) {
       console.warn('[AKCIO HIGHLIGHT] nincs aktioNapok adat – highlight kihagyva');
