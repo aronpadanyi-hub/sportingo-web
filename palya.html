@@ -2615,6 +2615,38 @@ function initFavButton() {
 
 
 // ── REVIEW MEGJELENÍTÉS – PÁLYAOLDAL ────────────────────────
+// Névformázó: keresztnév [+ monogram] – soha nem jelenik meg teljes név
+function spFormatNev(nev) {
+  var FALLBACK = 'Sportingo játékos';
+  if (!nev || typeof nev !== 'string') return FALLBACK;
+  var s = nev.trim();
+  if (!s) return FALLBACK;
+  // Email-szerű vagy gyanús string
+  if (s.indexOf('@') !== -1) return FALLBACK;
+  // Csak whitespace, számok, speciális karakterek (betű nélkül)
+  if (!/[a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]/.test(s)) return FALLBACK;
+  // Szavakra bontás
+  var parts = s.split(/\s+/).filter(function(p){ return p.length > 0; });
+  if (parts.length === 0) return FALLBACK;
+  // 1 szó: visszaadjuk ahogy van
+  if (parts.length === 1) return parts[0];
+  // 2 szó: utolsó szó + első szó kezdőbetűje
+  // (pl. "Tóth Gábor" → "Gábor T.")
+  if (parts.length === 2) {
+    return parts[1] + ' ' + parts[0][0].toUpperCase() + '.';
+  }
+  // 3+ szó: konzervatív – csak az utolsó szó
+  return parts[parts.length - 1];
+}
+
+function spFmtUpdated(letrehozas, updated) {
+  if (!updated || !letrehozas) return '';
+  // Csak akkor jelezzük ha ténylegesen frissítve lett (>1 perc különbség)
+  var diff = new Date(updated) - new Date(letrehozas);
+  if (diff < 60000) return '';
+  return 'Frissítve: ' + new Date(updated).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function spStars(rating, size) {
   var cls = size === 'sm' ? 'sp-review-star-sm' : 'sp-star';
   var s = '';
@@ -2657,14 +2689,16 @@ async function loadPalyaReviews(palyaId) {
 
   // ── Preview lista: top 5 legfrissebb ──
   var listRes = await sb.from('ertekelesek')
-    .select('id, rating, szoveg, cimkek, tulaj_valasz, letrehozas_datum')
+    .select('id, rating, szoveg, cimkek, tulaj_valasz, user_nev, letrehozas_datum, updated_at')
     .eq('palya_id', palyaId)
-    .order('letrehozas_datum', { ascending: false })
+    .order('updated_at', { ascending: false })
     .limit(5);
 
   var listData = listRes.data || [];
 
   var listHTML = listData.map(function(r) {
+    var nev = spFormatNev(r.user_nev);
+    var updatedStr = spFmtUpdated(r.letrehozas_datum, r.updated_at);
     var cimkekHTML = (r.cimkek && r.cimkek.length)
       ? '<div class="sp-review-cimkek">' +
           r.cimkek.map(function(cc) {
@@ -2674,16 +2708,19 @@ async function loadPalyaReviews(palyaId) {
       : '';
     var tulajHTML = r.tulaj_valasz
       ? '<div class="sp-review-tulaj">' +
-          '<div class="sp-review-tulaj-label">🏟 Tulajdonos válasza</div>' +
+          '<div class="sp-review-tulaj-label">Tulajdonos válasza</div>' +
           '<div class="sp-review-tulaj-text">' + esc(r.tulaj_valasz) + '</div>' +
         '</div>'
       : '';
     return '<div class="sp-review-item">' +
-      '<div class="sp-review-item-header">' +
-        '<span class="sp-review-user">👤 Sportingo játékos</span>' +
-        '<span class="sp-review-date">' + spFmtDatum(r.letrehozas_datum) + '</span>' +
+      '<div class="sp-review-item-top">' +
+        '<div class="sp-review-meta">' +
+          '<span class="sp-review-user">' + esc(nev) + '</span>' +
+          '<span class="sp-review-date">' + spFmtDatum(r.letrehozas_datum) + '</span>' +
+          (updatedStr ? '<span class="sp-review-updated">' + updatedStr + '</span>' : '') +
+        '</div>' +
+        '<div class="sp-review-stars-sm">' + spStars(r.rating, 'sm') + '</div>' +
       '</div>' +
-      '<div class="sp-review-stars-sm">' + spStars(r.rating, 'sm') + '</div>' +
       (r.szoveg ? '<div class="sp-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
       cimkekHTML + tulajHTML +
     '</div>';
