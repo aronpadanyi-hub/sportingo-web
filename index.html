@@ -1269,6 +1269,10 @@
     _cancelTargetId = null;
   }
 
+  // Globális elérhetőség az inline onclick-hez (IIFE miatt szükséges)
+  window.sfdConfirmCancel = sfdConfirmCancel;
+  window.sfdCloseConfirm  = sfdCloseConfirm;
+
   async function sfdDoCancel() {
     if (!_cancelTargetId) return;
     const id = _cancelTargetId;
