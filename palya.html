@@ -898,6 +898,17 @@
       .spf-promo-ertek { font-size: .85rem; }
       .spf-promo-badge { font-size: .68rem; padding: 2px 8px; }
     }
+    /* ── Akciós slot jelölés ── */
+    .spf-slot.akcio-slot { background: rgba(45,191,126,.13) !important; }
+    .spf-slot.akcio-slot:hover { background: rgba(45,191,126,.25) !important; }
+    .spf-slot.akcio-slot.selected { background: linear-gradient(180deg,rgba(26,143,193,.85),rgba(45,191,126,.85)) !important; }
+    .spf-akcio-badge {
+      position: absolute; top: 1px; right: 2px;
+      font-size: 8px; font-weight: 800; line-height: 1;
+      color: #059669; background: rgba(255,255,255,.85);
+      padding: 1px 3px; border-radius: 3px;
+      pointer-events: none; white-space: nowrap;
+    }
 </style>
 </head>
 <body>
@@ -1895,7 +1906,8 @@ const SPF = {
   calDate: new Date(),
   loggedInUser: null, guestInfo: {},
   step: 1,
-  aktioNapok: null  // { tol: 'YYYY-MM-DD', ig: 'YYYY-MM-DD' } vagy null
+  aktioNapok: null,   // { tol, ig } – nap szintű highlight
+  aktioAdat: null     // teljes akció objektum (idosav_kezdes, idosav_veg, ertek stb.)
 };
 
 function spfGetWeekMonday(d) { const dt=new Date(d),day=dt.getDay(),diff=day===0?-6:1-day; dt.setDate(dt.getDate()+diff); dt.setHours(0,0,0,0); return dt; }
@@ -2270,10 +2282,18 @@ async function spfMount(origPalya) {
       document.getElementById('spf-promo-meta').textContent = metaReszek.join('  ');
       promosav.classList.add('lathato');
 
-      // Naptár highlight: tároljuk az akciót (csak dátumtartományos, nem órasávos esetén)
+      // Naptár highlight: teljes akció tárolása (slot szintű jelöléshez is)
       SPF.aktioNapok = null;
-      if (datTol && datIg && !a.idosav_kezdes && !a.idosav_veg) {
+      SPF.aktioAdat  = null;
+      if (datTol && datIg) {
         SPF.aktioNapok = { tol: datTol, ig: datIg };
+        SPF.aktioAdat  = {
+          tol: datTol, ig: datIg,
+          idosav_kezdes: a.idosav_kezdes || null,
+          idosav_veg:    a.idosav_veg    || null,
+          ertek:         a.ertek         || null,
+          akcio_tipus:   a.akcio_tipus   || null
+        };
       }
       // Ha a naptár már renderelt, frissítjük a highlight-ot
       spfRenderAkcioHighlight();
@@ -2389,31 +2409,119 @@ async function spfMount(origPalya) {
 
   // ── AKCIÓS NAP HIGHLIGHT (vizuális only) ────────────────────
   function spfRenderAkcioHighlight() {
-    // Eltávolítjuk az összes korábbi highlight-ot
+    // Korábbi highlight-ok törlése
     document.querySelectorAll('.spf-cal-dayhdr.akcio-nap').forEach(function(el) {
       el.classList.remove('akcio-nap');
     });
-    var an = SPF.aktioNapok;
-    if (!an || !an.tol || !an.ig) return;
-    // Csak dátumtartományos (NEM órasávos) akciónál jelölünk
-    var tolDate = new Date(an.tol + 'T00:00:00');
-    var igDate  = new Date(an.ig  + 'T00:00:00');
-    if (isNaN(tolDate) || isNaN(igDate)) return;
-    // A naptár nap-fejléceit keressük és osztályozzuk
-    var dayHeaders = document.querySelectorAll('.spf-cal-dayhdr');
-    dayHeaders.forEach(function(hdr) {
-      var ddEl = hdr.querySelector('.dd');
-      if (!ddEl) return;
-      // A .dn tartalmazza a napnevet, a .dd a napszámot
-      // A dátumot a header pozíciójából nem tudjuk közvetlen,
-      // ezért data-datum attribútumot használunk (renderCalGrid-ből)
-      var datumStr = hdr.dataset.datum;
-      if (!datumStr) return;
-      var d = new Date(datumStr + 'T00:00:00');
-      if (d >= tolDate && d <= igDate) {
-        hdr.classList.add('akcio-nap');
-      }
+    document.querySelectorAll('.spf-slot.akcio-slot').forEach(function(el) {
+      el.classList.remove('akcio-slot');
+      var b = el.querySelector('.spf-akcio-badge');
+      if (b) b.remove();
     });
+
+    var an = SPF.aktioNapok;
+    var ad = SPF.aktioAdat;
+    if (!an || !an.tol || !an.ig) return;
+
+    try {
+      var tolDate = new Date(an.tol + 'T00:00:00');
+      var igDate  = new Date(an.ig  + 'T00:00:00');
+      if (isNaN(tolDate) || isNaN(igDate)) return;
+
+      // Badge szöveg
+      var badgeText = '';
+      if (ad && ad.akcio_tipus === 'szazalek' && ad.ertek) badgeText = '-' + ad.ertek + '%';
+      else if (ad && ad.akcio_tipus === 'last_minute')      badgeText = 'LM';
+      else                                                   badgeText = '🔥';
+
+      // Idősáv percben (ha van)
+      var hasIdosav = ad && ad.idosav_kezdes && ad.idosav_veg;
+      var iovKezdPerc = 0, iovVegPerc = 24 * 60;
+      if (hasIdosav) {
+        var kp = ad.idosav_kezdes.substring(0,5).split(':');
+        var vp = ad.idosav_veg.substring(0,5).split(':');
+        iovKezdPerc = parseInt(kp[0]) * 60 + parseInt(kp[1]);
+        iovVegPerc  = parseInt(vp[0]) * 60 + parseInt(vp[1]);
+      }
+
+      // Nap header jelölés (minden érintett napra, idősávtól függetlenül)
+      document.querySelectorAll('.spf-cal-dayhdr').forEach(function(hdr) {
+        var datumStr = hdr.dataset.datum;
+        if (!datumStr) return;
+        var d = new Date(datumStr + 'T00:00:00');
+        if (d >= tolDate && d <= igDate) hdr.classList.add('akcio-nap');
+      });
+
+      // Slot jelölés: data-datum és title (time) alapján
+      // A slotoknak nincs explicit dátum attribútuma, de a naptár oszloponként épül.
+      // A grid struktúra: 1. col = time label, 2-8. col = napok (hétfőtől vasárnapig)
+      // A .spf-cal-grid gyermekei sorban: corner, 7 dayhdr, majd soronként: time-lbl + 7 slot
+      var grid = document.getElementById('spf-cal-grid');
+      if (!grid) return;
+
+      // Gyűjtsük a dayhdr elemek dátumait (oszlop sorrend)
+      var dayDatumok = [];
+      grid.querySelectorAll('.spf-cal-dayhdr').forEach(function(hdr) {
+        dayDatumok.push(hdr.dataset.datum || '');
+      });
+      if (!dayDatumok.length) return;
+
+      // Minden sor: time-lbl + 7 slot váltakozva
+      // A grid children: [corner, hdr0..hdr6, timelbl0, slot0..slot6, timelbl1, slot0..slot6, ...]
+      var children = Array.from(grid.children);
+      // Az első 8 elem: corner + 7 dayhdr → kihagyjuk
+      var dataRows = children.slice(8); // time-lbl + slot sorok
+
+      var colCount = dayDatumok.length; // tipikusan 7
+      // Soronként: 1 time-lbl + colCount slot = colCount+1 elem
+      var rowSize = colCount + 1;
+
+      for (var i = 0; i < dataRows.length; i += rowSize) {
+        var timeLbl = dataRows[i];
+        if (!timeLbl) continue;
+
+        // Az időt a title-ből vagy a span szövegéből olvassuk
+        var timeStr = '';
+        var span = timeLbl.querySelector('span');
+        if (span) timeStr = span.textContent.trim();
+        // Ha üres (nem egész óra), az előző egész óra alapján kell, de skip-elünk
+        // – csak egész + fél órákat tudunk kezelni, a title alapján
+        if (!timeStr) continue;
+
+        // Időt percbe
+        var tp = timeStr.split(':');
+        var slotPerc = parseInt(tp[0]) * 60 + parseInt(tp[1]);
+
+        // Idősáv ellenőrzés: inkluzív határok
+        var slotAkciosIdo = !hasIdosav || (slotPerc >= iovKezdPerc && slotPerc <= iovVegPerc);
+        if (!slotAkciosIdo) continue;
+
+        // A sorban lévő 7 slot (i+1 … i+colCount)
+        for (var j = 1; j <= colCount; j++) {
+          var slot = dataRows[i + j];
+          if (!slot || !slot.classList.contains('spf-slot')) continue;
+
+          var datum = dayDatumok[j - 1];
+          if (!datum) continue;
+
+          var d = new Date(datum + 'T00:00:00');
+          if (d < tolDate || d > igDate) continue;
+
+          // Csak open/booked slotokat jelölünk (closed/past nem)
+          if (slot.classList.contains('closed') || slot.classList.contains('past')) continue;
+
+          slot.classList.add('akcio-slot');
+
+          // Badge csak egész órákon (hour-start)
+          if (slot.classList.contains('hour-start') && badgeText) {
+            var badge = document.createElement('span');
+            badge.className = 'spf-akcio-badge';
+            badge.textContent = badgeText;
+            slot.appendChild(badge);
+          }
+        }
+      }
+    } catch(e) { /* fail-closed: ne törje meg a naptárt */ }
   }
 
   // ── PÁLYA VÁLTÁS ─────────────────────────────────────────
