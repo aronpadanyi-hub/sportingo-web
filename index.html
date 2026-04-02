@@ -70,6 +70,12 @@
     .sp-sportag-btn { padding: 8px 16px; border: 1.5px solid #d4e8f0; border-radius: 30px; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 600; color: #6b8a9a; cursor: pointer; transition: all .2s; white-space: nowrap; }
     .sp-sportag-btn:hover { border-color: #1a8fc1; color: #1a8fc1; }
     .sp-sportag-btn.active { background: linear-gradient(135deg,#1a8fc1,#2dbf7e); border-color: transparent; color: white; box-shadow: 0 4px 14px rgba(26,143,193,.25); }
+    /* Létszám szűrő sor */
+    .sp-letszam-wrap { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .sp-letszam-label { font-size: .75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+    .sp-letszam-btn { padding: 6px 13px; border: 1.5px solid #d4e8f0; border-radius: 30px; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .8rem; font-weight: 600; color: #6b8a9a; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .sp-letszam-btn:hover { border-color: #1a8fc1; color: #1a8fc1; }
+    .sp-letszam-btn.active { background: #0a1628; border-color: #0a1628; color: white; box-shadow: 0 3px 10px rgba(10,22,40,.2); }
     .sp-selects { display: flex; flex-wrap: wrap; gap: .5rem; flex: 1; }
     .sp-select { padding: 9px 32px 9px 14px; border: 1.5px solid #d4e8f0; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; color: #1a2e3b; background: white; cursor: pointer; outline: none; transition: border-color .2s; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b8a9a' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
     .sp-select:focus { border-color: #1a8fc1; }
@@ -78,9 +84,11 @@
 
     /* ── RESULTS ── */
     .sp-main { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
-    .sp-results-header { margin-bottom: 1rem; }
+    .sp-results-header { margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .sp-count { font-size: .88rem; color: #6b8a9a; font-weight: 500; }
     .sp-count strong { color: #1a2e3b; }
+    .sp-sort-select { padding: 7px 28px 7px 12px; border: 1.5px solid #d4e8f0; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .82rem; color: #1a2e3b; background: white; cursor: pointer; outline: none; transition: border-color .2s; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b8a9a' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; }
+    .sp-sort-select:focus { border-color: #1a8fc1; }
     .sp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
     .sp-loading { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; color: #6b8a9a; font-size: .9rem; }
     .sp-spinner { width: 36px; height: 36px; border: 3px solid #d4e8f0; border-top-color: #1a8fc1; border-radius: 50%; animation: spin .7s linear infinite; }
@@ -314,6 +322,14 @@
         <button class="sp-sportag-btn" data-sport="Padel">🏸 Padel</button>
         <button class="sp-sportag-btn" data-sport="Squash">🟡 Squash</button>
       </div>
+      <div class="sp-letszam-wrap">
+        <span class="sp-letszam-label">👥</span>
+        <button class="sp-letszam-btn" data-letszam="" data-min="" data-max="">Bármennyi</button>
+        <button class="sp-letszam-btn" data-letszam="2-4" data-min="2" data-max="4">2–4 fő</button>
+        <button class="sp-letszam-btn" data-letszam="4-8" data-min="4" data-max="8">4–8 fő</button>
+        <button class="sp-letszam-btn" data-letszam="8-14" data-min="8" data-max="14">8–14 fő</button>
+        <button class="sp-letszam-btn" data-letszam="14+" data-min="14" data-max="">14+ fő</button>
+      </div>
     </div>
     <div class="sp-filters__dynamic" id="sp-dynamic-filters" style="display:none;">
       <div class="sp-selects" id="sp-selects-wrap"></div>
@@ -329,6 +345,10 @@
 <main class="sp-main">
   <div class="sp-results-header">
     <div id="sp-count" class="sp-count"></div>
+    <select id="sp-sort" class="sp-sort-select" aria-label="Rendezés">
+      <option value="alapertelmezett">Alapértelmezett</option>
+      <option value="ertekeles">⭐ Legjobb értékelés</option>
+    </select>
   </div>
   <div id="sp-grid" class="sp-grid">
     <div class="sp-loading">
@@ -1025,13 +1045,32 @@
 
   let allHelyszinek=[], filtered=[], activeFilters={}, activeSport='', debounceTimer=null;
   const grid=document.getElementById('sp-grid'), countEl=document.getElementById('sp-count');
+  const sortEl=document.getElementById('sp-sort');
+  let activeSort='alapertelmezett';
+  if(sortEl) sortEl.addEventListener('change',()=>{ activeSort=sortEl.value; applyFilters(); });
+
+  // Létszám szűrő
+  let activeLetszam = { min: null, max: null }; // null = szűrés nélkül
+  document.querySelectorAll('.sp-letszam-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sp-letszam-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      var min = btn.dataset.min ? parseInt(btn.dataset.min) : null;
+      var max = btn.dataset.max ? parseInt(btn.dataset.max) : null;
+      activeLetszam = { min: min, max: max };
+      applyFilters();
+    });
+  });
+  // Alapértelmezett: "Bármennyi" aktív
+  var defaultLetszamBtn = document.querySelector('.sp-letszam-btn[data-letszam=""]');
+  if (defaultLetszamBtn) defaultLetszamBtn.classList.add('active');
   const searchEl=document.getElementById('sp-search'), clearBtn=document.getElementById('sp-search-clear');
   const resetBtn=document.getElementById('sp-reset'), dynPanel=document.getElementById('sp-dynamic-filters');
   const selectsWrap=document.getElementById('sp-selects-wrap');
 
   async function loadHelyszinek(){
     try {
-      const url = SUPABASE_URL+'/rest/v1/helyszinek?statusz=eq.jovahagyva&select=id,nev,slug,varos,helyszin,palyas(id,slug,sportag,boritas,fedett,jatekforma,ar_per_ora,kep_url,statusz)&order=nev.asc&limit=300';
+      const url = SUPABASE_URL+'/rest/v1/helyszinek?statusz=eq.jovahagyva&select=id,nev,slug,varos,helyszin,palyas(id,slug,sportag,boritas,fedett,jatekforma,ar_per_ora,kep_url,statusz,min_letszam,max_letszam)&order=nev.asc&limit=300';
       const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer '+SUPABASE_KEY } });
       if(!res.ok) throw new Error();
       const data = await res.json();
@@ -1107,7 +1146,7 @@
   function applyFilters(){
     const search=searchEl.value.trim().toLowerCase();
     clearBtn.style.display=search?'flex':'none';
-    const hasAnyFilter=search||activeSport||Object.values(activeFilters).some(v=>v);
+    const hasAnyFilter=search||activeSport||Object.values(activeFilters).some(v=>v)||(activeLetszam.min!==null||activeLetszam.max!==null);
     resetBtn.style.display=hasAnyFilter?'flex':'none';
     filtered=allHelyszinek.filter(h=>{
       if(search){ const t=[(h.nev||''),(h.varos||'')].join(' ').toLowerCase(); if(!t.includes(search)) return false; }
@@ -1117,8 +1156,44 @@
         if(!val) continue;
         if(!rel.some(p=>(p[id]||'').toLowerCase().includes(val.toLowerCase()))) return false;
       }
+      // Létszám szűrő: tartomány-metszet alapú
+      // Helyszín bent marad, ha van legalább 1 releváns pálya amelynek tartománya metszi a kiválasztottat
+      if (activeLetszam.min !== null || activeLetszam.max !== null) {
+        var letszamMin = activeLetszam.min; // kiválasztott tartomány alja
+        var letszamMax = activeLetszam.max; // kiválasztott tartomány teteje (null = végtelen = 14+)
+        var vanMegfelelo = rel.some(function(p) {
+          var pMin = p.min_letszam != null ? p.min_letszam : null;
+          var pMax = p.max_letszam != null ? p.max_letszam : null;
+          // Ha a pályán nincs létszám adat: kihagyjuk (nem tudjuk ellenőrizni)
+          if (pMin === null || pMax === null) return false;
+          // Tartomány metszet: pálya[min,max] metszi a kiválasztott [letszamMin, letszamMax]-ot
+          // 14+ esetén letszamMax === null → csak a pMax >= 14 feltétel kell
+          if (letszamMax === null) {
+            // 14+ fő: pálya max >= 14
+            return pMax >= letszamMin;
+          }
+          // Normál tartomány: pMin <= letszamMax AND pMax >= letszamMin
+          return pMin <= letszamMax && pMax >= letszamMin;
+        });
+        if (!vanMegfelelo) return false;
+      }
       return true;
     });
+    // Rendezés: legjobb értékelés szerint
+    if (activeSort === 'ertekeles') {
+      filtered = filtered.slice().sort(function(a, b) {
+        var ra = reviewMap[a.id], rb = reviewMap[b.id];
+        // review nélküli helyszínek hátrébb
+        if (!ra && !rb) return 0;
+        if (!ra) return 1;
+        if (!rb) return -1;
+        // magasabb átlag előre
+        var diff = parseFloat(rb.atlag) - parseFloat(ra.atlag);
+        if (diff !== 0) return diff;
+        // azonos átlag esetén több review előre
+        return rb.count - ra.count;
+      });
+    }
     renderCards();
   }
 
@@ -1170,6 +1245,9 @@
   resetBtn.addEventListener('click',()=>{
     searchEl.value=''; clearBtn.style.display='none'; activeFilters={}; activeSport='';
     document.querySelectorAll('.sp-sportag-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    // Létszám szűrő reset
+    activeLetszam = { min: null, max: null };
+    document.querySelectorAll('.sp-letszam-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
     dynPanel.style.display='none'; selectsWrap.innerHTML=''; applyFilters();
   });
 
