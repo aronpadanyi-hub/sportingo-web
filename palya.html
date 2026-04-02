@@ -2505,6 +2505,9 @@ async function spfMount(origPalya) {
         return;
       }
 
+      // Diagnosztikai számlálók
+      var diagDatumba = 0, diagClosed = 0, diagPast = 0, diagOpen = 0, diagBooked = 0;
+
       var jeloltSzlotok = 0;
       osszesSzlot.forEach(function(slot) {
         var datumStr = slot.dataset.datum;
@@ -2522,6 +2525,13 @@ async function spfMount(origPalya) {
           if (slotPerc < iovKezdPerc || slotPerc > iovVegPerc) return;
         }
 
+        // Diagnosztika: állapot megszámlálása
+        diagDatumba++;
+        if (slot.classList.contains('closed'))  diagClosed++;
+        if (slot.classList.contains('past'))     diagPast++;
+        if (slot.classList.contains('open'))     diagOpen++;
+        if (slot.classList.contains('booked'))   diagBooked++;
+
         // Closed és past slotokat kihagyjuk
         if (slot.classList.contains('closed') || slot.classList.contains('past')) return;
 
@@ -2537,6 +2547,8 @@ async function spfMount(origPalya) {
         }
       });
 
+      console.log('[AKCIO HIGHLIGHT] dátumba és idősávba eső slotok:', diagDatumba);
+      console.log('[AKCIO HIGHLIGHT] ebből closed:', diagClosed, '| past:', diagPast, '| open:', diagOpen, '| booked:', diagBooked);
       console.log('[AKCIO HIGHLIGHT 5] ténylegesen megjelölt slotok:', jeloltSzlotok);
 
     } catch(e) {
