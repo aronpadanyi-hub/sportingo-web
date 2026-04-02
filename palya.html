@@ -2283,12 +2283,33 @@ async function spfMount(origPalya) {
         promosav.classList.add('lathato');
       }
 
-      // ── NAPTÁR HIGHLIGHT: jövőbeli akció is mehet ───────────
-      if (highlightAkciok.length) {
-        var h = sortAkciok(highlightAkciok)[0];
+      // ── NAPTÁR HIGHLIGHT: a megjelenített hétre releváns akció ───────────
+      // A megjelenített hét határa SPF.calDate alapján
+      var weekMon  = spfGetWeekMonday(SPF.calDate);
+      var weekSun  = new Date(weekMon); weekSun.setDate(weekSun.getDate() + 6);
+      var weekStart = spfFmtDate(weekMon);
+      var weekEnd   = spfFmtDate(weekSun);
+      console.log('[AKCIO DEBUG] highlight összes:', highlightAkciok.length);
+      console.log('[AKCIO DEBUG] hét kezdete:', weekStart, '| hét vége:', weekEnd);
+
+      // Csak azok az akciók relevánsak, amelyek metszenek a megjelenített héttel:
+      // akció[datum_tol, datum_ig] ∩ hét[weekStart, weekEnd] ≠ ∅
+      // feltétel: datum_tol <= weekEnd ÉS datum_ig >= weekStart
+      var hetiHighlightAkciok = highlightAkciok.filter(function(a) {
+        var aTol = a.datum_tol || '0000-01-01'; // nincs kezdet → mindig érvényes
+        var aIg  = a.datum_ig  || '9999-12-31'; // nincs vég → mindig érvényes
+        return aTol <= weekEnd && aIg >= weekStart;
+      });
+      console.log('[AKCIO DEBUG] hétre releváns highlight:', hetiHighlightAkciok.length);
+
+      SPF.aktioNapok = null;
+      SPF.aktioAdat  = null;
+
+      if (hetiHighlightAkciok.length) {
+        var h = sortAkciok(hetiHighlightAkciok)[0];
         var hTol = h.datum_tol || '';
         var hIg  = h.datum_ig  || '';
-        console.log('[AKCIO DEBUG] kiválasztott highlight akció:', h.nev, '| tol:', hTol, '| ig:', hIg);
+        console.log('[AKCIO DEBUG] kiválasztott heti highlight akció:', h.nev, '| tol:', hTol, '| ig:', hIg);
         if (hTol && hIg) {
           SPF.aktioNapok = { tol: hTol, ig: hIg };
           SPF.aktioAdat  = {
@@ -2535,6 +2556,7 @@ async function spfMount(origPalya) {
   window.spfChangeWeek = async function(dir) {
     SPF.calDate.setDate(SPF.calDate.getDate() + dir*7);
     await loadAndRenderCal();
+    await loadAkciok(); // hétváltáskor újra kiválasztja a hétre releváns akciót
   };
 
   // ── STEP KEZELÉS ─────────────────────────────────────────
