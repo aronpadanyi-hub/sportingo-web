@@ -2368,7 +2368,7 @@ async function spfMount(origPalya) {
           cls = isSel ? 'selected' : 'open';
           click = `onclick="spfToggle('${key}')"`;
         }
-        html += `<div class="spf-slot ${cls}${isHour?' hour-start':''}" style="height:26px;" ${click} title="${time}"></div>`;
+        html += `<div class="spf-slot ${cls}${isHour?' hour-start':''}" style="height:26px;" ${click} title="${time}" data-datum="${spfFmtDate(d)}" data-time="${time}"></div>`;
       });
     });
     html += '</div>';
@@ -2427,20 +2427,30 @@ async function spfMount(origPalya) {
 
     var an = SPF.aktioNapok;
     var ad = SPF.aktioAdat;
-    if (!an || !an.tol || !an.ig) return;
+
+    if (!an || !an.tol || !an.ig) {
+      console.warn('[AKCIO HIGHLIGHT] nincs aktioNapok adat – highlight kihagyva');
+      return;
+    }
 
     try {
       var tolDate = new Date(an.tol + 'T00:00:00');
       var igDate  = new Date(an.ig  + 'T00:00:00');
-      if (isNaN(tolDate) || isNaN(igDate)) return;
+      if (isNaN(tolDate) || isNaN(igDate)) {
+        console.warn('[AKCIO HIGHLIGHT] érvénytelen dátum:', an.tol, an.ig);
+        return;
+      }
+
+      console.log('[AKCIO HIGHLIGHT 1] akció tartomány:', an.tol, '–', an.ig,
+        '| idősáv:', ad && ad.idosav_kezdes ? ad.idosav_kezdes + '–' + ad.idosav_veg : 'nincs');
 
       // Badge szöveg
       var badgeText = '';
       if (ad && ad.akcio_tipus === 'szazalek' && ad.ertek) badgeText = '-' + ad.ertek + '%';
-      else if (ad && ad.akcio_tipus === 'last_minute')      badgeText = 'LM';
-      else                                                   badgeText = '🔥';
+      else if (ad && ad.akcio_tipus === 'last_minute') badgeText = 'LM';
+      else badgeText = '🔥';
 
-      // Idősáv percben (ha van)
+      // Idősáv percben
       var hasIdosav = ad && ad.idosav_kezdes && ad.idosav_veg;
       var iovKezdPerc = 0, iovVegPerc = 24 * 60;
       if (hasIdosav) {
@@ -2448,86 +2458,66 @@ async function spfMount(origPalya) {
         var vp = ad.idosav_veg.substring(0,5).split(':');
         iovKezdPerc = parseInt(kp[0]) * 60 + parseInt(kp[1]);
         iovVegPerc  = parseInt(vp[0]) * 60 + parseInt(vp[1]);
+        console.log('[AKCIO HIGHLIGHT 2] idősáv percben:', iovKezdPerc, '–', iovVegPerc);
       }
 
-      // Nap header jelölés (minden érintett napra, idősávtól függetlenül)
-      document.querySelectorAll('.spf-cal-dayhdr').forEach(function(hdr) {
-        var datumStr = hdr.dataset.datum;
-        if (!datumStr) return;
-        var d = new Date(datumStr + 'T00:00:00');
-        if (d >= tolDate && d <= igDate) hdr.classList.add('akcio-nap');
-      });
-
-      // Slot jelölés: data-datum és title (time) alapján
-      // A slotoknak nincs explicit dátum attribútuma, de a naptár oszloponként épül.
-      // A grid struktúra: 1. col = time label, 2-8. col = napok (hétfőtől vasárnapig)
-      // A .spf-cal-grid gyermekei sorban: corner, 7 dayhdr, majd soronként: time-lbl + 7 slot
-      var grid = document.getElementById('spf-cal-grid');
-      if (!grid) return;
-
-      // Gyűjtsük a dayhdr elemek dátumait (oszlop sorrend)
-      var dayDatumok = [];
-      grid.querySelectorAll('.spf-cal-dayhdr').forEach(function(hdr) {
-        dayDatumok.push(hdr.dataset.datum || '');
-      });
-      if (!dayDatumok.length) return;
-
-      // Minden sor: time-lbl + 7 slot váltakozva
-      // A grid children: [corner, hdr0..hdr6, timelbl0, slot0..slot6, timelbl1, slot0..slot6, ...]
-      var children = Array.from(grid.children);
-      // Az első 8 elem: corner + 7 dayhdr → kihagyjuk
-      var dataRows = children.slice(8); // time-lbl + slot sorok
-
-      var colCount = dayDatumok.length; // tipikusan 7
-      // Soronként: 1 time-lbl + colCount slot = colCount+1 elem
-      var rowSize = colCount + 1;
-
-      for (var i = 0; i < dataRows.length; i += rowSize) {
-        var timeLbl = dataRows[i];
-        if (!timeLbl) continue;
-
-        // Az időt a title-ből vagy a span szövegéből olvassuk
-        var timeStr = '';
-        var span = timeLbl.querySelector('span');
-        if (span) timeStr = span.textContent.trim();
-        // Ha üres (nem egész óra), az előző egész óra alapján kell, de skip-elünk
-        // – csak egész + fél órákat tudunk kezelni, a title alapján
-        if (!timeStr) continue;
-
-        // Időt percbe
-        var tp = timeStr.split(':');
-        var slotPerc = parseInt(tp[0]) * 60 + parseInt(tp[1]);
-
-        // Idősáv ellenőrzés: inkluzív határok
-        var slotAkciosIdo = !hasIdosav || (slotPerc >= iovKezdPerc && slotPerc <= iovVegPerc);
-        if (!slotAkciosIdo) continue;
-
-        // A sorban lévő 7 slot (i+1 … i+colCount)
-        for (var j = 1; j <= colCount; j++) {
-          var slot = dataRows[i + j];
-          if (!slot || !slot.classList.contains('spf-slot')) continue;
-
-          var datum = dayDatumok[j - 1];
-          if (!datum) continue;
-
-          var d = new Date(datum + 'T00:00:00');
-          if (d < tolDate || d > igDate) continue;
-
-          // Csak open/booked slotokat jelölünk (closed/past nem)
-          if (slot.classList.contains('closed') || slot.classList.contains('past')) continue;
-
-          slot.classList.add('akcio-slot');
-
-          // Badge csak egész órákon (hour-start)
-          if (slot.classList.contains('hour-start') && badgeText) {
-            var badge = document.createElement('span');
-            badge.className = 'spf-akcio-badge';
-            badge.textContent = badgeText;
-            slot.appendChild(badge);
-          }
+      // Nap header jelölés
+      var fejlecJelolt = 0;
+      document.querySelectorAll('.spf-cal-dayhdr[data-datum]').forEach(function(hdr) {
+        var d = new Date(hdr.dataset.datum + 'T00:00:00');
+        if (d >= tolDate && d <= igDate) {
+          hdr.classList.add('akcio-nap');
+          fejlecJelolt++;
         }
+      });
+      console.log('[AKCIO HIGHLIGHT 3] jelölt nap fejlécek:', fejlecJelolt);
+
+      // Slot jelölés – data-datum és data-time alapján (megbízható)
+      var osszesSzlot = document.querySelectorAll('.spf-slot[data-datum]');
+      console.log('[AKCIO HIGHLIGHT 4] összes data-datum-os slot:', osszesSzlot.length);
+
+      if (osszesSzlot.length === 0) {
+        console.warn('[AKCIO HIGHLIGHT] FIGYELEM: nincsenek data-datum attribútumos slotok! Lehet régi render?');
+        return;
       }
-    } catch(e) { /* fail-closed: ne törje meg a naptárt */ }
+
+      var jeloltSzlotok = 0;
+      osszesSzlot.forEach(function(slot) {
+        var datumStr = slot.dataset.datum;
+        var timeStr  = slot.dataset.time;
+        if (!datumStr || !timeStr) return;
+
+        // Dátum ellenőrzés
+        var d = new Date(datumStr + 'T00:00:00');
+        if (d < tolDate || d > igDate) return;
+
+        // Időszak ellenőrzés
+        if (hasIdosav) {
+          var tp = timeStr.split(':');
+          var slotPerc = parseInt(tp[0]) * 60 + parseInt(tp[1]);
+          if (slotPerc < iovKezdPerc || slotPerc > iovVegPerc) return;
+        }
+
+        // Closed és past slotokat kihagyjuk
+        if (slot.classList.contains('closed') || slot.classList.contains('past')) return;
+
+        slot.classList.add('akcio-slot');
+        jeloltSzlotok++;
+
+        // Badge csak egész órákon
+        if (slot.classList.contains('hour-start') && badgeText) {
+          var badge = document.createElement('span');
+          badge.className = 'spf-akcio-badge';
+          badge.textContent = badgeText;
+          slot.appendChild(badge);
+        }
+      });
+
+      console.log('[AKCIO HIGHLIGHT 5] ténylegesen megjelölt slotok:', jeloltSzlotok);
+
+    } catch(e) {
+      console.warn('[AKCIO HIGHLIGHT] hiba a highlight során:', e);
+    }
   }
 
   // ── PÁLYA VÁLTÁS ─────────────────────────────────────────
