@@ -565,24 +565,17 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
   var sum = allData.reduce(function(a, r) { return a + r.rating; }, 0);
   var atlag = totalCount ? (sum / allData.length).toFixed(1) : '–';
 
-  // ── Preview lista: top 3 szöveges értékelés ──
+  // ── Preview lista: top 5 legfrissebb → szövegesek előre, max 3 megjelenítve ──
   var previewRes = await sb.from('ertekelesek')
     .select('rating, szoveg, user_nev, letrehozas_datum, updated_at, palyas(nev)')
     .eq('helyszin_id', helyszinId)
-    .not('szoveg', 'is', null)
     .order('updated_at', { ascending: false })
-    .limit(3);
+    .limit(5);
 
-  var previewData = previewRes.data || [];
-  // Ha nincs szöveges review, esés nélkül fallback: bármilyen top 3
-  if (!previewData.length) {
-    var fbRes = await sb.from('ertekelesek')
-      .select('rating, szoveg, user_nev, letrehozas_datum, updated_at, palyas(nev)')
-      .eq('helyszin_id', helyszinId)
-      .order('letrehozas_datum', { ascending: false })
-      .limit(3);
-    previewData = fbRes.data || [];
-  }
+  var allPreview   = previewRes.data || [];
+  var withText     = allPreview.filter(function(r){ return r.szoveg && r.szoveg.trim(); });
+  var withoutText  = allPreview.filter(function(r){ return !r.szoveg || !r.szoveg.trim(); });
+  var previewData  = withText.concat(withoutText).slice(0, 3);
 
   var countText = totalCount + ' értékelés alapján';
 
