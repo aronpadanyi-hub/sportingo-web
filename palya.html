@@ -30,7 +30,32 @@
 
     /* ── MAIN BODY GRID ── */
     .sp-body { display: grid; grid-template-columns: 1fr 400px; gap: 28px; align-items: start; }
-    @media(max-width: 900px) { .sp-body { grid-template-columns: 1fr; } }
+    @media(max-width: 900px) {
+      .sp-body { grid-template-columns: 1fr; }
+    }
+
+    /* ── Mobil sorrend: foglalás a hero után ── */
+    @media (max-width: 900px) {
+      /* A sp-wrap flex konténer mobilon → order vezérli a sorrendet */
+      .sp-wrap { display: flex; flex-direction: column; padding-bottom: 60px; }
+
+      /* Sorrend: breadcrumb → hero → foglalás → sp-body */
+      .sp-breadcrumb { order: 0; }
+      .sp-hero        { order: 1; }
+
+      /* Naptáras és form-os foglalás: közvetlenül a hero után */
+      #spf-card       { order: 2; margin-top: 16px; }
+      #foglalas-form  { order: 2; margin-top: 0; }
+
+      /* sp-body (alapadatok, sidebar stb.): utána */
+      .sp-body        { order: 3; width: 100%; }
+
+      /* Mobilon a sidebar CTA gomb (scroll-to-form anchor) elrejtése –
+         az űrlap már fent van, nincs szükség a duplicate CTA-ra */
+      .sp-cta .sp-cta-btn { display: none; }
+      /* De a "Foglalás nem szükséges" kártya és külső link maradjon */
+      .sp-cta:has(a[target="_blank"]) .sp-cta-btn { display: flex; }
+    }
 
     /* ── CARDS ── */
     .sp-card { background: white; border-radius: 20px; border: 1.5px solid #e4eef5; padding: 24px 26px; margin-bottom: 20px; box-shadow: 0 2px 16px rgba(10,22,40,.06); }
