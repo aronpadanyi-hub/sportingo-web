@@ -1932,10 +1932,7 @@
             reviewBtn = `<button class="sfd-btn-ertekeles" data-fid="${f.id}" data-pid="${f.palya_id}" data-hid="${helyszinId}" data-nev="${palyaNev}" onclick="sfdNyitReviewModal(this)">⭐ Újra értékelem</button>`;
           } else {
             // 90 napon belül → tájékoztató, nem szerkeszthető
-            const ertDatumStr = ertDatum ? ertDatum.toLocaleDateString('hu-HU', { month: 'long', day: 'numeric' }) : '–';
-            const kovetkezoDatum = ertDatum ? new Date(ertDatum.getTime() + nap90) : null;
-            const kovetkezoStr = kovetkezoDatum ? kovetkezoDatum.toLocaleDateString('hu-HU', { month: 'long', day: 'numeric' }) : '–';
-            reviewBtn = `<div class="sfd-review-info">Értékelted: <strong>${ertDatumStr}</strong> · Újra értékelhető: <strong>${kovetkezoStr}</strong></div>`;
+            reviewBtn = '';
           }
         } else {
           reviewBtn = `<button class="sfd-btn-ertekeles" data-fid="${f.id}" data-pid="${f.palya_id}" data-hid="${helyszinId}" data-nev="${palyaNev}" onclick="sfdNyitReviewModal(this)">⭐ Értékelem</button>`;
