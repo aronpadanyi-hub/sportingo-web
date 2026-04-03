@@ -8,6 +8,7 @@
   <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/sportingo-drawer.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: #f5f9fc; color: #0a1628; padding-top: 68px; }
@@ -87,463 +88,7 @@
     .sp-footer a:hover { color:white; }
     .sp-footer-logo { font-size:1.1rem; font-weight:900; letter-spacing:6px; text-transform:uppercase; color:white; margin-bottom:12px; }
     .sp-footer-logo span { color:#1a8fc1; }
-    /* LOGIN MODAL */
-    #sp-login-modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,.55); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .25s; }
-    #sp-login-modal-overlay.open { opacity: 1; pointer-events: all; }
-    #sp-login-modal { background: white; border-radius: 20px; width: 420px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.25); overflow: hidden; }
-    .sp-modal-head { padding: 20px 20px 16px; display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1.5px solid #f0f7fb; }
-    .sp-modal-logo img { height: 36px; }
-    .sp-modal-subtitle { font-size: .78rem; color: #6b8a9a; font-weight: 600; margin-top: 4px; }
-    .sp-modal-close { background: #f0f7fb; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; color: #6b8a9a; transition: all .2s; flex-shrink: 0; }
-    .sp-modal-close:hover { background: #d4e8f0; color: #0a1628; }
-    #sp-login-modal-body { padding: 20px; }
-    .sp-login-alert { padding: 10px 14px; border-radius: 10px; font-size: .83rem; font-weight: 600; margin-bottom: 14px; display: none; }
-    .sp-login-alert.error { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
-    .sp-login-alert.success { background: rgba(45,191,126,.1); color: #1a9960; border: 1px solid rgba(45,191,126,.3); }
-    .sp-login-tabs { display: flex; gap: 4px; background: #f0f7fb; border-radius: 12px; padding: 4px; margin-bottom: 18px; }
-    .sp-login-tab { flex: 1; padding: 8px; text-align: center; font-size: .85rem; font-weight: 600; cursor: pointer; border-radius: 9px; border: none; background: transparent; color: #6b8a9a; transition: all .2s; font-family: inherit; }
-    .sp-login-tab.active { background: white; color: #0a1628; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .sp-lv-section { display: none; }
-    .sp-lv-section.active { display: block; }
-    .sp-login-input { width: 100%; padding: 11px 14px; border: 1.5px solid #d4e8f0; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .9rem; color: #0a1628; background: white; outline: none; transition: all .2s; margin-bottom: 10px; }
-    .sp-login-input:focus { border-color: #1a8fc1; box-shadow: 0 0 0 3px rgba(26,143,193,.1); }
-    .sp-login-btn { width: 100%; padding: 12px; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; border: none; border-radius: 11px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .92rem; font-weight: 700; cursor: pointer; transition: all .2s; margin-bottom: 10px; }
-    .sp-login-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,143,193,.3); }
-    .sp-login-btn:disabled { opacity: .6; cursor: not-allowed; }
-    .sp-google-btn { width: 100%; padding: 11px; background: white; color: #1a2e3b; border: 1.5px solid #d4e8f0; border-radius: 11px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .88rem; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-    .sp-google-btn:hover { border-color: #1a8fc1; }
-    .sp-login-divider { display: flex; align-items: center; gap: 10px; color: #6b8a9a; font-size: .78rem; margin: 4px 0 10px; }
-    .sp-login-divider::before, .sp-login-divider::after { content: ''; flex: 1; height: 1px; background: #d4e8f0; }
-    .sp-login-link { font-size: .78rem; color: #1a8fc1; font-weight: 600; cursor: pointer; background: none; border: none; padding: 0; font-family: inherit; text-decoration: underline; }
-    .sp-modal-foot { padding: 12px 20px; border-top: 1.5px solid #f0f7fb; font-size: .78rem; color: #6b8a9a; text-align: center; }
-    .sp-modal-foot a { color: #1a8fc1; font-weight: 600; text-decoration: none; }
-    @media (max-width:900px) {
-      #sp-nav, #sp-socials { display:none; }
-      #sp-hamburger { display:flex; }
-      #sp-mobile-menu { display:block; }
-      .sp-contact-section { grid-template-columns:1fr; gap:32px; }
-    }
-    @media (max-width:600px) {
-      #sp-login-modal { border-radius: 16px 16px 0 0; max-height: 95vh; position: fixed; bottom: 0; width: 100%; }
-      #sp-login-modal-overlay { align-items: flex-end; }
-    }
-    @media (max-width:560px) {
-      .sp-form-row { grid-template-columns:1fr; }
-      .sp-form-card { padding:22px; }
-      body { padding-top:60px; }
-      #sp-header-inner { height:60px; }
-      #sp-logo-img { height:32px; }
-    }
-
-    /* ── DRAWER CSS ── */
-
-
-/* ── Panel overlay ── */
-#sp-drawer-overlay {
-  position: fixed; inset: 0;
-  background: rgba(10,22,40,.5);
-  backdrop-filter: blur(4px);
-  z-index: 9998; opacity: 0; pointer-events: none;
-  transition: opacity .35s;
-}
-#sp-drawer-overlay.open { opacity: 1; pointer-events: all; }
-
-/* ── Panel alap ── */
-#sp-drawer {
-  position: fixed; top: 0; right: 0; bottom: 0;
-  width: 860px; max-width: 100vw;
-  background: #f5f9fc;
-  z-index: 9999;
-  box-shadow: -12px 0 60px rgba(10,22,40,.18);
-  transform: translateX(100%);
-  transition: transform .38s cubic-bezier(.4,0,.2,1);
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-#sp-drawer.open { transform: translateX(0); }
-
-/* ── Panel fejléc ── */
-.sfd-header {
-  background: linear-gradient(135deg, #0a1628 0%, #0f2040 100%);
-  padding: 0;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-.sfd-header::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 80% 50%, rgba(45,191,126,.15), transparent 60%),
-              radial-gradient(ellipse at 20% 80%, rgba(26,143,193,.12), transparent 50%);
-  pointer-events: none;
-}
-.sfd-header-inner {
-  position: relative;
-  padding: 20px 24px 0;
-  display: flex; gap: 16px; align-items: flex-start;
-}
-.sfd-avatar {
-  width: 52px; height: 52px; border-radius: 50%;
-  background: linear-gradient(135deg, #1a8fc1, #2dbf7e);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 900; font-size: 1.3rem; color: white;
-  flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(45,191,126,.3);
-}
-.sfd-userinfo { flex: 1; min-width: 0; padding-top: 4px; }
-.sfd-title {
-  font-size: .68rem; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; color: rgba(255,255,255,.45);
-  margin-bottom: 2px;
-}
-.sfd-name {
-  font-weight: 800; font-size: 1.05rem; color: white;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sfd-email { font-size: .75rem; color: rgba(255,255,255,.5); margin-top: 1px; }
-.sfd-close {
-  background: rgba(255,255,255,.1); border: none; border-radius: 50%;
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: rgba(255,255,255,.7);
-  font-size: .9rem; transition: all .2s; flex-shrink: 0;
-  margin-top: 4px;
-}
-.sfd-close:hover { background: rgba(255,255,255,.2); color: white; }
-
-/* ── CTA gomb a fejlécben ── */
-.sfd-header-cta {
-  margin: 14px 24px 0;
-  position: relative;
-}
-.sfd-search-btn {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 11px 18px;
-  background: linear-gradient(135deg, #1a8fc1, #2dbf7e);
-  color: white; border: none; border-radius: 12px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .88rem; font-weight: 700; cursor: pointer;
-  transition: all .2s; text-decoration: none;
-  box-shadow: 0 4px 16px rgba(26,143,193,.3);
-}
-.sfd-search-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,143,193,.4); }
-.sfd-search-btn svg { flex-shrink: 0; }
-
-/* ── Nav tabs ── */
-.sfd-nav {
-  display: flex; gap: 0;
-  padding: 16px 24px 0;
-  position: relative;
-}
-.sfd-nav-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 10px 16px;
-  background: none; border: none; border-bottom: 2.5px solid transparent;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .8rem; font-weight: 700; color: rgba(255,255,255,.45);
-  cursor: pointer; transition: all .2s; white-space: nowrap;
-}
-.sfd-nav-btn:hover { color: rgba(255,255,255,.75); }
-.sfd-nav-btn.active { color: #2dbf7e; border-bottom-color: #2dbf7e; }
-.sfd-nav-btn .nav-icon { font-size: .9rem; }
-
-/* ── Tartalom terület ── */
-.sfd-body {
-  flex: 1; overflow-y: auto;
-  padding: 24px;
-  background: #f5f9fc;
-}
-.sfd-panel { display: none; }
-.sfd-panel.active { display: block; }
-
-/* ── Áttekintés ── */
-.sfd-overview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.sfd-stat-card {
-  background: white; border-radius: 16px;
-  padding: 18px 16px;
-  border: 1.5px solid #e8f2f8;
-  cursor: pointer; transition: all .22s;
-  text-align: center;
-}
-.sfd-stat-card:hover { border-color: #1a8fc1; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,143,193,.1); }
-.sfd-stat-val {
-  font-size: 1.6rem; font-weight: 900; color: #0a1628;
-  line-height: 1;
-}
-.sfd-stat-lbl {
-  font-size: .72rem; font-weight: 700; color: #6b8a9a;
-  margin-top: 6px; text-transform: uppercase; letter-spacing: .04em;
-}
-
-/* Következő foglalás kártya */
-.sfd-next-booking {
-  background: linear-gradient(135deg, rgba(26,143,193,.08), rgba(45,191,126,.06));
-  border: 1.5px solid rgba(26,143,193,.2);
-  border-radius: 16px; padding: 18px 20px;
-  margin-bottom: 20px;
-}
-.sfd-next-label {
-  font-size: .7rem; font-weight: 700; color: #1a8fc1;
-  text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px;
-}
-.sfd-next-val {
-  font-size: 1rem; font-weight: 800; color: #0a1628;
-}
-.sfd-next-sub { font-size: .78rem; color: #6b8a9a; margin-top: 2px; }
-
-/* Gyors akciók */
-.sfd-quick-actions {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 10px; margin-bottom: 24px;
-}
-.sfd-quick-btn {
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 16px;
-  background: white; border: 1.5px solid #e8f2f8;
-  border-radius: 14px; cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .85rem; font-weight: 700; color: #0a1628;
-  transition: all .2s; text-decoration: none;
-}
-.sfd-quick-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
-.sfd-quick-btn .qb-icon {
-  width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, rgba(26,143,193,.12), rgba(45,191,126,.1));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; flex-shrink: 0;
-}
-
-/* ── Foglalások ── */
-.sfd-filter-bar {
-  display: flex; gap: 6px; margin-bottom: 16px;
-  overflow-x: auto; padding-bottom: 4px;
-}
-.sfd-filter-chip {
-  padding: 6px 14px; border-radius: 20px;
-  border: 1.5px solid #d4e8f0; background: white;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .78rem; font-weight: 700; color: #6b8a9a;
-  cursor: pointer; transition: all .2s; white-space: nowrap; flex-shrink: 0;
-}
-.sfd-filter-chip.active { background: #0a1628; border-color: #0a1628; color: white; }
-
-.sfd-booking-card {
-  background: white; border-radius: 14px;
-  padding: 14px 16px; margin-bottom: 10px;
-  border: 1.5px solid #e8f2f8;
-  transition: border-color .2s;
-}
-.sfd-booking-card.jovahagyva { border-left: 3px solid #2dbf7e; }
-.sfd-booking-card.varakozik  { border-left: 3px solid #f59e0b; }
-.sfd-booking-card.elutasitva { border-left: 3px solid #ef4444; background: #fff9f9; }
-.sfd-booking-top {
-  display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 8px; margin-bottom: 6px;
-}
-.sfd-booking-name { font-weight: 700; font-size: .9rem; color: #0a1628; }
-.sfd-status-pill {
-  padding: 3px 10px; border-radius: 20px;
-  font-size: .68rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;
-}
-.sfd-status-pill.jovahagyva { background: rgba(45,191,126,.12); color: #1a9960; }
-.sfd-status-pill.varakozik  { background: rgba(245,158,11,.12); color: #b45309; }
-.sfd-status-pill.elutasitva { background: rgba(239,68,68,.1);   color: #ef4444; }
-.sfd-booking-meta { font-size: .75rem; color: #6b8a9a; }
-.sfd-booking-link {
-  display: inline-block; margin-top: 6px;
-  font-size: .73rem; font-weight: 700; color: #1a8fc1;
-  text-decoration: none;
-}
-
-/* ── Kedvencek ── */
-.sfd-kedvenc-card {
-  background: white; border-radius: 14px;
-  padding: 12px 16px; margin-bottom: 8px;
-  border: 1.5px solid #e8f2f8;
-  display: flex; align-items: center; gap: 12px;
-}
-.sfd-kedvenc-icon {
-  width: 40px; height: 40px; border-radius: 10px;
-  background: linear-gradient(135deg, rgba(26,143,193,.1), rgba(45,191,126,.1));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; flex-shrink: 0;
-}
-.sfd-kedvenc-info { flex: 1; min-width: 0; }
-.sfd-kedvenc-name { font-weight: 700; font-size: .88rem; color: #0a1628; }
-.sfd-kedvenc-meta { font-size: .73rem; color: #6b8a9a; margin-top: 1px; }
-.sfd-kedvenc-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.sfd-kedvenc-link {
-  font-size: .75rem; font-weight: 700; color: #1a8fc1;
-  text-decoration: none; white-space: nowrap;
-  padding: 5px 10px; border: 1.5px solid rgba(26,143,193,.25);
-  border-radius: 8px; transition: all .2s;
-}
-.sfd-kedvenc-link:hover { background: #1a8fc1; color: white; border-color: transparent; }
-.sfd-kedvenc-remove {
-  background: none; border: none; cursor: pointer;
-  color: #c0d4dc; font-size: 1rem; padding: 4px;
-  border-radius: 6px; transition: all .2s;
-}
-.sfd-kedvenc-remove:hover { background: #fee2e2; color: #ef4444; }
-
-/* ── Profil ── */
-.sfd-profil-section {
-  background: white; border-radius: 16px;
-  padding: 20px; margin-bottom: 16px;
-  border: 1.5px solid #e8f2f8;
-}
-.sfd-profil-section-title {
-  font-size: .72rem; font-weight: 700; color: #6b8a9a;
-  text-transform: uppercase; letter-spacing: .08em;
-  margin-bottom: 16px;
-}
-.sfd-field { margin-bottom: 14px; }
-.sfd-field:last-child { margin-bottom: 0; }
-.sfd-field-label {
-  font-size: .72rem; font-weight: 700; color: #6b8a9a;
-  margin-bottom: 5px;
-}
-.sfd-field-input {
-  width: 100%; padding: 10px 14px;
-  border: 1.5px solid #d4e8f0; border-radius: 10px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .9rem; color: #0a1628; background: #f8fbfd;
-  outline: none; transition: all .2s;
-}
-.sfd-field-input:focus { border-color: #1a8fc1; background: white; box-shadow: 0 0 0 3px rgba(26,143,193,.08); }
-.sfd-field-val {
-  font-size: .9rem; font-weight: 600; color: #0a1628;
-  padding: 10px 0;
-}
-.sfd-save-btn {
-  width: 100%; padding: 11px;
-  background: linear-gradient(135deg, #1a8fc1, #2dbf7e);
-  color: white; border: none; border-radius: 11px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 700; font-size: .9rem; cursor: pointer;
-  transition: all .2s; margin-top: 4px;
-}
-.sfd-save-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,143,193,.3); }
-.sfd-save-btn:disabled { opacity: .6; cursor: not-allowed; }
-.sfd-msg { font-size: .8rem; margin-top: 8px; padding: 8px 12px; border-radius: 8px; }
-.sfd-msg.ok  { background: rgba(45,191,126,.1); color: #1a9960; }
-.sfd-msg.err { background: rgba(239,68,68,.1);  color: #ef4444; }
-
-/* ── Statisztika ── */
-.sfd-stats-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 10px; margin-bottom: 16px;
-}
-.sfd-insight-card {
-  background: white; border-radius: 14px;
-  padding: 16px; border: 1.5px solid #e8f2f8;
-}
-.sfd-insight-icon { font-size: 1.3rem; margin-bottom: 8px; }
-.sfd-insight-val { font-size: 1.2rem; font-weight: 900; color: #0a1628; }
-.sfd-insight-lbl { font-size: .72rem; color: #6b8a9a; font-weight: 600; margin-top: 2px; }
-
-/* ── Empty states ── */
-.sfd-empty {
-  text-align: center; padding: 40px 20px;
-}
-.sfd-empty-icon { font-size: 2.2rem; margin-bottom: 12px; }
-.sfd-empty-title {
-  font-weight: 800; font-size: .95rem; color: #0a1628; margin-bottom: 6px;
-}
-.sfd-empty-sub {
-  font-size: .82rem; color: #6b8a9a; line-height: 1.6; max-width: 260px; margin: 0 auto;
-}
-.sfd-empty-cta {
-  display: inline-block; margin-top: 16px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #1a8fc1, #2dbf7e);
-  color: white; border-radius: 10px;
-  font-weight: 700; font-size: .85rem; text-decoration: none;
-}
-
-/* ── Pagination ── */
-.sfd-pagination {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12px; margin-top: 16px;
-}
-.sfd-page-btn {
-  padding: 7px 16px; border: 1.5px solid #d4e8f0;
-  border-radius: 8px; background: white;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .78rem; font-weight: 700; color: #6b8a9a;
-  cursor: pointer; transition: all .2s;
-}
-.sfd-page-btn:hover:not(:disabled) { border-color: #1a8fc1; color: #1a8fc1; }
-.sfd-page-btn:disabled { opacity: .4; cursor: not-allowed; }
-.sfd-page-info { font-size: .78rem; color: #6b8a9a; font-weight: 600; }
-
-/* ── Footer ── */
-.sfd-footer {
-  padding: 14px 24px;
-  border-top: 1.5px solid #e8f2f8;
-  background: white;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; flex-shrink: 0;
-}
-.sfd-footer-left {
-  font-size: .78rem; color: #6b8a9a; font-weight: 600;
-}
-.sfd-logout-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 16px;
-  background: #fff5f5; color: #ef4444;
-  border: 1.5px solid #fed7d7; border-radius: 10px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 700; font-size: .82rem; cursor: pointer;
-  transition: all .2s;
-}
-.sfd-logout-btn:hover { background: #fed7d7; }
-
-/* ── Section fejléc ── */
-.sfd-section-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-.sfd-section-title {
-  font-size: .88rem; font-weight: 800; color: #0a1628;
-}
-
-/* ══════════════════════════════════════
-   RESPONSIVE – Mobil (< 640px)
-   ══════════════════════════════════════ */
-@media (max-width: 640px) {
-  #sp-drawer {
-    width: 100vw;
-    /* Mobil: full-screen */
-  }
-  .sfd-header-inner { padding: 16px 16px 0; }
-  .sfd-header-cta { margin: 12px 16px 0; }
-  .sfd-search-btn { font-size: .85rem; padding: 10px 14px; }
-  .sfd-nav { padding: 12px 16px 0; overflow-x: auto; }
-  .sfd-nav-btn { padding: 8px 12px; font-size: .75rem; }
-  .sfd-body { padding: 16px; }
-  .sfd-overview-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .sfd-stat-card { padding: 14px 10px; }
-  .sfd-stat-val { font-size: 1.3rem; }
-  .sfd-quick-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .sfd-quick-btn { padding: 12px; font-size: .8rem; }
-  .sfd-stats-grid { grid-template-columns: 1fr 1fr; }
-  .sfd-footer { padding: 12px 16px; }
-}
-
-/* ── Desktop: 2-oszlopos layout ahol van hely ── */
-@media (min-width: 900px) {
-  .sfd-two-col {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-  }
-}
-
-  </style>
+</style>
 </head>
 <body>
 
@@ -750,6 +295,9 @@
       <button class="sfd-nav-btn" data-sfd-tab="statisztika" role="tab">
         <span class="nav-icon">📊</span> Statisztika
       </button>
+      <button class="sfd-nav-btn" data-sfd-tab="ertekelesek" role="tab">
+        <span class="nav-icon">⭐</span> Értékeléseim
+      </button>
     </nav>
   </div>
 
@@ -765,7 +313,7 @@
       <div class="sfd-overview-grid">
         <div class="sfd-stat-card" onclick="sfdSwitchTab('foglalasok')">
           <div class="sfd-stat-val" id="sfd-stat-foglalasok">–</div>
-          <div class="sfd-stat-lbl">Foglalás</div>
+          <div class="sfd-stat-lbl">Aktív foglalás</div>
         </div>
         <div class="sfd-stat-card" onclick="sfdSwitchTab('kedvencek')">
           <div class="sfd-stat-val" id="sfd-stat-kedvencek">–</div>
@@ -802,10 +350,10 @@
         <a href="https://sportingo.hu" class="sfd-kedvenc-link" onclick="closeDrawerGlobal()">+ Új foglalás</a>
       </div>
       <div class="sfd-filter-bar">
-        <button class="sfd-filter-chip active" data-sfd-filter="mind">Mind</button>
-        <button class="sfd-filter-chip" data-sfd-filter="jovahagyva">✅ Jóváhagyva</button>
+        <button class="sfd-filter-chip active" data-sfd-filter="kozelgo">📅 Közelgő</button>
+        <button class="sfd-filter-chip" data-sfd-filter="multbeli">🕐 Múltbeli</button>
+        <button class="sfd-filter-chip" data-sfd-filter="mind">Mind</button>
         <button class="sfd-filter-chip" data-sfd-filter="varakozik">⏳ Várakozik</button>
-        <button class="sfd-filter-chip" data-sfd-filter="elutasitva">❌ Elutasítva</button>
         <button class="sfd-filter-chip" data-sfd-filter="lemondva">🚫 Lemondva</button>
       </div>
       <div id="sfd-bookings-list"></div>
@@ -878,7 +426,7 @@
             <div class="sfd-insight-lbl">Jóváhagyva</div>
           </div>
           <div class="sfd-insight-card">
-            <div class="sfd-insight-icon">⚽</div>
+            <div class="sfd-insight-icon">🥇</div>
             <div class="sfd-insight-val" id="sfd-ins-sport">–</div>
             <div class="sfd-insight-lbl">Kedvenc sportág</div>
           </div>
@@ -896,6 +444,32 @@
       </div>
     </div>
 
+    <!-- ── ÉRTÉKELÉSEIM ── -->
+    <div class="sfd-panel" id="sfd-panel-ertekelesek">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Értékeléseim</div>
+      </div>
+      <div id="sfd-ert-loading" class="sfd-empty">
+        <div class="sfd-empty-icon">⏳</div>
+        <div class="sfd-empty-sub">Betöltés...</div>
+      </div>
+      <div id="sfd-ert-content" style="display:none;">
+        <!-- A: Értékelésre vár -->
+        <div class="sfd-ert-szekció" id="sfd-ert-var-wrap">
+          <div class="sfd-ert-szekció-cím">Értékelésre vár</div>
+          <div class="sfd-ert-szekció-alcím">Ezeket a pályákat még nem értékelted, vagy újra értékelheted.</div>
+          <div id="sfd-ert-var-list"></div>
+        </div>
+        <hr class="sfd-ert-elvalaszto">
+        <!-- B: Korábbi értékelések -->
+        <div class="sfd-ert-szekció" id="sfd-ert-meglevo-wrap">
+          <div class="sfd-ert-szekció-cím">Korábbi értékeléseim</div>
+          <div class="sfd-ert-szekció-alcím">A következő 90 napban ezeket a pályákat nem értékelheted újra.</div>
+          <div id="sfd-ert-meglevo-list"></div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /sfd-body -->
 
   <!-- FOOTER -->
@@ -909,686 +483,80 @@
 
 </div><!-- /sp-drawer -->
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-// ══════════════════════════════════════════════════════════════════
-// SPORTINGO FIÓK PANEL JS – Teljes újraírás
-// ══════════════════════════════════════════════════════════════════
-(function() {
-  'use strict';
+<div class="sp-fav-toast" id="sp-fav-toast"></div>
 
-  const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
-
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  window._spSb = sb;
-
-  // ── State ──
-  let currentUser = null;
-  let allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'mind';
-  const perPage = 10;
-  const sportEmoji = { Futball: '⚽', Tenisz: '🎾', Padel: '🎾', Squash: '🟡' };
-  const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva', lemondva: '🚫 Lemondva' };
-
-  function spEsc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
-
-  // ── DOM refs ──
-  const drawer        = document.getElementById('sp-drawer');
-  const drawerOverlay = document.getElementById('sp-drawer-overlay');
-  const dAvatar       = document.getElementById('sp-drawer-avatar');
-  const dName         = document.getElementById('sp-drawer-name');
-  const dEmail        = document.getElementById('sp-drawer-email');
-  const logoutBtn     = document.getElementById('sfd-logout-btn');
-
-  function getAuthLabels() { return document.querySelectorAll('.sportingo-auth-label'); }
-
-  // ── UI frissítés ──
-  function setLoggedInUI(user) {
-    const meta = user.user_metadata || {};
-    const name = meta.full_name || meta.name || user.email.split('@')[0];
-    getAuthLabels().forEach(l => l.textContent = name);
-    document.querySelectorAll('.sportingo-auth-icon').forEach(i => i.textContent = '👤');
-    if (dAvatar) dAvatar.textContent = name[0].toUpperCase();
-    if (dName)   dName.textContent   = name;
-    if (dEmail)  dEmail.textContent  = user.email;
-    const ed = document.getElementById('sfd-profil-email-display');
-    if (ed) ed.textContent = user.email;
-    // Profil mező frissítése
-    const pn = document.getElementById('sfd-profil-nev');
-    const pt = document.getElementById('sfd-profil-telefon');
-    if (pn) pn.value = meta.full_name || meta.name || '';
-    if (pt) pt.value = meta.telefon || meta.phone || '';
-  }
-
-  function setLoggedOutUI() {
-    getAuthLabels().forEach(l => l.textContent = 'Bejelentkezés');
-    document.querySelectorAll('.sportingo-auth-icon').forEach(i => i.textContent = '👤');
-    if (dAvatar) dAvatar.textContent = '?';
-    if (dName)   dName.textContent = '–';
-    if (dEmail)  dEmail.textContent = '–';
-  }
-
-  // ── Auth init ──
-  sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) { currentUser = session.user; setLoggedInUI(session.user); }
-  });
-
-  sb.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && session) {
-      currentUser = session.user;
-      setLoggedInUI(session.user);
-      if (document.getElementById('sp-login-modal-overlay')?.classList.contains('open')) {
-        closeLoginModal();
-        setTimeout(openDrawer, 350);
-      }
-    }
-    if (event === 'SIGNED_OUT') { currentUser = null; setLoggedOutUI(); closeDrawer(); }
-    if (event === 'TOKEN_REFRESHED' && session) { currentUser = session.user; }
-  });
-
-  // ── Tab navigáció ──
-  window.sfdSwitchTab = function(name) {
-    document.querySelectorAll('.sfd-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.sfdTab === name));
-    document.querySelectorAll('.sfd-panel').forEach(p => p.classList.toggle('active', p.id === 'sfd-panel-' + name));
-    if (name === 'foglalasok') loadBookings();
-    if (name === 'kedvencek')  loadKedvencek();
-    if (name === 'profil')     loadProfil();
-    if (name === 'statisztika') loadStatisztika();
-    if (name === 'attekintes') loadAttekintes();
-  };
-
-  document.querySelectorAll('.sfd-nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => sfdSwitchTab(btn.dataset.sfdTab));
-  });
-
-  // ── Drawer megnyitás/zárás ──
-  function openDrawer() {
-    if (!drawer) return;
-    drawer.classList.add('open');
-    if (drawerOverlay) drawerOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    // Alapértelmezett tab: Áttekintés
-    sfdSwitchTab('attekintes');
-    loadAttekintes();
-  }
-
-  function closeDrawer() {
-    if (!drawer) return;
-    drawer.classList.remove('open');
-    if (drawerOverlay) drawerOverlay.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  window.closeDrawerGlobal = closeDrawer;
-
-
-  // ── Foglalás lemondás – confirm modal + DB update ──────────────
-  let _cancelTargetId = null;
-
-  function sfdConfirmCancel(foglalasId) {
-    _cancelTargetId = foglalasId;
-    const overlay = document.getElementById('sp-confirm-modal-overlay');
-    if (overlay) overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function sfdCloseConfirm() {
-    const overlay = document.getElementById('sp-confirm-modal-overlay');
-    if (overlay) overlay.classList.remove('open');
-    document.body.style.overflow = '';
-    _cancelTargetId = null;
-  }
-
-  // Globális elérhetőség az inline onclick-hez (IIFE miatt szükséges)
-  window.sfdConfirmCancel = sfdConfirmCancel;
-  window.sfdCloseConfirm  = sfdCloseConfirm;
-
-  async function sfdDoCancel() {
-    if (!_cancelTargetId) return;
-    const id = _cancelTargetId;
-    const okBtn = document.getElementById('sp-confirm-yes');
-    if (okBtn) { okBtn.disabled = true; okBtn.textContent = '⏳ Lemondás...'; }
-    try {
-      // 1. Foglalás adatai – idopont_kezdes + idopont_veg a biztonságos időablakhoz
-      const { data: fogl } = await sb.from('foglalasok')
-        .select('palya_id, idopont_id, idopont_kezdes, idopont_veg, idopontok(datum)')
-        .eq('id', id)
-        .single();
-
-      // 2. Státusz: lemondva
-      const { error } = await sb.from('foglalasok').update({ statusz: 'lemondva' }).eq('id', id);
-      if (error) throw error;
-
-      // 3. Slot felszabadítás – kizárólag az eltárolt időablak alapján (biztonságos)
-      const datum = fogl?.idopontok?.datum;
-      if (fogl?.palya_id && datum && fogl?.idopont_kezdes && fogl?.idopont_veg) {
-        await sb.from('idopontok')
-          .update({ foglalt: false })
-          .eq('palya_id', fogl.palya_id)
-          .eq('datum', datum)
-          .gte('kezdes', fogl.idopont_kezdes)
-          .lt('kezdes', fogl.idopont_veg);
-      } else if (fogl?.idopont_id) {
-        // Fallback régi foglalásokhoz (migráció előttiekhez)
-        await sb.from('idopontok').update({ foglalt: false }).eq('id', fogl.idopont_id);
-      }
-
-      sfdCloseConfirm();
-      showSfdToast('🚫 Foglalás lemondva');
-      await loadBookings();
-      await loadAttekintes();
-    } catch(e) {
-      if (okBtn) { okBtn.disabled = false; okBtn.textContent = 'Foglalás lemondása'; }
-      showSfdToast('❌ Hiba történt a lemondásnál');
-    }
-  }
-
-  function showSfdToast(msg) {
-    // Egyszerű toast a drawer felett
-    let toast = document.getElementById('sfd-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'sfd-toast';
-      var ts = toast.style;
-      ts.position = 'fixed'; ts.bottom = '24px'; ts.left = '50%';
-      ts.transform = 'translateX(-50%) translateY(12px)';
-      ts.background = '#0a1628'; ts.color = 'white';
-      ts.padding = '10px 20px'; ts.borderRadius = '100px';
-      ts.fontFamily = 'Plus Jakarta Sans, sans-serif';
-      ts.fontSize = '.82rem'; ts.fontWeight = '700';
-      ts.boxShadow = '0 8px 32px rgba(0,0,0,.22)';
-      ts.opacity = '0'; ts.transition = 'opacity .22s, transform .22s';
-      ts.zIndex = '99999'; ts.pointerEvents = 'none'; ts.whiteSpace = 'nowrap';
-      document.body.appendChild(toast);
-    }
-    toast.textContent = msg;
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(-50%) translateY(12px)';
-    }, 2600);
-  }
-
-  // Confirm modal gombok
-  document.addEventListener('click', function(e) {
-    if (e.target.id === 'sp-confirm-no' || e.target === document.getElementById('sp-confirm-modal-overlay')) {
-      sfdCloseConfirm();
-    }
-    if (e.target.id === 'sp-confirm-yes') {
-      sfdDoCancel();
-    }
-  });
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('sp-confirm-modal-overlay')?.classList.contains('open')) {
-      sfdCloseConfirm();
-    }
-  });
-
-  // ── Logout ──
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      logoutBtn.disabled = true;
-      closeDrawer();
-      await sb.auth.signOut();
-      logoutBtn.disabled = false;
-    });
-  }
-
-  // ── Click kezelés ──
-  document.addEventListener('click', e => {
-    const authBtn = e.target.closest('.sportingo-auth-btn');
-    if (authBtn) { e.preventDefault(); e.stopPropagation(); currentUser ? openDrawer() : openLoginModal(); return; }
-    if (e.target.matches('[data-sp-close-login]') || e.target === document.getElementById('sp-login-modal-overlay')) { closeLoginModal(); return; }
-    if (e.target.matches('[data-sp-close-drawer]') || e.target.closest('[data-sp-close-drawer]') || e.target === drawerOverlay) { closeDrawer(); return; }
-  });
-
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeLoginModal(); } });
-
-  // ── Filter chips ──
-  document.querySelectorAll('.sfd-filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.sfd-filter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      activeFilter = chip.dataset.sfdFilter;
-      currentPage = 1;
-      applyBookingFilter();
-    });
-  });
-
-  const prevBtn = document.getElementById('sfd-prev-page');
-  const nextBtn = document.getElementById('sfd-next-page');
-  if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderBookings(); } });
-  if (nextBtn) nextBtn.addEventListener('click', () => { const max = Math.ceil(filteredBookings.length / perPage); if (currentPage < max) { currentPage++; renderBookings(); } });
-
-  // ── ÁTTEKINTÉS ──
-  async function loadAttekintes() {
-    if (!currentUser) return;
-    const email = currentUser.email;
-
-    // Stats
-    const [{ data: fogl }, { data: kedv }] = await Promise.all([
-      sb.from('foglalasok').select('id,statusz,palyas(sportag,nev,helyszin_nev),created_at').eq('ugyfel_email', email),
-      sb.from('kedvencek').select('id').eq('ugyfel_email', email)
-    ]);
-
-    const fEl = document.getElementById('sfd-stat-foglalasok');
-    const kEl = document.getElementById('sfd-stat-kedvencek');
-    if (fEl) fEl.textContent = fogl ? fogl.length : '0';
-    if (kEl) kEl.textContent = kedv ? kedv.length : '0';
-
-    // Következő foglalás
-    const nextWrap = document.getElementById('sfd-next-booking-wrap');
-    if (nextWrap && fogl && fogl.length > 0) {
-      const jovahagyott = fogl.filter(f => f.statusz === 'jovahagyva');
-      // Lemondott foglalások nem számítanak aktívnak
-      if (jovahagyott.length > 0) {
-        const next = jovahagyott[jovahagyott.length - 1];
-        const nev = next.palyas?.helyszin_nev || next.palyas?.nev || '–';
-        nextWrap.innerHTML = `
-          <div class="sfd-next-booking">
-            <div class="sfd-next-label">✅ Legutóbbi jóváhagyott foglalás</div>
-            <div class="sfd-next-val">${spEsc(nev)}</div>
-            <div class="sfd-next-sub">${sportEmoji[next.palyas?.sportag] || '🏟'} ${next.palyas?.sportag || ''}</div>
-          </div>`;
-      } else {
-        nextWrap.innerHTML = '';
-      }
-    } else if (nextWrap) {
-      nextWrap.innerHTML = '';
-      if (nEl) nEl.textContent = '0';
-    }
-  }
-
-  // ── FOGLALÁSOK ──
-  async function loadBookings() {
-    const list = document.getElementById('sfd-bookings-list');
-    if (!currentUser || !list) return;
-    list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
-    const { data, error } = await sb.from('foglalasok')
-      .select('*,palyas(nev,helyszin_nev,sportag,slug),idopontok(datum)')
-      .eq('ugyfel_email', currentUser.email)
-      .order('created_at', { ascending: false });
-    if (error || !data) {
-      list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⚠️</div><div class="sfd-empty-title">Hiba történt</div><div class="sfd-empty-sub">Nem sikerült betölteni a foglalásokat.</div></div>';
-      return;
-    }
-    allBookings = data;
-    applyBookingFilter();
-  }
-
-  function applyBookingFilter() {
-    filteredBookings = activeFilter === 'mind' ? allBookings : allBookings.filter(f => f.statusz === activeFilter);
-    currentPage = 1;
-    renderBookings();
-  }
-
-  function renderBookings() {
-    const list = document.getElementById('sfd-bookings-list');
-    const pag  = document.getElementById('sfd-pagination');
-    if (!list) return;
-
-    if (!filteredBookings.length) {
-      list.innerHTML = `<div class="sfd-empty">
-        <div class="sfd-empty-icon">📋</div>
-        <div class="sfd-empty-title">Nincs foglalás</div>
-        <div class="sfd-empty-sub">Keress pályát és küldj foglalási kérést – megjelennek majd itt.</div>
-        <a href="https://sportingo.hu" class="sfd-empty-cta" onclick="closeDrawerGlobal()">🔎 Pályák keresése</a>
-      </div>`;
-      if (pag) pag.style.display = 'none';
-      return;
-    }
-
-    const maxPage = Math.ceil(filteredBookings.length / perPage);
-    const page = filteredBookings.slice((currentPage - 1) * perPage, currentPage * perPage);
-
-    list.innerHTML = page.map(f => {
-      const nev   = f.palyas?.helyszin_nev || f.palyas?.nev || '–';
-      const sport = f.palyas?.sportag || '';
-      const emoji = sportEmoji[sport] || '🏟';
-      const safe  = ['varakozik','jovahagyva','elutasitva','lemondva'].includes(f.statusz) ? f.statusz : '';
-      const slug  = f.palyas?.slug || '';
-      // Tényleges foglalt dátum és időintervallum megjelenítése (nem a created_at)
-      const foglDatum = f.idopontok?.datum || null;
-      let dateStr = '';
-      if (foglDatum && f.idopont_kezdes && f.idopont_veg) {
-        const d = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
-        dateStr = `${d} ${f.idopont_kezdes}–${f.idopont_veg}`;
-      } else if (foglDatum) {
-        dateStr = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
-      } else if (f.created_at) {
-        dateStr = new Date(f.created_at).toLocaleDateString('hu-HU', { year:'numeric', month:'short', day:'numeric' });
-      }
-      const canCancel = f.statusz === 'varakozik' || f.statusz === 'jovahagyva';
-      const cancelBtn = canCancel
-        ? `<button class="sfd-cancel-btn" onclick="sfdConfirmCancel('${f.id}')">🚫 Foglalás lemondása</button>`
-        : '';
-      return `<div class="sfd-booking-card ${safe}">
-        <div class="sfd-booking-top">
-          <div class="sfd-booking-name">${emoji} ${spEsc(nev)}</div>
-          <span class="sfd-status-pill ${safe}">${statuszLabel[f.statusz] || f.statusz}</span>
-        </div>
-        <div class="sfd-booking-meta">${dateStr ? '📅 ' + dateStr : ''} ${sport ? '· ' + sport : ''}</div>
-        ${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" class="sfd-booking-link">Pálya megtekintése ↗</a>` : ''}
-        ${cancelBtn}
-      </div>`;
-    }).join('');
-
-    if (maxPage > 1 && pag) {
-      pag.style.display = 'flex';
-      const pi = document.getElementById('sfd-page-info');
-      if (pi) pi.textContent = currentPage + ' / ' + maxPage;
-      if (prevBtn) prevBtn.disabled = currentPage === 1;
-      if (nextBtn) nextBtn.disabled = currentPage === maxPage;
-    } else if (pag) {
-      pag.style.display = 'none';
-    }
-  }
-
-  // ── KEDVENCEK ──
-  async function loadKedvencek() {
-    const list = document.getElementById('sfd-kedvencek-list');
-    if (!currentUser || !list) return;
-    list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
-    const { data, error } = await sb.from('kedvencek')
-      .select('id,palya_id,palyas(nev,helyszin_nev,sportag,slug,varos)')
-      .eq('ugyfel_email', currentUser.email)
-      .order('created_at', { ascending: false });
-
-    if (error || !data || !data.length) {
-      list.innerHTML = `<div class="sfd-empty">
-        <div class="sfd-empty-icon">❤️</div>
-        <div class="sfd-empty-title">Még nincsenek kedvenceid</div>
-        <div class="sfd-empty-sub">Mentsd el a kedvenc pályáidat, hogy legközelebb gyorsabban foglalhass.</div>
-        <a href="https://sportingo.hu" class="sfd-empty-cta" onclick="closeDrawerGlobal()">🔎 Pályák felfedezése</a>
-      </div>`;
-      return;
-    }
-
-    list.innerHTML = data.map(k => {
-      const p    = k.palyas || {};
-      const nev  = p.helyszin_nev || p.nev || '–';
-      const slug = p.slug || '';
-      const varos = p.varos || '';
-      const emoji = sportEmoji[p.sportag] || '🏟';
-      return `<div class="sfd-kedvenc-card" data-kedvenc-id="${k.id}">
-        <div class="sfd-kedvenc-icon">${emoji}</div>
-        <div class="sfd-kedvenc-info">
-          <div class="sfd-kedvenc-name">${spEsc(nev)}</div>
-          <div class="sfd-kedvenc-meta">${varos ? '📍 ' + spEsc(varos) : (p.sportag || '')}</div>
-        </div>
-        <div class="sfd-kedvenc-actions">
-          ${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" class="sfd-kedvenc-link">Foglalás →</a>` : ''}
-          <button class="sfd-kedvenc-remove" data-kid="${k.id}" title="Törlés">🗑</button>
-        </div>
-      </div>`;
-    }).join('');
-
-    list.addEventListener('click', async e => {
-      const btn = e.target.closest('.sfd-kedvenc-remove');
-      if (!btn) return;
-      btn.textContent = '⏳';
-      const { error: delErr } = await sb.from('kedvencek').delete().eq('id', btn.dataset.kid);
-      if (!delErr) {
-        btn.closest('.sfd-kedvenc-card').remove();
-        const kEl = document.getElementById('sfd-stat-kedvencek');
-        if (kEl) kEl.textContent = Math.max(0, parseInt(kEl.textContent || '0') - 1);
-      } else { btn.textContent = '🗑'; }
-    }, { once: true });
-  }
-
-  // ── PROFIL ──
-  function loadProfil() {
-    if (!currentUser) return;
-    const meta = currentUser.user_metadata || {};
-    const pn = document.getElementById('sfd-profil-nev');
-    const pt = document.getElementById('sfd-profil-telefon');
-    if (pn) pn.value = meta.full_name || meta.name || '';
-    if (pt) pt.value = meta.telefon || meta.phone || '';
-    const ed = document.getElementById('sfd-profil-email-display');
-    if (ed) ed.textContent = currentUser.email;
-  }
-
-  const profilSaveBtn = document.getElementById('sfd-profil-save-btn');
-  if (profilSaveBtn) {
-    profilSaveBtn.addEventListener('click', async function() {
-      if (!currentUser) return;
-      const nev = (document.getElementById('sfd-profil-nev')?.value || '').trim();
-      const tel = (document.getElementById('sfd-profil-telefon')?.value || '').trim();
-      const msg = document.getElementById('sfd-profil-msg');
-      this.disabled = true; this.textContent = '⏳ Mentés...';
-      const { error } = await sb.auth.updateUser({ data: { full_name: nev, name: nev, telefon: tel, phone: tel } });
-      this.disabled = false; this.textContent = '💾 Adatok mentése';
-      if (msg) msg.style.display = 'block';
-      if (!error) {
-        if (msg) { msg.className = 'sfd-msg ok'; msg.textContent = '✅ Adatok mentve!'; }
-        if (nev && dAvatar) dAvatar.textContent = nev[0].toUpperCase();
-        if (nev && dName)   dName.textContent = nev;
-        getAuthLabels().forEach(l => l.textContent = nev);
-        if (currentUser.user_metadata) { currentUser.user_metadata.full_name = nev; currentUser.user_metadata.telefon = tel; }
-      } else {
-        if (msg) { msg.className = 'sfd-msg err'; msg.textContent = '❌ Hiba történt.'; }
-      }
-      setTimeout(() => { if (msg) msg.style.display = 'none'; }, 3000);
-    });
-  }
-
-  const pwResetBtn = document.getElementById('sfd-pw-reset-btn');
-  if (pwResetBtn) {
-    pwResetBtn.addEventListener('click', async function() {
-      if (!currentUser) return;
-      const msg = document.getElementById('sfd-pw-msg');
-      this.disabled = true; this.textContent = '⏳ Küldés...';
-      const { error } = await sb.auth.resetPasswordForEmail(currentUser.email, { redirectTo: 'https://sportingo.hu/jelszo-reset' });
-      this.disabled = false; this.textContent = '📧 Jelszóváltoztatási email';
-      if (msg) msg.style.display = 'block';
-      if (!error) { if (msg) { msg.className = 'sfd-msg ok'; msg.textContent = '✅ Email elküldve!'; } }
-      else         { if (msg) { msg.className = 'sfd-msg err'; msg.textContent = '❌ Nem sikerült.'; } }
-      setTimeout(() => { if (msg) msg.style.display = 'none'; }, 4000);
-    });
-  }
-
-  // ── STATISZTIKA ──
-  async function loadStatisztika() {
-    if (!currentUser) return;
-    const { data } = await sb.from('foglalasok')
-      .select('statusz,palyas(sportag,nev,helyszin_nev)')
-      .eq('ugyfel_email', currentUser.email);
-
-    const totalEl    = document.getElementById('sfd-ins-total');
-    const approvedEl = document.getElementById('sfd-ins-approved');
-    const sportEl    = document.getElementById('sfd-ins-sport');
-    const placeEl    = document.getElementById('sfd-ins-place');
-    const emptyEl    = document.getElementById('sfd-stats-empty');
-
-    if (!data || data.length === 0) {
-      if (totalEl) totalEl.textContent = '0';
-      if (approvedEl) approvedEl.textContent = '0';
-      if (sportEl) sportEl.textContent = '–';
-      if (placeEl) placeEl.textContent = '–';
-      if (emptyEl) emptyEl.style.display = 'block';
-      return;
-    }
-
-    if (emptyEl) emptyEl.style.display = 'none';
-    if (totalEl) totalEl.textContent = data.length;
-    if (approvedEl) approvedEl.textContent = data.filter(f => f.statusz === 'jovahagyva').length;
-
-    // Kedvenc sportág
-    const sportCount = {};
-    data.forEach(f => { const s = f.palyas?.sportag; if (s) sportCount[s] = (sportCount[s] || 0) + 1; });
-    const topSport = Object.entries(sportCount).sort((a,b) => b[1]-a[1])[0];
-    if (sportEl) sportEl.textContent = topSport ? (sportEmoji[topSport[0]] || '') + ' ' + topSport[0] : '–';
-
-    // Legtöbbet látogatott helyszín
-    const placeCount = {};
-    data.forEach(f => { const n = f.palyas?.helyszin_nev || f.palyas?.nev; if (n) placeCount[n] = (placeCount[n] || 0) + 1; });
-    const topPlace = Object.entries(placeCount).sort((a,b) => b[1]-a[1])[0];
-    if (placeEl) placeEl.textContent = topPlace ? topPlace[0] : '–';
-  }
-
-  // ── Login modal (változatlan logika, új ID-k mentén) ──
-  let loginView = 'login';
-  let forgotCooldown = false;
-
-  function injectLoginModal() {
-    if (document.getElementById('sp-login-modal-overlay')) return;
-    const div = document.createElement('div');
-    div.innerHTML = `<div id="sp-login-modal-overlay">
-  <div id="sp-login-modal">
-    <div class="sp-modal-head">
-      <div>
-        <div class="sp-modal-logo"><img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo"></div>
-        <div class="sp-modal-subtitle" id="sp-login-modal-title">Bejelentkezés</div>
-      </div>
-      <button type="button" class="sp-modal-close" data-sp-close-login>&#x2715;</button>
+<div id="sfd-review-modal-overlay">
+  <div id="sfd-review-modal">
+    <div class="sfd-review-modal-title">⭐ Pálya értékelése</div>
+    <div class="sfd-review-modal-sub" id="sfd-review-modal-sub">–</div>
+    <div class="sfd-review-stars" id="sfd-review-stars">
+      <span class="sfd-review-star" data-val="1">★</span>
+      <span class="sfd-review-star" data-val="2">★</span>
+      <span class="sfd-review-star" data-val="3">★</span>
+      <span class="sfd-review-star" data-val="4">★</span>
+      <span class="sfd-review-star" data-val="5">★</span>
     </div>
-    <div id="sp-login-modal-body">
-      <div id="sp-login-alert" class="sp-login-alert"></div>
-      <div class="sp-login-tabs">
-        <button class="sp-login-tab active" onclick="spSetLoginView('login')">Bejelentkezés</button>
-        <button class="sp-login-tab" onclick="spSetLoginView('register')">Regisztráció</button>
-      </div>
-      <div class="sp-lv-section active" id="sp-lv-login">
-        <input type="email" id="sp-login-email" class="sp-login-input" placeholder="Email cím" autocomplete="email">
-        <input type="password" id="sp-login-password" class="sp-login-input" placeholder="Jelszó" autocomplete="current-password">
-        <button id="sp-login-btn" class="sp-login-btn" onclick="spHandleLogin()">Bejelentkezés →</button>
-        <button class="sp-login-link" onclick="spSetLoginView('forgot')" style="display:block;margin-bottom:12px;">Elfelejtett jelszó?</button>
-        <div class="sp-login-divider">vagy</div>
-        <button class="sp-google-btn" onclick="spGoogleLogin()">
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Folytatás Google-lel
-        </button>
-      </div>
-      <div class="sp-lv-section" id="sp-lv-register">
-        <input type="text" id="sp-reg-nev" class="sp-login-input" placeholder="Teljes neved" autocomplete="name">
-        <input type="email" id="sp-reg-email" class="sp-login-input" placeholder="Email cím" autocomplete="email">
-        <input type="password" id="sp-reg-password" class="sp-login-input" placeholder="Jelszó (min. 6 karakter)" autocomplete="new-password">
-        <button id="sp-reg-btn" class="sp-login-btn" onclick="spHandleRegister()">Regisztráció →</button>
-        <div class="sp-login-divider">vagy</div>
-        <button class="sp-google-btn" onclick="spGoogleLogin()">
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Folytatás Google-lel
-        </button>
-      </div>
-      <div class="sp-lv-section" id="sp-lv-forgot">
-        <p style="font-size:.85rem;color:#6b8a9a;margin-bottom:14px;">Add meg az email címed, küldünk egy visszaállító linket.</p>
-        <input type="email" id="sp-forgot-email" class="sp-login-input" placeholder="Email cím" autocomplete="email">
-        <button id="sp-forgot-btn" class="sp-login-btn" onclick="spHandleForgot()">Email küldése</button>
-        <button class="sp-login-link" onclick="spSetLoginView('login')" style="display:block;text-align:center;">← Vissza</button>
-      </div>
+    <div class="sfd-review-rating-label" id="sfd-review-rating-label">Kattints egy csillagra az értékeléshez</div>
+    <textarea class="sfd-review-textarea" id="sfd-review-szoveg" placeholder="Oszd meg tapasztalatod a pályáról... (opcionális)" rows="3"></textarea>
+    <div class="sfd-review-cimkek-title">Cimkék (max 3)</div>
+    <div class="sfd-review-cimkek" id="sfd-review-cimkek">
+      <span class="sfd-review-cimke" data-cimke="Jó borítás">Jó borítás</span>
+      <span class="sfd-review-cimke" data-cimke="Könnyű megközelítés">Könnyű megközelítés</span>
+      <span class="sfd-review-cimke" data-cimke="Korrekt ár">Korrekt ár</span>
+      <span class="sfd-review-cimke" data-cimke="Jó hangulat">Jó hangulat</span>
+      <span class="sfd-review-cimke" data-cimke="Tiszta öltöző">Tiszta öltöző</span>
     </div>
-    <div class="sp-modal-foot">Pályatulajdonos? <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál →</a></div>
+    <div class="sfd-review-error" id="sfd-review-error"></div>
+    <div class="sfd-review-actions">
+      <button class="sfd-review-cancel-btn" id="sfd-review-cancel-btn">Mégse</button>
+      <button class="sfd-review-submit-btn" id="sfd-review-submit-btn" disabled>Értékelés küldése</button>
+    </div>
   </div>
-</div>`;
-    document.body.appendChild(div.firstElementChild);
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/sportingo-drawer.js"></script>
+<script>
+// ── Kapcsolat form ──────────────────────────────────────────────
+async function spSendContact() {
+  var nev    = (document.getElementById('sp-nev')?.value    || '').trim();
+  var email  = (document.getElementById('sp-email')?.value  || '').trim();
+  var tema   = (document.getElementById('sp-tema')?.value   || '').trim();
+  var uzenet = (document.getElementById('sp-uzenet')?.value || '').trim();
+  var errEl  = document.getElementById('sp-form-error');
+  var sucEl  = document.getElementById('sp-form-success');
+  var btnEl  = document.getElementById('sp-submit-btn');
+
+  if (errEl) errEl.style.display = 'none';
+
+  if (!nev || !email || !uzenet) {
+    if (errEl) { errEl.textContent = 'Kérjük töltsd ki a kötelező mezőket!'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (errEl) { errEl.textContent = 'Kérjük érvényes email címet adj meg!'; errEl.style.display = 'block'; }
+    return;
   }
 
-  function openLoginModal() {
-    injectLoginModal();
-    const overlay = document.getElementById('sp-login-modal-overlay');
-    if (!overlay) return;
-    window._spLoginWasOpen = true;
-    setLoginView('login');
-    const alertEl = document.getElementById('sp-login-alert');
-    if (alertEl) alertEl.style.display = 'none';
-    const emailEl = document.getElementById('sp-login-email');
-    if (emailEl) emailEl.value = '';
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => { if (emailEl) emailEl.focus(); }, 100);
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Küldés...'; }
+
+  try {
+    var sb = window._spSb;
+    if (sb) {
+      var result = await sb.from('kapcsolat_uzenetek').insert({
+        nev: nev, email: email, tema: tema || null, uzenet: uzenet
+      });
+      if (result.error) throw result.error;
+    }
+    var formEl = document.getElementById('sp-contact-form');
+    if (formEl) formEl.style.display = 'none';
+    if (sucEl)  sucEl.style.display = 'block';
+  } catch(e) {
+    if (errEl) { errEl.textContent = 'Hiba történt. Kérjük próbáld újra!'; errEl.style.display = 'block'; }
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📨 Üzenet küldése'; }
   }
-
-  function closeLoginModal() {
-    const lmo = document.getElementById('sp-login-modal-overlay');
-    if (!lmo) return;
-    lmo.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  function setLoginView(view) {
-    loginView = view;
-    ['login','register','forgot'].forEach(v => {
-      const el = document.getElementById('sp-lv-' + v);
-      if (el) el.style.display = v === view ? 'block' : 'none';
-    });
-    document.querySelectorAll('.sp-login-tab').forEach(btn => {
-      const isLogin = btn.textContent.includes('Bejelentkezés');
-      const isReg   = btn.textContent.includes('Regisztráció');
-      btn.classList.toggle('active', (view === 'login' && isLogin) || (view === 'register' && isReg));
-    });
-    const title = document.getElementById('sp-login-modal-title');
-    if (title) title.textContent = view === 'login' ? 'Bejelentkezés' : view === 'register' ? 'Regisztráció' : 'Jelszó visszaállítás';
-    const alertEl = document.getElementById('sp-login-alert');
-    if (alertEl) alertEl.style.display = 'none';
-  }
-
-  function showLoginAlert(msg, isError) {
-    const el = document.getElementById('sp-login-alert');
-    if (!el) return;
-    el.textContent = msg; el.className = 'sp-login-alert ' + (isError ? 'error' : 'success'); el.style.display = 'block';
-  }
-
-  window.spSetLoginView = setLoginView;
-
-  window.spHandleLogin = async function() {
-    const email = (document.getElementById('sp-login-email')?.value || '').trim();
-    const pw    = (document.getElementById('sp-login-password')?.value || '');
-    if (!email || !pw) { showLoginAlert('Kérjük töltsd ki az összes mezőt!', true); return; }
-    const btn = document.getElementById('sp-login-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
-    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
-    if (btn) { btn.disabled = false; btn.textContent = 'Bejelentkezés →'; }
-    if (error) showLoginAlert('Hibás email vagy jelszó!', true);
-  };
-
-  window.spHandleRegister = async function() {
-    const email = (document.getElementById('sp-reg-email')?.value || '').trim();
-    const pw    = (document.getElementById('sp-reg-password')?.value || '');
-    const nev   = (document.getElementById('sp-reg-nev')?.value || '').trim();
-    if (!email || !pw || !nev) { showLoginAlert('Kérjük töltsd ki az összes mezőt!', true); return; }
-    if (pw.length < 6) { showLoginAlert('A jelszó legalább 6 karakter legyen!', true); return; }
-    const btn = document.getElementById('sp-reg-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
-    const { error } = await sb.auth.signUp({ email, password: pw, options: { data: { full_name: nev } } });
-    if (btn) { btn.disabled = false; btn.textContent = 'Regisztráció →'; }
-    if (error) showLoginAlert(error.message, true);
-    else showLoginAlert('✅ Sikeres regisztráció! Ellenőrizd az emailed.', false);
-  };
-
-  window.spGoogleLogin = async function() {
-    try { sessionStorage.setItem('sp_return_to', window.location.href); } catch(e) {}
-    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://sportingo.hu/auth-callback' } });
-    if (error) showLoginAlert('Google belépés sikertelen!', true);
-  };
-
-  window.spHandleForgot = async function() {
-    if (forgotCooldown) { showLoginAlert('Kérlek várj legalább 60 másodpercet!', true); return; }
-    const email = (document.getElementById('sp-forgot-email')?.value || '').trim();
-    if (!email) { showLoginAlert('Add meg az email címed!', true); return; }
-    const btn = document.getElementById('sp-forgot-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://sportingo.hu/jelszo-reset' });
-    if (btn) { btn.disabled = false; btn.textContent = 'Email küldése'; }
-    if (error) { showLoginAlert('Nem sikerült!', true); return; }
-    showLoginAlert('✅ Email elküldve!', false);
-    forgotCooldown = true;
-    setTimeout(() => { forgotCooldown = false; }, 60000);
-  };
-
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    const overlay = document.getElementById('sp-login-modal-overlay');
-    if (!overlay?.classList.contains('open')) return;
-    if (loginView === 'login')    window.spHandleLogin();
-    if (loginView === 'register') window.spHandleRegister();
-    if (loginView === 'forgot')   window.spHandleForgot();
-  });
-
-})();
-
+}
 </script>
 </body>
 </html>
