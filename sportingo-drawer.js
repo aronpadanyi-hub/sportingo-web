@@ -64,8 +64,13 @@
   }
 
   // ── Auth init ──
+  // Pending állapot: semleges UI amíg a session check fut
+  getAuthLabels().forEach(l => l.dataset.spPending = l.textContent);
+  getAuthLabels().forEach(l => l.textContent = '…');
+
   sb.auth.getSession().then(({ data: { session } }) => {
     if (session) { currentUser = session.user; setLoggedInUI(session.user); }
+    else { setLoggedOutUI(); }
   });
 
   sb.auth.onAuthStateChange((event, session) => {
