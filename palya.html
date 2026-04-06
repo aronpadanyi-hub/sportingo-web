@@ -1264,7 +1264,11 @@ async function spfMount(origPalya) {
   function renderPalyaNav() {
     try {
       const palyak = SPF.csoportPalyak;
-      if (!palyak || palyak.length <= 1) return '';
+      console.log('[SPF Nav] renderPalyaNav hívva | csoportPalyak.length:', palyak ? palyak.length : 'undefined', '| aktivIdx:', SPF.aktivIdx);
+      if (!palyak || palyak.length <= 1) {
+        console.log('[SPF Nav] 1 vagy 0 pálya – nav nem jelenik meg');
+        return '';
+      }
       const btns = palyak.map((p, i) => {
         // Biztonságos névgenerálás – p.nev lehet undefined (fallback pályánál)
         const nev   = p.nev || '';
@@ -1670,7 +1674,12 @@ async function spfMount(origPalya) {
     SPF.aktivIdx = idx;
     SPF.selectedKeys = [];
     SPF.availableSlots = {};
-    document.getElementById('spf-palya-nav-wrap').innerHTML = renderPalyaNav();
+    const navWrap = document.getElementById('spf-palya-nav-wrap');
+    if (navWrap) {
+      navWrap.innerHTML = renderPalyaNav();
+    } else {
+      console.warn('[SPF Nav] spf-palya-nav-wrap nem található – pályaváltás folytatódik naptár frissítéssel');
+    }
     renderSelectedBar();
     await loadAndRenderCal();
     await loadAkciok();
@@ -1959,6 +1968,17 @@ async function spfMount(origPalya) {
   // Indítás
   await loadAndRenderCal();
   await loadAkciok();
+
+  // Nav újrarenderelés a loadAndRenderCal után – garantálja, hogy az aktív gomb
+  // helyes legyen, és ha valami async miatt a nav első renderelése csúszott, most frissül.
+  const navWrapFinal = document.getElementById('spf-palya-nav-wrap');
+  if (navWrapFinal) {
+    const navHtml = renderPalyaNav();
+    if (navHtml !== navWrapFinal.innerHTML) {
+      navWrapFinal.innerHTML = navHtml;
+      console.log('[SPF Nav] Nav újrarenderelve a loadAndRenderCal után');
+    }
+  }
 }
 
 // ── EMAIL FOGLALÁS (régi módszer, email alapú) ──────────
