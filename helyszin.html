@@ -43,6 +43,9 @@
     .sh-map-link { font-size: .82rem; color: #1a8fc1; font-weight: 600; text-decoration: none; }
     .sh-map-link:hover { text-decoration: underline; }
     @media(max-width:480px) { .sh-palya-grid { grid-template-columns: 1fr; } }
+    /* ── Típuskártyás megjelenítés ── */
+    .sh-tipus-db { font-size: .78rem; font-weight: 700; color: #1a8fc1; }
+    .sh-tipus-card:focus-visible { outline: 2px solid #1a8fc1; outline-offset: 2px; }
     /* Loading / 404 */
     .sh-loading { text-align: center; padding: 80px 20px; color: #6b8a9a; font-size: .95rem; }
     .sh-loading-spinner { width: 40px; height: 40px; border: 3px solid #d4e8f0; border-top-color: #1a8fc1; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
@@ -203,9 +206,28 @@ async function init() {
     else csoportok['Egyéb'].push(p);
   });
 
+  // ── fedett_tipus normalizáló – minden pályaobjektumra lefut a render előtt ──
+  // A p.fedett mező érintetlen marad. A fedett_tipus új, derivált mező.
+  // Lehetséges kimenetek: "fedett" | "kültéri" | "szezonális"
+  function normalizeFedettTipus(fedett) {
+    if (!fedett || fedett === false || fedett === 'false') return 'kültéri';
+    const v = String(fedett).toLowerCase().trim();
+    if (v === 'true' || v === 'fedett') return 'fedett';
+    if (v === 'kültéri') return 'kültéri';
+    if (v === 'szezonális' || v === 'szezonalis') return 'szezonális';
+    return 'kültéri'; // ismeretlen érték: stabil fallback, nem crash
+  }
+
+  // fedett_tipus mező hozzáadása minden pályaobjektumhoz (a render előtt)
+  palyas.forEach(p => { p.fedett_tipus = normalizeFedettTipus(p.fedett); });
+
+  // UI megjelenítési leképezés: fedett_tipus → olvasható felirat
+  const fedettTipusLabel = { 'fedett': 'Fedett', 'kültéri': 'Kültéri', 'szezonális': 'Szezonálisan fedett' };
+
   function palyaCardHTML(p) {
     const pUrl = p.slug ? `https://sportingo.hu/palya/${p.slug}` : '#';
-    const tags = [p.boritas, p.fedett].filter(v => v && v !== 'false' && v !== false);
+    const fedettLabel = p.fedett_tipus !== 'kültéri' ? (fedettTipusLabel[p.fedett_tipus] || '') : '';
+    const tags = [p.boritas, fedettLabel].filter(v => v);
     return `
       <a href="${esc(pUrl)}" class="sh-palya-card">
         <div class="sh-palya-thumb">
@@ -224,6 +246,14 @@ async function init() {
       </a>`;
   }
 
+  // ── State: kiválasztott csoport ──────────────────────────────────
+  // Az init() scope-ján belül – elérhető a render logika ÉS a click handler számára is
+  let selectedGroup  = null;  // pl. "fedett" | "szezonális" | "kültéri"
+  let selectedPalyak = [];    // a kiválasztott csoporthoz tartozó pályák tömbje
+
+  // groupedPalyas az init() scope-ján elérhető – render ÉS click handler is látja
+  let groupedPalyas = [];
+
   let palyakHTML = '';
   if (palyas.length === 0) {
     palyakHTML = `
@@ -233,22 +263,102 @@ async function init() {
         <div style="font-size:.85rem;margin-top:4px;">A pályák adatai feltöltés alatt állnak.</div>
       </div>`;
   } else {
-    const csoportTitles = {
-      'Kispálya': '⚽ Kispályák',
-      'Nagypálya': '🏟 Nagypályák',
-      'Egyéb': '🏃 Pályák'
-    };
-    for (const [cnev, cpalyas] of Object.entries(csoportok)) {
-      if (cpalyas.length === 0) continue;
-      palyakHTML += `
-        <div class="sh-group">
-          <div class="sh-group-title">
-            ${csoportTitles[cnev]} <span style="font-weight:400;margin-left:4px;">(${cpalyas.length} db)</span>
-          </div>
-          <div class="sh-palya-grid">
-            ${cpalyas.map(palyaCardHTML).join('')}
-          </div>
-        </div>`;
+    try {
+      // ── groupedPalyas: végleges típuscsoport-adatmodell ─────────────
+      // Group key: sportag + boritas + fedett_tipus
+      // KIVÉTEL: ha sportag = Futball, a key tartalmazza a jatekforma-t is,
+      // hogy kispálya és nagypálya soha ne kerüljön egy csoportba.
+      // Más sportágnál a jatekforma nem része a kulcsnak.
+      // Az eredeti palyas tömb érintetlen – ez csak származtatott struktúra.
+      const groupedPalyasMap = new Map();
+      palyas.forEach(p => {
+        const sportag      = (p.sportag      || '').trim() || 'Egyéb';
+        const boritas      = (p.boritas      || '').trim() || 'Egyéb';
+        const fedett_tipus = (p.fedett_tipus || 'kültéri');
+        // Futball-nál a jatekforma is bekerül a kulcsba (kispálya/nagypálya szétválasztás)
+        // Más sportágnál üres string – a kulcsban nem jelenik meg
+        const jatekformaKulcs = (sportag === 'Futball')
+          ? '|' + ((p.jatekforma || '').trim() || 'Egyéb')
+          : '';
+        const key = sportag + '|' + boritas + '|' + fedett_tipus + jatekformaKulcs;
+
+        if (!groupedPalyasMap.has(key)) {
+          // jatekforma: Futball esetén a cím megjelenítéséhez tároljuk
+          const jatekformaLabel = (sportag === 'Futball')
+            ? ((p.jatekforma || '').trim() || 'Egyéb')
+            : '';
+          groupedPalyasMap.set(key, {
+            key:           key,
+            sportag:       sportag,
+            boritas:       boritas,
+            fedett_tipus:  fedett_tipus,
+            jatekforma:    jatekformaLabel,
+            count:         0,
+            palyak:        []
+          });
+        }
+        const csoport = groupedPalyasMap.get(key);
+        csoport.count++;
+        csoport.palyak.push(p);
+      });
+
+      // groupedPalyas: rendezett tömb – sportag, majd boritas, majd fedett_tipus szerint
+      const fedettSorrend = { 'fedett': 0, 'szezonális': 1, 'kültéri': 2 };
+      groupedPalyas = Array.from(groupedPalyasMap.values()).sort((a, b) => {
+        if (a.sportag   !== b.sportag)   return a.sportag.localeCompare(b.sportag,   'hu');
+        if (a.boritas   !== b.boritas)   return a.boritas.localeCompare(b.boritas,   'hu');
+        return (fedettSorrend[a.fedett_tipus] ?? 9) - (fedettSorrend[b.fedett_tipus] ?? 9);
+      });
+
+      // Debug log – ideiglenes ellenőrzésre
+      console.log('[Sportingo] groupedPalyas:', groupedPalyas.length, 'típuscsoport',
+        groupedPalyas.map(g => g.key + ' (' + g.count + ' db)'));
+
+      // ── UI leképezés: fedett_tipus → olvasható felirat ───────────────
+      const fedettCimLabel = {
+        'fedett':     'Fedett',
+        'szezonális': 'Szezonálisan fedett',
+        'kültéri':    'Kültéri'
+      };
+
+      // ── Típuskártyás render: minden csoport = 1 kártya ───────────────
+      // Újrahasználja a meglévő .sh-palya-card CSS osztályt.
+      // NEM tartalmaz egyedi pályakártyákat – csak a típust és a darabszámot.
+      // data-key: a click handler azonosítja a csoportot.
+      palyakHTML = '<div class="sh-palya-grid sh-tipus-grid">';
+      groupedPalyas.forEach(csoport => {
+        if (csoport.palyak.length === 0) return;
+
+        // Reprezentatív kép: első pálya képe, ha van
+        const repKep = csoport.palyak.find(p => p.kep_url);
+
+        // Cím összerakása: sportag · boritas · fedett · [jatekforma ha Futball]
+        const fedettFelirat = fedettCimLabel[csoport.fedett_tipus] || csoport.fedett_tipus;
+        const cimReszek = [csoport.sportag, csoport.boritas, fedettFelirat];
+        if (csoport.jatekforma) cimReszek.push(csoport.jatekforma); // Futball: Kispálya / Nagypálya
+        const cim = cimReszek.map(r => esc(r)).join(' · ');
+
+        palyakHTML += `
+          <div class="sh-palya-card sh-tipus-card" data-key="${esc(csoport.key)}" style="cursor:pointer;">
+            <div class="sh-palya-thumb">
+              ${repKep
+                ? `<img src="${esc(repKep.kep_url)}" alt="${esc(csoport.sportag)}" loading="lazy">`
+                : `<div class="sh-palya-thumb-placeholder">${sportIcon(csoport.sportag)}</div>`}
+            </div>
+            <div class="sh-palya-body">
+              <div class="sh-palya-nev">${cim}</div>
+              <div class="sh-palya-footer">
+                <div class="sh-tipus-db">${csoport.count} db pálya</div>
+                <div class="sh-palya-arrow">Kiválasztás →</div>
+              </div>
+            </div>
+          </div>`;
+      });
+      palyakHTML += '</div>';
+
+    } catch(e) {
+      // Fallback: ha bármilyen hiba történik, az eredeti flat lista jelenik meg
+      palyakHTML = `<div class="sh-palya-grid">${palyas.map(palyaCardHTML).join('')}</div>`;
     }
   }
 
@@ -303,6 +413,56 @@ async function init() {
     </div>`;
   // Review blokk – render UTÁN
   loadHelyszinReviews(helyszin.id, palyas.map(function(p){ return p.id; }));
+
+  // ── Csoport kattintás kezelő – render UTÁN kötjük fel ──────────
+  // Kattintáskor: state frissítés + navigáció a legjobb pálya pályaoldalára.
+  // A pályaoldal (web-palya.html) saját logikája kezeli:
+  //   – az availability alapú testvérpálya rendezést
+  //   – a pályaváltó UI-t
+  //   – a booking flow-t
+  // Ez a megközelítés nulla booking logika duplikációval jár.
+  try {
+    document.querySelectorAll('#sh-root .sh-tipus-card[data-key]').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        if (e.target.closest('a')) return;
+
+        const key = el.dataset.key;
+        if (!key) return;
+
+        // Csoport megkeresése
+        if (!groupedPalyas || !groupedPalyas.length) return;
+        const csoport = groupedPalyas.find(function(g) { return g.key === key; });
+        if (!csoport || !csoport.palyak || csoport.palyak.length === 0) return;
+
+        // State frissítése
+        selectedGroup  = csoport;
+        selectedPalyak = csoport.palyak;
+
+        console.log('[Sportingo] Kiválasztott csoport:', selectedGroup.key,
+          '| Pályák száma:', selectedPalyak.length);
+
+        // ── Navigáció a legjobb pályára ─────────────────────────────────
+        // Legjobb pálya = az első a csoportban (a groupedPalyas sorrendben az
+        // elérhető pályák közül az első, ami slug-gal rendelkezik).
+        // A pályaoldal ezután availability szerint rendezi a testvérpályákat,
+        // és a pályaváltó UI-n keresztül engedi a csoporton belüli lapozást.
+        // Fallback: ha nincs slug, maradunk az oldalon (nincs navigáció).
+        var celPalya = null;
+        for (var i = 0; i < csoport.palyak.length; i++) {
+          if (csoport.palyak[i].slug) { celPalya = csoport.palyak[i]; break; }
+        }
+
+        if (celPalya && celPalya.slug) {
+          window.location.href = 'https://sportingo.hu/palya/' + encodeURIComponent(celPalya.slug);
+        } else {
+          // Nincs slug – fallback: state megmarad, de nincs navigáció
+          console.warn('[Sportingo] Nincs slug a csoportban:', csoport.key);
+        }
+      });
+    });
+  } catch(e) {
+    console.warn('[Sportingo] Csoport click handler hiba:', e);
+  }
 }
 
 init();
