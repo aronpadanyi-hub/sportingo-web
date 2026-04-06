@@ -95,11 +95,13 @@
     /* Pálya léptető */
     .spf-palya-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1.5px solid #f0f7fb; }
     .spf-palya-label { font-size: .72rem; font-weight: 800; color: #6b8a9a; text-transform: uppercase; letter-spacing: .8px; }
-    .spf-palya-btn { padding: 6px 14px; border: 1.5px solid #e4eef5; border-radius: 20px; background: white; font-size: .8rem; font-weight: 700; color: #6b8a9a; cursor: pointer; transition: all .2s; white-space: nowrap; font-family: inherit; }
-    .spf-palya-btn:hover { border-color: #1a8fc1; color: #1a8fc1; }
-    .spf-palya-btn.active { background: linear-gradient(135deg,#1a8fc1,#2dbf7e); border-color: transparent; color: white; box-shadow: 0 3px 10px rgba(26,143,193,.25); }
-    .spf-palya-free-badge { font-size: .65rem; background: rgba(255,255,255,.25); color: white; border-radius: 10px; padding: 1px 6px; margin-left: 3px; font-weight: 700; }
-    .spf-palya-btn:not(.active) .spf-palya-free-badge { background: rgba(45,191,126,.12); color: #1a9960; }
+    .spf-palya-btn { padding: 7px 16px; border: 1.5px solid #d4e8f0; border-radius: 20px; background: white; font-size: .82rem; font-weight: 700; color: #4a6b7a; cursor: pointer; transition: border-color .18s, color .18s, background .18s, box-shadow .18s; white-space: nowrap; font-family: inherit; }
+    .spf-palya-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
+    .spf-palya-btn:active { transform: scale(.97); }
+    .spf-palya-btn.active { background: linear-gradient(135deg,#1a8fc1,#2dbf7e); border-color: transparent; color: white; box-shadow: 0 3px 12px rgba(26,143,193,.28); }
+    .spf-palya-free-badge { font-size: .63rem; background: rgba(255,255,255,.22); color: rgba(255,255,255,.9); border-radius: 10px; padding: 1px 7px; margin-left: 5px; font-weight: 700; }
+    .spf-palya-btn:not(.active) .spf-palya-free-badge { background: rgba(45,191,126,.13); color: #1a9960; }
+    .spf-palya-no-slot { font-size: .63rem; background: #f1f5f9; color: #94a3b8; border-radius: 10px; padding: 1px 7px; margin-left: 5px; font-weight: 600; }
     .spf-palya-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .spf-palya-nav::-webkit-scrollbar { display: none; }
 
@@ -1267,20 +1269,24 @@ async function spfMount(origPalya) {
         return '';
       }
       const btns = palyak.map((p, i) => {
-        // Biztonságos névgenerálás – p.nev lehet undefined (fallback pályánál)
-        const nev   = p.nev || '';
-        const szam  = p.palya_szam;
+        // Label: elsődlegesen a pálya neve, fallback: palya_szam → régexes szám → index
+        const nev  = (p.nev || '').trim();
+        const szam = p.palya_szam;
         let label;
-        if (szam) {
-          label = szam + '. pálya';
+        if (nev) {
+          label = nev;                                        // → "Futball 1-es pálya"
+        } else if (szam) {
+          label = szam + '. pálya';                          // → "2. pálya"
         } else {
-          const numMatch = nev.match(/\d+$/);
-          label = numMatch ? numMatch[0] + '. pálya' : (nev || (i + 1) + '. pálya');
+          const numMatch = nev.match ? nev.match(/\d+$/) : null;
+          label = numMatch ? numMatch[0] + '. pálya' : (i + 1) + '. pálya';
         }
-        const free    = SPF.palyaFreeCounts[p.id] || 0;
+        const free     = SPF.palyaFreeCounts[p.id] || 0;
         const isActive = i === SPF.aktivIdx;
-        const freeTxt  = free > 0 ? `<span class="spf-palya-free-badge">${free} szabad</span>` : '';
-        return `<button class="spf-palya-btn${isActive ? ' active' : ''}" onclick="spfSwitchPalya(${i})" aria-pressed="${isActive}">${esc(label)}${freeTxt}</button>`;
+        const badgeTxt = free > 0
+          ? `<span class="spf-palya-free-badge">${free} szabad</span>`
+          : `<span class="spf-palya-no-slot">Nincs szabad idő</span>`;
+        return `<button class="spf-palya-btn${isActive ? ' active' : ''}" onclick="spfSwitchPalya(${i})" aria-pressed="${isActive}">${esc(label)}${badgeTxt}</button>`;
       }).join('');
       return `<div class="spf-palya-nav"><span class="spf-palya-label">Válassz pályát:</span>${btns}</div>`;
     } catch(e) {
