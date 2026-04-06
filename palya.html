@@ -989,13 +989,50 @@ async function init() {
   try {
     const today = spfFmtDate(new Date());
     const in60  = spfFmtDate(new Date(Date.now() + 60*24*3600*1000));
-    // Azonos sportag + helyszin_id pályák
+    // ── Testvérpálya lekérdezés ─────────────────────────────────────
+    // A fedett szűrést KLIENS OLDALON végezzük normalizeFedettTipus() segítségével –
+    // ugyanazzal a függvénnyel, amit a helyszínoldali grouping is használ.
+    // Ez garantálja a teljes szinkront, függetlenül a nyers fedett értékek
+    // inkonzisztens adatbázis-tárolásától (null, false, 'false', 'Fedett', stb.).
+    //
+    // REST szűrők: helyszin_id + sportag + boritas + (Futballnál) jatekforma
+    // fedett: NEM szűrünk REST-szinten – kliens oldalon szűrjük normalizált értékkel.
     let testverpUrl = '/rest/v1/palyas?helyszin_id=eq.' + encodeURIComponent(palya.helyszin_id)
       + '&statusz=eq.jovahagyva&elrejtett=neq.true';
-    if (sportag) testverpUrl += '&sportag=eq.' + encodeURIComponent(sportag);
+    if (sportag)    testverpUrl += '&sportag=eq.'    + encodeURIComponent(sportag);
+    if (boritas)    testverpUrl += '&boritas=eq.'    + encodeURIComponent(boritas);
+    // jatekforma: Futballnál kötelező (kispálya/nagypálya szétválasztás)
     if (jatekforma) testverpUrl += '&jatekforma=eq.' + encodeURIComponent(jatekforma);
-    testverpUrl += '&select=id,nev,slug,palya_szam,ar_per_ora';
-    const testverpData = await sbFetch(testverpUrl);
+    testverpUrl += '&select=id,nev,slug,palya_szam,ar_per_ora,fedett';
+    const testverpRaw = await sbFetch(testverpUrl);
+
+    // [Sportingo Debug] Aktuális pálya fedett paraméterei
+    console.log('[Sportingo Debug] Aktuális palya:', {
+      id: palya.id,
+      nev: palya.nev || '–',
+      fedett_nyers: palya.fedett,
+      fedett_tipus: palya.fedett_tipus,
+      sportag: sportag || '–',
+      boritas: boritas || '–',
+      jatekforma: jatekforma || '–'
+    });
+    console.log('[Sportingo Debug] REST válasz – nyers pályák száma:', (testverpRaw || []).length);
+
+    // Kliens oldali fedett szűrés – normalizeFedettTipus() azonos a helyszínoldali logikával
+    // Csak azok a pályák maradnak, amelyek fedett_tipusa megegyezik a jelenlegi pályáéval.
+    const testverpData = (testverpRaw || []).filter(p => {
+      const pNormFedett = normalizeFedettTipus(p.fedett);
+      const benne = pNormFedett === palya.fedett_tipus;
+      // [Sportingo Debug] Pályánkénti szűrési döntés
+      console.log('[Sportingo Debug] Szűrés –', (p.nev || p.id), '|',
+        'fedett_nyers:', JSON.stringify(p.fedett),
+        '| normalizált:', pNormFedett,
+        '| elvárt:', palya.fedett_tipus,
+        '|', benne ? '✅ bekerül' : '❌ kiesik (fedett mismatch)');
+      return benne;
+    });
+    console.log('[Sportingo Debug] Szűrés után maradt pályák:', testverpData.length,
+      testverpData.map(p => p.nev || p.id));
 
     // Szabad időpontok száma az összes testvérpályán (60 napon belül)
     const freeCounts = {};
@@ -1014,6 +1051,10 @@ async function init() {
     const palyakWithSlots = (testverpData||[]).filter(p => freeCounts[p.id] > 0);
     // Rendezés: legtöbb szabad időpont elöl
     palyakWithSlots.sort((a,b) => freeCounts[b.id] - freeCounts[a.id]);
+
+    // [Sportingo Debug] Végeredmény – ezek kerülnek a selectorba
+    console.log('[Sportingo Debug] Szabad időponttal rendelkező pályák:', palyakWithSlots.length,
+      palyakWithSlots.map(p => (p.nev || p.id) + ' (' + (freeCounts[p.id] || 0) + ' szabad)'));
 
     if (palyakWithSlots.length > 0) {
       hasNaptar = true;
