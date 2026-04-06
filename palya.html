@@ -1062,27 +1062,24 @@ async function init() {
       } catch(e) { freeCounts[p.id] = 0; }
     }));
 
-    // Csak azok a pályák ahol van szabad időpont
-    const palyakWithSlots = (testverpData||[]).filter(p => freeCounts[p.id] > 0);
-    // Rendezés: legtöbb szabad időpont elöl
-    palyakWithSlots.sort((a,b) => freeCounts[b.id] - freeCounts[a.id]);
+    // ── SELECTOR lista = a TELJES testvérpálya csoport ────────────────
+    // A SPF.csoportPalyak NEM availability-lista.
+    // Minden pálya megjelenik a selectorban, akkor is ha nincs szabad időpontja.
+    // Rendezés: legtöbb szabad időpont elöl (badge informatív, nem szűr).
+    const csoportSorted = (testverpData || []).slice().sort((a, b) =>
+      (freeCounts[b.id] || 0) - (freeCounts[a.id] || 0)
+    );
+    const anyHasSlots = csoportSorted.some(p => (freeCounts[p.id] || 0) > 0);
 
-    // [Sportingo Debug] Végeredmény – ezek kerülnek a selectorba
-    console.log('[Sportingo Debug] Szabad időponttal rendelkező pályák:', palyakWithSlots.length,
-      palyakWithSlots.map(p => (p.nev || p.id) + ' (' + (freeCounts[p.id] || 0) + ' szabad)'));
+    console.log('[Sportingo Debug] Teljes csoport (selector):', csoportSorted.length,
+      csoportSorted.map(p => (p.nev || p.id) + ' (' + (freeCounts[p.id] || 0) + ' szabad)'));
 
-    // Fallback: ha az eredeti pálya nincs a szabad időpontos listában,
-    // adjuk hozzá az elejére – a naptár így mindig tud mit megjeleníteni.
-    // (Lehet hogy tele van, de legalább a struktúra renderelődik.)
-    const existsInSlots = palyakWithSlots.some(p => p.id === palya.id);
-    if (!existsInSlots) {
-      console.warn('[SPF] Eredeti pálya kiesett szűrésen – fallback hozzáadva');
-      palyakWithSlots.unshift(palya);
-    }
-
-    if (palyakWithSlots.length > 0) {
-      hasNaptar = true;
-      csoportPalyak = palyakWithSlots;
+    if (csoportSorted.length > 0) {
+      // hasNaptar: akkor true, ha legalább egy pályán van szabad időpont VAGY
+      // több pálya van a csoportban (akkor is megjelenik a naptár selector nélkül)
+      hasNaptar = anyHasSlots || csoportSorted.length > 1;
+      // SPF.csoportPalyak = a TELJES csoport – selector mindig a teljes listát mutatja
+      csoportPalyak = csoportSorted;
       SPF.csoportPalyak = csoportPalyak;
       SPF.palyaFreeCounts = freeCounts;
       // Aktív pálya: ha az eredeti palya is van a listában, azt preferáljuk, különben az első
