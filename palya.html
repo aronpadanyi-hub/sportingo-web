@@ -1034,6 +1034,19 @@ async function init() {
     console.log('[Sportingo Debug] Szűrés után maradt pályák:', testverpData.length,
       testverpData.map(p => p.nev || p.id));
 
+    // Fallback: ha az eredeti palya kiesett a szűrésen (inkonzisztens adatbázis-adat),
+    // adjuk hozzá a listához – nélküle a loadAndRenderCal semmit nem tudna megjeleníteni.
+    // Ez nem módosít logikát: a pálya már betöltve van, csak a selectorból esett ki.
+    const origBenne = testverpData.some(p => p.id === palya.id);
+    if (!origBenne) {
+      console.warn('[Sportingo Debug] Fallback: az eredeti pálya kiesett a fedett szűrésen!',
+        'palya.id:', palya.id, '| palya.fedett:', JSON.stringify(palya.fedett),
+        '| palya.fedett_tipus:', palya.fedett_tipus,
+        '– hozzáadva a listához');
+      testverpData.unshift({ id: palya.id, nev: palya.nev, slug: palya.slug,
+        palya_szam: palya.palya_szam, ar_per_ora: palya.ar_per_ora, fedett: palya.fedett });
+    }
+
     // Szabad időpontok száma az összes testvérpályán (60 napon belül)
     const freeCounts = {};
     await Promise.all((testverpData||[]).map(async (p) => {
@@ -1056,6 +1069,15 @@ async function init() {
     console.log('[Sportingo Debug] Szabad időponttal rendelkező pályák:', palyakWithSlots.length,
       palyakWithSlots.map(p => (p.nev || p.id) + ' (' + (freeCounts[p.id] || 0) + ' szabad)'));
 
+    // Fallback: ha az eredeti pálya nincs a szabad időpontos listában,
+    // adjuk hozzá az elejére – a naptár így mindig tud mit megjeleníteni.
+    // (Lehet hogy tele van, de legalább a struktúra renderelődik.)
+    const existsInSlots = palyakWithSlots.some(p => p.id === palya.id);
+    if (!existsInSlots) {
+      console.warn('[SPF] Eredeti pálya kiesett szűrésen – fallback hozzáadva');
+      palyakWithSlots.unshift(palya);
+    }
+
     if (palyakWithSlots.length > 0) {
       hasNaptar = true;
       csoportPalyak = palyakWithSlots;
@@ -1064,6 +1086,8 @@ async function init() {
       // Aktív pálya: ha az eredeti palya is van a listában, azt preferáljuk, különben az első
       const origIdx = csoportPalyak.findIndex(p => p.id === palya.id);
       SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
+      // Garancia: aktivIdx soha nem mutathat érvénytelen indexre
+      if (SPF.aktivIdx >= SPF.csoportPalyak.length) SPF.aktivIdx = 0;
       // Bejelentkezés ellenőrzés
       try {
         const { data: { session } } = await _sbGlobal.auth.getSession();
@@ -1390,6 +1414,15 @@ async function spfMount(origPalya) {
 
   // ── NAPTÁR RENDER ─────────────────────────────────────────
   async function loadAndRenderCal() {
+    // Védelem: ha csoportPalyak üres vagy aktivIdx érvénytelen, nem futunk tovább
+    if (!SPF.csoportPalyak || SPF.csoportPalyak.length === 0) {
+      console.warn('[Sportingo Debug] loadAndRenderCal: SPF.csoportPalyak üres – naptár nem tud renderelni');
+      return;
+    }
+    if (SPF.aktivIdx < 0 || SPF.aktivIdx >= SPF.csoportPalyak.length) {
+      console.warn('[Sportingo Debug] loadAndRenderCal: aktivIdx érvénytelen, visszaállítás 0-ra');
+      SPF.aktivIdx = 0;
+    }
     const palyaId = SPF.csoportPalyak[SPF.aktivIdx].id;
     const calWrap = document.getElementById('spf-cal-wrap');
     const loading = document.getElementById('spf-cal-loading');
