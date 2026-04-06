@@ -944,7 +944,18 @@ async function init() {
   const varos       = palya.varos || h.varos || '';
   const ar          = palya.ar_per_ora;
   const boritas     = palya.boritas || '';
-  const fedett      = palya.fedett || '';
+  const fedett      = palya.fedett || '';  // eredeti mező – érintetlen marad
+  // ── fedett_tipus: derivált, normalizált mező ──────────────────
+  // Nem írja felül a fedett mezőt. Lehetséges értékek: "fedett" | "kültéri" | "szezonális"
+  function normalizeFedettTipus(val) {
+    if (!val || val === false || val === 'false') return 'kültéri';
+    const v = String(val).toLowerCase().trim();
+    if (v === 'true' || v === 'fedett') return 'fedett';
+    if (v === 'kültéri') return 'kültéri';
+    if (v === 'szezonális' || v === 'szezonalis') return 'szezonális';
+    return 'kültéri'; // ismeretlen érték: stabil fallback
+  }
+  palya.fedett_tipus = normalizeFedettTipus(palya.fedett);
   const sportag     = palya.sportag || '';
   const jatekforma  = palya.jatekforma || '';
   const leiras      = palya.leiras || '';
@@ -1024,7 +1035,10 @@ async function init() {
   const metaItems = [];
   if (ar) metaItems.push(['Ár', fmt(ar) + ' Ft / óra']);
   if (boritas) metaItems.push(['Borítás', boritas]);
-  if (fedett && fedett !== 'false' && fedett !== false) metaItems.push(['Elhelyezés', fedett === true || fedett === 'true' ? 'Fedett' : fedett]);
+  if (palya.fedett_tipus && palya.fedett_tipus !== 'kültéri') {
+    const fedettTipusLabel = { 'fedett': 'Fedett', 'szezonális': 'Szezonálisan fedett' };
+    metaItems.push(['Elhelyezés', fedettTipusLabel[palya.fedett_tipus] || palya.fedett_tipus]);
+  }
   if (sportag) metaItems.push(['Sportág', sportag]);
   if (jatekforma) metaItems.push(['Játékforma', jatekforma]);
   const metaHTML = metaItems.map(([label, val]) => `
