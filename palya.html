@@ -998,6 +998,11 @@ async function init() {
   // ── VAN-E SZABAD IDŐPONT? ────────────────────────────────
   // Lekérjük az összes azonos típusú pályát a helyszínen
   let csoportPalyak = [palya];
+  // Korai fallback: SPF.csoportPalyak soha ne legyen üres ha van aktuális pálya
+  // Ezt a testvérpálya lekérdezés felülírhatja, de ha nem fut, legalább ez megvan
+  SPF.csoportPalyak = [{ id: palya.id, nev: palya.nev, slug: palya.slug,
+    palya_szam: palya.palya_szam, ar_per_ora: palya.ar_per_ora, fedett: palya.fedett }];
+  SPF.aktivIdx = 0;
   let hasNaptar = false;
   try {
     const today = spfFmtDate(new Date());
@@ -1074,26 +1079,30 @@ async function init() {
       csoportSorted.map(p => (p.nev || p.id) + ' (' + (freeCounts[p.id] || 0) + ' szabad)'));
 
     if (csoportSorted.length > 0) {
-      // hasNaptar: akkor true, ha legalább egy pályán van szabad időpont VAGY
-      // több pálya van a csoportban (akkor is megjelenik a naptár selector nélkül)
-      // idopontos pályánál a naptár mindig megjelenik – 0 slot = üres naptár, nem CTA fallback
-    hasNaptar = foglalasTipus === 'idopontos' || anyHasSlots || csoportSorted.length > 1;
-      // SPF.csoportPalyak = a TELJES csoport – selector mindig a teljes listát mutatja
+      // testvérpálya lekérdezés sikeres – feltöltjük a teljes csoportot
       csoportPalyak = csoportSorted;
       SPF.csoportPalyak = csoportPalyak;
       SPF.palyaFreeCounts = freeCounts;
-      // Aktív pálya: ha az eredeti palya is van a listában, azt preferáljuk, különben az első
       const origIdx = csoportPalyak.findIndex(p => p.id === palya.id);
       SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
-      // Garancia: aktivIdx soha nem mutathat érvénytelen indexre
       if (SPF.aktivIdx >= SPF.csoportPalyak.length) SPF.aktivIdx = 0;
-      // Bejelentkezés ellenőrzés
-      try {
-        const { data: { session } } = await _sbGlobal.auth.getSession();
-        if (session) SPF.loggedInUser = session.user;
-      } catch(e) {}
+      console.log('[SPF FIX] final csoportPalyak length:', SPF.csoportPalyak.length, '| aktivIdx:', SPF.aktivIdx);
+    } else {
+      // Üres testvérpálya lista – a korai fallback ([palya]) marad a SPF.csoportPalyak-ban
+      console.log('[SPF FIX] testver count: 0 – fallback to current palya, SPF.csoportPalyak.length:', SPF.csoportPalyak.length);
     }
-  } catch(e) { hasNaptar = foglalasTipus === 'idopontos'; } // idopontos: naptár marad hiba esetén is
+    // hasNaptar: idopontos típusnál mindig true, 0 slot = üres naptár, nem CTA fallback
+    hasNaptar = foglalasTipus === 'idopontos' || anyHasSlots || csoportSorted.length > 1;
+    // Bejelentkezés ellenőrzés
+    try {
+      const { data: { session } } = await _sbGlobal.auth.getSession();
+      if (session) SPF.loggedInUser = session.user;
+    } catch(e) {}
+  } catch(e) {
+    console.log('[SPF FIX] testverpálya lekérdezés hiba – fallback to current palya');
+    // SPF.csoportPalyak korai fallback ([palya]) már be van állítva
+    hasNaptar = foglalasTipus === 'idopontos'; // idopontos: naptár hiba esetén is megjelenik
+  }
 
   // ── META ITEMS ───────────────────────────────────────────
   const metaItems = [];
@@ -1438,9 +1447,11 @@ async function spfMount(origPalya) {
 
   // ── NAPTÁR RENDER ─────────────────────────────────────────
   async function loadAndRenderCal() {
-    // Védelem: ha csoportPalyak üres vagy aktivIdx érvénytelen, nem futunk tovább
+    // Védelem: ha csoportPalyak üres, ez BUG – de ne hagyjuk loading állapotban
     if (!SPF.csoportPalyak || SPF.csoportPalyak.length === 0) {
-      console.warn('[Sportingo Debug] loadAndRenderCal: SPF.csoportPalyak üres – naptár nem tud renderelni');
+      console.warn('[SPF FIX] loadAndRenderCal: SPF.csoportPalyak üres – ez nem történhet meg, de loading-ot leállítjuk');
+      const loadEl = document.getElementById('spf-cal-loading');
+      if (loadEl) loadEl.style.display = 'none';
       return;
     }
     if (SPF.aktivIdx < 0 || SPF.aktivIdx >= SPF.csoportPalyak.length) {
