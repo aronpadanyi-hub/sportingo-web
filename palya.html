@@ -924,6 +924,7 @@ const SPF_SLOTS = spfGenSlots();
 
 // ── MAIN INIT ──────────────────────────────────────────
 async function init() {
+  console.log('[SPF BUILD] web-palya version: squash-debug-final-1');
   console.log('[INIT DEBUG 0] init() elindult');
   const slug = getSlug();
   const idParam = new URLSearchParams(window.location.search).get('id') || '';
@@ -1047,13 +1048,16 @@ async function init() {
     const freeCounts = {};
     await Promise.all((testverpData||[]).map(async (p) => {
       try {
-        const cnt = await sbFetch(
-          '/rest/v1/idopontok?palya_id=eq.' + p.id
+        const slotUrl = '/rest/v1/idopontok?palya_id=eq.' + p.id
           + '&foglalt=eq.false&datum=gte.' + today + '&datum=lte.' + in60
-          + '&select=id'
-        );
+          + '&select=id';
+        const cnt = await sbFetch(slotUrl);
         freeCounts[p.id] = Array.isArray(cnt) ? cnt.length : 0;
-      } catch(e) { freeCounts[p.id] = 0; }
+        console.log('[SPF SLOT QUERY] palyaId:', p.id, '| nev:', p.nev || '?', '| raw free count:', freeCounts[p.id]);
+      } catch(e) {
+        freeCounts[p.id] = 0;
+        console.warn('[SPF SLOT QUERY ERROR] palyaId:', p.id, '| error:', e.message || e);
+      }
     }));
 
     // ── SELECTOR lista = a TELJES testvérpálya csoport ────────────────
@@ -1117,8 +1121,19 @@ async function init() {
     </div>`).join('');
 
   // ── CTA BLOKK ─────────────────────────────────────────────
+  // Teljes döntési state log – egyetlen blokkban
+  console.log('[SPF FINAL STATE]', JSON.stringify({
+    palyaId: palya.id, palyaNev: palya.nev,
+    foglalasTipus, foglalasiEmail: !!foglalasiEmail, kulsoLink: !!kulsoLink,
+    anyHasSlots, csoportPalyakLength: SPF.csoportPalyak ? SPF.csoportPalyak.length : 0,
+    SPF_csoportPalyakLength: SPF.csoportPalyak ? SPF.csoportPalyak.length : 0,
+    freeCounts: SPF.palyaFreeCounts || {},
+    hasNaptar
+  }));
+
   let ctaHTML = '';
   if (foglalasTipus === 'nincs') {
+    console.log('[SPF CTA] branch = NINCS (szabad foglalás)');
     ctaHTML = `
       <div class="sp-card" style="text-align:center;padding:18px;">
         <div style="font-size:1.5rem;margin-bottom:6px;">✅</div>
@@ -1126,13 +1141,16 @@ async function init() {
         <div style="font-size:.8rem;color:#6b8a9a;margin-top:4px;">Szabadon látogatható</div>
       </div>`;
   } else if (hasNaptar) {
-    // NAPTÁRAS FOGLALÁS
+    console.log('[SPF CTA] branch = NAPTAR');
     ctaHTML = `<div class="sp-card" id="spf-card"><div id="spf-mount"></div></div>`;
   } else if (foglalasiEmail) {
+    console.log('[SPF CTA] branch = EMAIL_FORM | hasNaptar=false, foglalasiEmail exists');
     ctaHTML = `<div class="sp-cta"><h3>Foglalás</h3><p>Töltsd ki az űrlapot a foglalási kérés elküldéséhez.</p><a class="sp-cta-btn" href="#foglalas-form">📋 Foglalási kérés küldése</a></div>`;
   } else if (kulsoLink) {
+    console.log('[SPF CTA] branch = KULSO_LINK');
     ctaHTML = `<div class="sp-cta"><h3>Foglalás</h3><p>Foglalj online a pálya weboldalán.</p><a class="sp-cta-btn external" href="${esc(kulsoLink)}" target="_blank" rel="noopener">🔗 Foglalás a weboldalon</a></div>`;
   } else {
+    console.log('[SPF CTA] branch = CONTACT_FALLBACK | no naptar, no email, no external link');
     ctaHTML = `<div class="sp-cta"><h3>Foglalás</h3><p>Vedd fel a kapcsolatot a helyszínnel.</p></div>`;
   }
 
