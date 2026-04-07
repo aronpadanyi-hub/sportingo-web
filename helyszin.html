@@ -376,11 +376,17 @@ async function init() {
           _rule.meret   && csoport.jatekforma ? csoport.jatekforma : null,
           _rule.fedett  && fedettFelirat ? fedettFelirat : null,
         ].filter(Boolean);
-        if (csoport.jatekforma) cimReszek.push(csoport.jatekforma); // Futball: Kispálya / Nagypálya
+        // jatekforma már a _rule.meret ágban benne van, külön push nem kell
         const cim = cimReszek.map(r => esc(r)).join(' · ');
 
+        // Elsődleges navigációs célpálya: az első slug-gal rendelkező pálya a csoportban
+        var _celSlug = '';
+        for (var _ci = 0; _ci < csoport.palyak.length; _ci++) {
+          if (csoport.palyak[_ci].slug) { _celSlug = csoport.palyak[_ci].slug; break; }
+        }
+        const _href = _celSlug ? 'https://sportingo.hu/palya/' + encodeURIComponent(_celSlug) : '#';
         palyakHTML += `
-          <div class="sh-palya-card sh-tipus-card" data-key="${esc(csoport.key)}" style="cursor:pointer;">
+          <a href="${esc(_href)}" class="sh-palya-card sh-tipus-card" data-key="${esc(csoport.key)}" style="cursor:pointer;text-decoration:none;">
             <div class="sh-palya-thumb">
               ${repKep
                 ? `<img src="${esc(repKep.kep_url)}" alt="${esc(csoport.sportag)}" loading="lazy">`
@@ -393,7 +399,7 @@ async function init() {
                 <div class="sh-palya-arrow">Kiválasztás →</div>
               </div>
             </div>
-          </div>`;
+          </a>`;
       });
       palyakHTML += '</div>';
 
@@ -465,8 +471,7 @@ async function init() {
   try {
     document.querySelectorAll('#sh-root .sh-tipus-card[data-key]').forEach(function(el) {
       el.addEventListener('click', function(e) {
-        if (e.target.closest('a')) return;
-
+        e.preventDefault(); // href fallback helyett JS navigáció fut
         const key = el.dataset.key;
         if (!key) return;
 
