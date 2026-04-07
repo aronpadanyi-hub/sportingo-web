@@ -1073,7 +1073,8 @@ async function init() {
     if (csoportSorted.length > 0) {
       // hasNaptar: akkor true, ha legalább egy pályán van szabad időpont VAGY
       // több pálya van a csoportban (akkor is megjelenik a naptár selector nélkül)
-      hasNaptar = anyHasSlots || csoportSorted.length > 1;
+      // idopontos pályánál a naptár mindig megjelenik – 0 slot = üres naptár, nem CTA fallback
+    hasNaptar = foglalasTipus === 'idopontos' || anyHasSlots || csoportSorted.length > 1;
       // SPF.csoportPalyak = a TELJES csoport – selector mindig a teljes listát mutatja
       csoportPalyak = csoportSorted;
       SPF.csoportPalyak = csoportPalyak;
@@ -1089,7 +1090,7 @@ async function init() {
         if (session) SPF.loggedInUser = session.user;
       } catch(e) {}
     }
-  } catch(e) { hasNaptar = false; }
+  } catch(e) { hasNaptar = foglalasTipus === 'idopontos'; } // idopontos: naptár marad hiba esetén is
 
   // ── META ITEMS ───────────────────────────────────────────
   const metaItems = [];
