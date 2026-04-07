@@ -924,7 +924,7 @@ const SPF_SLOTS = spfGenSlots();
 
 // ── MAIN INIT ──────────────────────────────────────────
 async function init() {
-  console.log('[SPF BUILD] web-palya version: squash-debug-final-1');
+  console.log('[SPF BUILD] web-palya version: squash-grouping-rules-fix');
   console.log('[INIT DEBUG 0] init() elindult');
   const slug = getSlug();
   const idParam = new URLSearchParams(window.location.search).get('id') || '';
@@ -956,15 +956,38 @@ async function init() {
   const ar          = palya.ar_per_ora;
   const boritas     = palya.boritas || '';
   const fedett      = palya.fedett || '';  // eredeti mező – érintetlen marad
-  // ── fedett_tipus: derivált, normalizált mező ──────────────────
-  // Nem írja felül a fedett mezőt. Lehetséges értékek: "fedett" | "kültéri" | "szezonális"
+  // ── fedett_tipus + GROUPING_RULES (szinkron a helyszínoldallal) ────────────
   function normalizeFedettTipus(val) {
     if (!val || val === false || val === 'false') return 'kültéri';
     const v = String(val).toLowerCase().trim();
     if (v === 'true' || v === 'fedett') return 'fedett';
     if (v === 'kültéri') return 'kültéri';
-    if (v === 'szezonális' || v === 'szezonalis') return 'fedett'; // kompatibilitás: user-facing fedett
-    return 'kültéri'; // ismeretlen érték: stabil fallback
+    if (v === 'szezonális' || v === 'szezonalis') return 'fedett';
+    return 'kültéri';
+  }
+
+  const GROUPING_RULES = {
+    'Futball':        { meret: true,  boritas: true,  fedett: true  },
+    'Labdarúgás':     { meret: true,  boritas: true,  fedett: true  },
+    'Tenisz':         { meret: false, boritas: true,  fedett: true  },
+    'Padel':          { meret: false, boritas: false, fedett: true  },
+    'Squash':         { meret: false, boritas: false, fedett: false },
+    'Tollaslabda':    { meret: false, boritas: false, fedett: true  },
+    'Röplabda':       { meret: false, boritas: true,  fedett: false },
+    'Strandröplabda': { meret: false, boritas: true,  fedett: false },
+    'Bowling':        { meret: false, boritas: false, fedett: false },
+    'Biliárd':        { meret: false, boritas: false, fedett: false },
+    'Pingpong':       { meret: false, boritas: false, fedett: true  },
+    'Kosárlabda':     { meret: false, boritas: false, fedett: true  },
+    'Teqball':        { meret: false, boritas: false, fedett: true  },
+    'Gokart':         { meret: false, boritas: false, fedett: true  },
+    'Lőtér':          { meret: false, boritas: false, fedett: true  },
+    'Kézilabda':      { meret: false, boritas: true,  fedett: true  },
+    'Egyéb':          { meret: false, boritas: true,  fedett: true  },
+  };
+  const GROUPING_DEFAULT = { meret: false, boritas: false, fedett: true };
+  function getGroupingRule(sg) {
+    return GROUPING_RULES[(sg || '').trim()] || GROUPING_DEFAULT;
   }
   palya.fedett_tipus = normalizeFedettTipus(palya.fedett);
   const sportag     = palya.sportag || '';
@@ -1099,7 +1122,8 @@ async function init() {
       if (session) SPF.loggedInUser = session.user;
     } catch(e) {}
   } catch(e) {
-    console.log('[SPF FIX] testverpálya lekérdezés hiba – fallback to current palya');
+    console.error('[SPF ERROR] testverpálya lekérdezés HIBA:', e && (e.message || e));
+    console.error('[SPF ERROR] hiba stack:', e && e.stack);
     // SPF.csoportPalyak korai fallback ([palya]) már be van állítva
     hasNaptar = foglalasTipus === 'idopontos';
   }
