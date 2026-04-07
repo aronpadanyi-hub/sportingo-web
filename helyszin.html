@@ -379,14 +379,23 @@ async function init() {
         // jatekforma már a _rule.meret ágban benne van, külön push nem kell
         const cim = cimReszek.map(r => esc(r)).join(' · ');
 
-        // Elsődleges navigációs célpálya: az első slug-gal rendelkező pálya a csoportban
-        var _celSlug = '';
+        // Célpálya URL – egységes logika (ugyanez fut a JS click handlerben is):
+        // 1. első slug-os pálya → /palya/{slug}
+        // 2. nincs slug → /palya/?id={uuid}  (web-palya.html getSlug() ?id= paramétert is fogad)
+        // 3. nincs pálya → '#' (nem fordul elő éles rendszeren)
+        var _celP = null;
         for (var _ci = 0; _ci < csoport.palyak.length; _ci++) {
-          if (csoport.palyak[_ci].slug) { _celSlug = csoport.palyak[_ci].slug; break; }
+          if (csoport.palyak[_ci].slug) { _celP = csoport.palyak[_ci]; break; }
         }
-        const _href = _celSlug ? 'https://sportingo.hu/palya/' + encodeURIComponent(_celSlug) : '#';
+        if (!_celP && csoport.palyak.length > 0) _celP = csoport.palyak[0];
+        var _href = '#';
+        if (_celP && _celP.slug) {
+          _href = 'https://sportingo.hu/palya/' + encodeURIComponent(_celP.slug);
+        } else if (_celP && _celP.id) {
+          _href = 'https://sportingo.hu/palya/?id=' + encodeURIComponent(_celP.id);
+        }
         palyakHTML += `
-          <a href="${esc(_href)}" class="sh-palya-card sh-tipus-card" data-key="${esc(csoport.key)}" style="cursor:pointer;text-decoration:none;">
+          <a href="${esc(_href)}" class="sh-palya-card sh-tipus-card" data-key="${esc(csoport.key)}" data-href="${esc(_href)}" style="cursor:pointer;text-decoration:none;">
             <div class="sh-palya-thumb">
               ${repKep
                 ? `<img src="${esc(repKep.kep_url)}" alt="${esc(csoport.sportag)}" loading="lazy">`
@@ -471,38 +480,12 @@ async function init() {
   try {
     document.querySelectorAll('#sh-root .sh-tipus-card[data-key]').forEach(function(el) {
       el.addEventListener('click', function(e) {
-        e.preventDefault(); // href fallback helyett JS navigáció fut
-        const key = el.dataset.key;
-        if (!key) return;
-
-        // Csoport megkeresése
-        if (!groupedPalyas || !groupedPalyas.length) return;
-        const csoport = groupedPalyas.find(function(g) { return g.key === key; });
-        if (!csoport || !csoport.palyak || csoport.palyak.length === 0) return;
-
-        // State frissítése
-        selectedGroup  = csoport;
-        selectedPalyak = csoport.palyak;
-
-        console.log('[Sportingo] Kiválasztott csoport:', selectedGroup.key,
-          '| Pályák száma:', selectedPalyak.length);
-
-        // ── Navigáció a legjobb pályára ─────────────────────────────────
-        // Legjobb pálya = az első a csoportban (a groupedPalyas sorrendben az
-        // elérhető pályák közül az első, ami slug-gal rendelkezik).
-        // A pályaoldal ezután availability szerint rendezi a testvérpályákat,
-        // és a pályaváltó UI-n keresztül engedi a csoporton belüli lapozást.
-        // Fallback: ha nincs slug, maradunk az oldalon (nincs navigáció).
-        var celPalya = null;
-        for (var i = 0; i < csoport.palyak.length; i++) {
-          if (csoport.palyak[i].slug) { celPalya = csoport.palyak[i]; break; }
-        }
-
-        if (celPalya && celPalya.slug) {
-          window.location.href = 'https://sportingo.hu/palya/' + encodeURIComponent(celPalya.slug);
-        } else {
-          // Nincs slug – fallback: state megmarad, de nincs navigáció
-          console.warn('[Sportingo] Nincs slug a csoportban:', csoport.key);
+        e.preventDefault();
+        // data-href = render-időben kiszámított URL (slug vagy ?id= fallback)
+        // Garantáltan egyezik az <a href>-fel – egyetlen forrás
+        var targetUrl = el.dataset.href || el.getAttribute('href') || '#';
+        if (targetUrl && targetUrl !== '#') {
+          window.location.href = targetUrl;
         }
       });
     });
