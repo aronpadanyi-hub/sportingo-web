@@ -379,14 +379,27 @@ async function init() {
         // jatekforma már a _rule.meret ágban benne van, külön push nem kell
         const cim = cimReszek.map(r => esc(r)).join(' · ');
 
-        // Célpálya URL – egységes logika (ugyanez fut a JS click handlerben is):
-        // 1. első slug-os pálya → /palya/{slug}
-        // 2. nincs slug → /palya/?id={uuid}  (web-palya.html getSlug() ?id= paramétert is fogad)
-        // 3. nincs pálya → '#' (nem fordul elő éles rendszeren)
-        var _celP = null;
-        for (var _ci = 0; _ci < csoport.palyak.length; _ci++) {
-          if (csoport.palyak[_ci].slug) { _celP = csoport.palyak[_ci]; break; }
+        // Célpálya-választás – prioritás sorrend (azonos elvek a helyszín és pályaoldalon):
+        // 1. jóváhagyott + slug + booking-képes (naptáras vagy email vagy külső link)
+        // 2. jóváhagyott + slug (bármilyen)
+        // 3. jóváhagyott + id (slug nélkül, ?id= fallback)
+        // 4. első pálya fallback
+        function _bookingKepesP(p) {
+          return p.foglalas_tipus === 'idopontos' || p.foglalas_tipus === 'email' || !!p.kulso_link;
         }
+        var _celP = null;
+        // Prioritás 1: slug + booking
+        for (var _ci = 0; _ci < csoport.palyak.length; _ci++) {
+          var _p = csoport.palyak[_ci];
+          if (_p.slug && _bookingKepesP(_p)) { _celP = _p; break; }
+        }
+        // Prioritás 2: slug (bármilyen)
+        if (!_celP) {
+          for (var _ci = 0; _ci < csoport.palyak.length; _ci++) {
+            if (csoport.palyak[_ci].slug) { _celP = csoport.palyak[_ci]; break; }
+          }
+        }
+        // Prioritás 3 és 4: id vagy legelső
         if (!_celP && csoport.palyak.length > 0) _celP = csoport.palyak[0];
         var _href = '#';
         if (_celP && _celP.slug) {
