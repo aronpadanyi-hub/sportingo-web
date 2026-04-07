@@ -973,7 +973,10 @@ async function init() {
   const nyitvatartas= h.nyitvatartas_szoveg || '';
   const mapsUrl     = h.google_maps_url || '';
   const mapsLink    = h.maps_link || '';
-  const foglalasTipus = palya.foglalas_tipus || '';
+  // foglalas_tipus: ha nincs beállítva a portálon, de van ár → idopontos heurisztika
+  // Ez biztosítja, hogy a naptár megjelenjen a squash típusú pályákon is
+  const _rawFoglalas = palya.foglalas_tipus || '';
+  const foglalasTipus = _rawFoglalas || (palya.ar_per_ora && !palya.kulso_link ? 'idopontos' : '');
   const kulsoLink   = palya.kulso_link || '';
   const foglalasiEmail = palya.foglalasi_email || h.foglalasi_email || '';
 
