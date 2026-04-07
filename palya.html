@@ -926,13 +926,19 @@ const SPF_SLOTS = spfGenSlots();
 async function init() {
   console.log('[INIT DEBUG 0] init() elindult');
   const slug = getSlug();
-  console.log('[INIT DEBUG 1] slug:', slug);
-  if (!slug) { render404(); return; }
+  const idParam = new URLSearchParams(window.location.search).get('id') || '';
+  console.log('[INIT DEBUG 1] slug:', slug, '| idParam:', idParam);
+  if (!slug && !idParam) { render404(); return; }
 
   let palya;
   try {
+    // Elsődleges: slug alapú lekérdezés
+    // Fallback: ha nincs slug de van id (pl. squash pályáknál hiányzó slug esetén)
+    const palyaFilter = slug
+      ? '?slug=eq.' + encodeURIComponent(slug)
+      : '?id=eq.'  + encodeURIComponent(idParam);
     const data = await sbFetch(
-      '/rest/v1/palyas?slug=eq.' + encodeURIComponent(slug)
+      '/rest/v1/palyas' + palyaFilter
       + '&statusz=eq.jovahagyva'
       + '&select=*,helyszinek(id,nev,slug,varos,helyszin,google_maps_url,maps_link,nyitvatartas_szoveg,foglalasi_email)'
       + '&limit=1'
@@ -949,43 +955,15 @@ async function init() {
   const ar          = palya.ar_per_ora;
   const boritas     = palya.boritas || '';
   const fedett      = palya.fedett || '';  // eredeti mező – érintetlen marad
-
-  // ══════════════════════════════════════════════════════════════════
-  // SPORTÁG-SZABÁLY ALAPÚ GROUPING RENDSZER (azonos a helyszínoldallal)
-  // ══════════════════════════════════════════════════════════════════
-  const GROUPING_RULES = {
-    'Futball':          { meret: true,  boritas: true,  fedett: true  },
-    'Labdarúgás':       { meret: true,  boritas: true,  fedett: true  },
-    'Tenisz':           { meret: false, boritas: true,  fedett: true  },
-    'Padel':            { meret: false, boritas: false, fedett: true  },
-    'Squash':           { meret: false, boritas: false, fedett: false },
-    'Tollaslabda':      { meret: false, boritas: false, fedett: true  },
-    'Röplabda':         { meret: false, boritas: true,  fedett: false },
-    'Strandröplabda':   { meret: false, boritas: true,  fedett: false },
-    'Bowling':          { meret: false, boritas: false, fedett: false },
-    'Biliárd':          { meret: false, boritas: false, fedett: false },
-    'Pingpong':         { meret: false, boritas: false, fedett: true  },
-    'Kosárlabda':       { meret: false, boritas: false, fedett: true  },
-    'Teqball':          { meret: false, boritas: false, fedett: true  },
-    'Gokart':           { meret: false, boritas: false, fedett: true  },
-    'Lőtér':            { meret: false, boritas: false, fedett: true  },
-    'Kézilabda':        { meret: false, boritas: true,  fedett: true  },
-    'Egyéb':            { meret: false, boritas: true,  fedett: true  },
-  };
-  const GROUPING_DEFAULT = { meret: false, boritas: false, fedett: true };
-
-  function getGroupingRule(sportag) {
-    return GROUPING_RULES[(sportag || '').trim()] || GROUPING_DEFAULT;
-  }
-  // ══════════════════════════════════════════════════════════════════
-  // fedett normalizálás – szezonális: kompatibilitás, user-facing 'fedett'-ként
+  // ── fedett_tipus: derivált, normalizált mező ──────────────────
+  // Nem írja felül a fedett mezőt. Lehetséges értékek: "fedett" | "kültéri" | "szezonális"
   function normalizeFedettTipus(val) {
     if (!val || val === false || val === 'false') return 'kültéri';
     const v = String(val).toLowerCase().trim();
     if (v === 'true' || v === 'fedett') return 'fedett';
     if (v === 'kültéri') return 'kültéri';
-    if (v === 'szezonális' || v === 'szezonalis') return 'fedett';
-    return 'kültéri';
+    if (v === 'szezonális' || v === 'szezonalis') return 'szezonális';
+    return 'kültéri'; // ismeretlen érték: stabil fallback
   }
   palya.fedett_tipus = normalizeFedettTipus(palya.fedett);
   const sportag     = palya.sportag || '';
@@ -1021,14 +999,20 @@ async function init() {
   try {
     const today = spfFmtDate(new Date());
     const in60  = spfFmtDate(new Date(Date.now() + 60*24*3600*1000));
-    // ── Testvérpálya lekérdezés – sportág-szabály alapján ──────────────
-    const _rule = getGroupingRule(sportag);
+    // ── Testvérpálya lekérdezés ─────────────────────────────────────
+    // A fedett szűrést KLIENS OLDALON végezzük normalizeFedettTipus() segítségével –
+    // ugyanazzal a függvénnyel, amit a helyszínoldali grouping is használ.
+    // Ez garantálja a teljes szinkront, függetlenül a nyers fedett értékek
+    // inkonzisztens adatbázis-tárolásától (null, false, 'false', 'Fedett', stb.).
+    //
+    // REST szűrők: helyszin_id + sportag + boritas + (Futballnál) jatekforma
+    // fedett: NEM szűrünk REST-szinten – kliens oldalon szűrjük normalizált értékkel.
     let testverpUrl = '/rest/v1/palyas?helyszin_id=eq.' + encodeURIComponent(palya.helyszin_id)
       + '&statusz=eq.jovahagyva&elrejtett=neq.true';
-    if (sportag)                       testverpUrl += '&sportag=eq.'    + encodeURIComponent(sportag);
-    if (_rule.boritas && boritas)      testverpUrl += '&boritas=eq.'    + encodeURIComponent(boritas);
-    if (_rule.meret   && jatekforma)   testverpUrl += '&jatekforma=eq.' + encodeURIComponent(jatekforma);
-    // fedett: kliens oldalon szűrjük (csak ha a szabály szerint számít)
+    if (sportag)    testverpUrl += '&sportag=eq.'    + encodeURIComponent(sportag);
+    if (boritas)    testverpUrl += '&boritas=eq.'    + encodeURIComponent(boritas);
+    // jatekforma: Futballnál kötelező (kispálya/nagypálya szétválasztás)
+    if (jatekforma) testverpUrl += '&jatekforma=eq.' + encodeURIComponent(jatekforma);
     testverpUrl += '&select=id,nev,slug,palya_szam,ar_per_ora,fedett';
     const testverpRaw = await sbFetch(testverpUrl);
 
@@ -1044,13 +1028,34 @@ async function init() {
     });
     console.log('[Sportingo Debug] REST válasz – nyers pályák száma:', (testverpRaw || []).length);
 
-    // Kliens oldali fedett szűrés – CSAK ha az adott sport szabálya szerint számít
-    const testverpRaw2 = testverpRaw || [];
-    const testverpData = _rule.fedett
-      ? testverpRaw2.filter(p => normalizeFedettTipus(p.fedett) === palya.fedett_tipus)
-      : testverpRaw2;
-    console.log('[Sportingo Debug] Testvérpályák (szabályalapú szűrés után):', testverpData.length,
-      'fedett_rule:', _rule.fedett, testverpData.map(p => p.nev || p.id));
+    // Kliens oldali fedett szűrés – normalizeFedettTipus() azonos a helyszínoldali logikával
+    // Csak azok a pályák maradnak, amelyek fedett_tipusa megegyezik a jelenlegi pályáéval.
+    const testverpData = (testverpRaw || []).filter(p => {
+      const pNormFedett = normalizeFedettTipus(p.fedett);
+      const benne = pNormFedett === palya.fedett_tipus;
+      // [Sportingo Debug] Pályánkénti szűrési döntés
+      console.log('[Sportingo Debug] Szűrés –', (p.nev || p.id), '|',
+        'fedett_nyers:', JSON.stringify(p.fedett),
+        '| normalizált:', pNormFedett,
+        '| elvárt:', palya.fedett_tipus,
+        '|', benne ? '✅ bekerül' : '❌ kiesik (fedett mismatch)');
+      return benne;
+    });
+    console.log('[Sportingo Debug] Szűrés után maradt pályák:', testverpData.length,
+      testverpData.map(p => p.nev || p.id));
+
+    // Fallback: ha az eredeti palya kiesett a szűrésen (inkonzisztens adatbázis-adat),
+    // adjuk hozzá a listához – nélküle a loadAndRenderCal semmit nem tudna megjeleníteni.
+    // Ez nem módosít logikát: a pálya már betöltve van, csak a selectorból esett ki.
+    const origBenne = testverpData.some(p => p.id === palya.id);
+    if (!origBenne) {
+      console.warn('[Sportingo Debug] Fallback: az eredeti pálya kiesett a fedett szűrésen!',
+        'palya.id:', palya.id, '| palya.fedett:', JSON.stringify(palya.fedett),
+        '| palya.fedett_tipus:', palya.fedett_tipus,
+        '– hozzáadva a listához');
+      testverpData.unshift({ id: palya.id, nev: palya.nev, slug: palya.slug,
+        palya_szam: palya.palya_szam, ar_per_ora: palya.ar_per_ora, fedett: palya.fedett });
+    }
 
     // Szabad időpontok száma az összes testvérpályán (60 napon belül)
     const freeCounts = {};
@@ -1103,7 +1108,7 @@ async function init() {
   if (ar) metaItems.push(['Ár', fmt(ar) + ' Ft / óra']);
   if (boritas) metaItems.push(['Borítás', boritas]);
   if (palya.fedett_tipus && palya.fedett_tipus !== 'kültéri') {
-    const fedettTipusLabel = { 'fedett': 'Fedett', 'kültéri': 'Kültéri' };
+    const fedettTipusLabel = { 'fedett': 'Fedett', 'szezonális': 'Szezonálisan fedett' };
     metaItems.push(['Elhelyezés', fedettTipusLabel[palya.fedett_tipus] || palya.fedett_tipus]);
   }
   if (sportag) metaItems.push(['Sportág', sportag]);
