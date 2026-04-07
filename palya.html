@@ -973,10 +973,8 @@ async function init() {
   const nyitvatartas= h.nyitvatartas_szoveg || '';
   const mapsUrl     = h.google_maps_url || '';
   const mapsLink    = h.maps_link || '';
-  // foglalas_tipus: ha nincs beállítva a portálon, de van ár → idopontos heurisztika
-  // Ez biztosítja, hogy a naptár megjelenjen a squash típusú pályákon is
-  const _rawFoglalas = palya.foglalas_tipus || '';
-  const foglalasTipus = _rawFoglalas || (palya.ar_per_ora && !palya.kulso_link ? 'idopontos' : '');
+  const foglalasTipus = palya.foglalas_tipus || '';
+  console.log('[SPF REAL] foglalas_tipus (raw DB):', palya.foglalas_tipus, '| foglalasTipus:', foglalasTipus);
   const kulsoLink   = palya.kulso_link || '';
   const foglalasiEmail = palya.foglalasi_email || h.foglalasi_email || '';
 
@@ -1016,7 +1014,7 @@ async function init() {
     // Testvérpálya lekérdezés – sportág-szabály alapján (szinkron a helyszínoldallal)
     const _rule = getGroupingRule(sportag);
     let testverpUrl = '/rest/v1/palyas?helyszin_id=eq.' + encodeURIComponent(palya.helyszin_id)
-      + '&statusz=eq.jovahagyva&elrejtett=neq.true';
+      + '&statusz=eq.jovahagyva&elrejtett=not.is.true'; // not.is.true: null és false is bekerül, csak true esik ki
     if (sportag)                         testverpUrl += '&sportag=eq.'    + encodeURIComponent(sportag);
     if (_rule.boritas && boritas)        testverpUrl += '&boritas=eq.'    + encodeURIComponent(boritas);
     if (_rule.meret   && jatekforma)     testverpUrl += '&jatekforma=eq.' + encodeURIComponent(jatekforma);
@@ -1024,25 +1022,17 @@ async function init() {
     testverpUrl += '&select=id,nev,slug,palya_szam,ar_per_ora,fedett';
     const testverpRaw = await sbFetch(testverpUrl);
 
-    // [Sportingo Debug] Aktuális pálya fedett paraméterei
-    console.log('[Sportingo Debug] Aktuális palya:', {
-      id: palya.id,
-      nev: palya.nev || '–',
-      fedett_nyers: palya.fedett,
-      fedett_tipus: palya.fedett_tipus,
-      sportag: sportag || '–',
-      boritas: boritas || '–',
-      jatekforma: jatekforma || '–'
-    });
-    console.log('[Sportingo Debug] REST válasz – nyers pályák száma:', (testverpRaw || []).length);
+    console.log('[SPF REAL] testver query url:', testverpUrl);
+    console.log('[SPF REAL] raw rows:', (testverpRaw || []).length,
+      '| raw ids:', (testverpRaw || []).map(p => (p.nev || '?') + '/' + p.id));
 
     // Kliens oldali fedett szűrés – CSAK ha a sportág-szabály szerint számít
-    // Squashnál: fedett=false → nem szűrünk → minden squash pálya a csoportba kerül
+    // Squashnál: _rule.fedett=false → nem szűrünk → minden squash pálya a csoportba kerül
     const testverpData = _rule.fedett
       ? (testverpRaw || []).filter(p => normalizeFedettTipus(p.fedett) === palya.fedett_tipus)
       : (testverpRaw || []);
-    console.log('[Sportingo Debug] Testvérpályák (szabályalapú szűrés):', testverpData.length,
-      '| fedett_rule:', _rule.fedett, testverpData.map(p => p.nev || p.id));
+    console.log('[SPF REAL] filtered ids:', testverpData.map(p => (p.nev || '?') + '/' + p.id),
+      '| fedett_rule:', _rule.fedett, '| sportag_rule:', JSON.stringify(_rule));
 
     // Fallback: ha az aktuális pálya nem kerül bele (pl. saját fedett értéke inkonzisztens),
     // adjuk hozzá – nélküle a loadAndRenderCal semmit nem tudna megjeleníteni.
@@ -1086,13 +1076,19 @@ async function init() {
       const origIdx = csoportPalyak.findIndex(p => p.id === palya.id);
       SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
       if (SPF.aktivIdx >= SPF.csoportPalyak.length) SPF.aktivIdx = 0;
-      console.log('[SPF FIX] final csoportPalyak length:', SPF.csoportPalyak.length, '| aktivIdx:', SPF.aktivIdx);
+      console.log('[SPF REAL] final selector ids:', SPF.csoportPalyak.map(p => (p.nev || '?') + '/' + p.id),
+        '| length:', SPF.csoportPalyak.length, '| aktivIdx:', SPF.aktivIdx);
     } else {
       // Üres testvérpálya lista – a korai fallback ([palya]) marad a SPF.csoportPalyak-ban
       console.log('[SPF FIX] testver count: 0 – fallback to current palya, SPF.csoportPalyak.length:', SPF.csoportPalyak.length);
     }
     // hasNaptar: idopontos típusnál mindig true, 0 slot = üres naptár, nem CTA fallback
-    hasNaptar = foglalasTipus === 'idopontos' || anyHasSlots || csoportSorted.length > 1;
+    // hasNaptar: idopontos foglalástípus VAGY szabad slot van VAGY több pálya van a csoportban
+    hasNaptar = foglalasTipus === 'idopontos'
+      || anyHasSlots
+      || csoportSorted.length > 1;
+    console.log('[SPF REAL] hasNaptar:', hasNaptar, '| foglalasTipus:', foglalasTipus,
+      '| anyHasSlots:', anyHasSlots, '| csoportSorted.length:', csoportSorted.length);
     // Bejelentkezés ellenőrzés
     try {
       const { data: { session } } = await _sbGlobal.auth.getSession();
@@ -1101,7 +1097,7 @@ async function init() {
   } catch(e) {
     console.log('[SPF FIX] testverpálya lekérdezés hiba – fallback to current palya');
     // SPF.csoportPalyak korai fallback ([palya]) már be van állítva
-    hasNaptar = foglalasTipus === 'idopontos'; // idopontos: naptár hiba esetén is megjelenik
+    hasNaptar = foglalasTipus === 'idopontos';
   }
 
   // ── META ITEMS ───────────────────────────────────────────
@@ -1459,6 +1455,7 @@ async function spfMount(origPalya) {
       SPF.aktivIdx = 0;
     }
     const palyaId = SPF.csoportPalyak[SPF.aktivIdx].id;
+    console.log('[SPF REAL] load calendar for palyaId:', palyaId, '| active idx:', SPF.aktivIdx);
     const calWrap = document.getElementById('spf-cal-wrap');
     const loading = document.getElementById('spf-cal-loading');
     if (loading) { loading.style.display = 'flex'; loading.style.removeProperty('display'); loading.style.display = 'flex'; }
