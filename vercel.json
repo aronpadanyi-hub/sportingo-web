@@ -2,6 +2,7 @@
   "routes": [
     { "src": "/auth-callback", "dest": "/auth-callback.html" },
     { "src": "/palya/([^/]+)/?", "dest": "/palya.html" },
+    { "src": "/palya/?", "dest": "/palya.html" },
     { "src": "/helyszin/([^/]+)/?", "dest": "/helyszin.html" },
     { "src": "/hogyan-mukodik/?", "dest": "/hogyan-mukodik.html" },
     { "src": "/palyat-uzemeltetsz/?", "dest": "/palyat-uzemeltetsz.html" },
