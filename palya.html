@@ -1005,14 +1005,14 @@ async function init() {
     // Ez garantálja a teljes szinkront, függetlenül a nyers fedett értékek
     // inkonzisztens adatbázis-tárolásától (null, false, 'false', 'Fedett', stb.).
     //
-    // REST szűrők: helyszin_id + sportag + boritas + (Futballnál) jatekforma
-    // fedett: NEM szűrünk REST-szinten – kliens oldalon szűrjük normalizált értékkel.
+    // Testvérpálya lekérdezés – sportág-szabály alapján (szinkron a helyszínoldallal)
+    const _rule = getGroupingRule(sportag);
     let testverpUrl = '/rest/v1/palyas?helyszin_id=eq.' + encodeURIComponent(palya.helyszin_id)
       + '&statusz=eq.jovahagyva&elrejtett=neq.true';
-    if (sportag)    testverpUrl += '&sportag=eq.'    + encodeURIComponent(sportag);
-    if (boritas)    testverpUrl += '&boritas=eq.'    + encodeURIComponent(boritas);
-    // jatekforma: Futballnál kötelező (kispálya/nagypálya szétválasztás)
-    if (jatekforma) testverpUrl += '&jatekforma=eq.' + encodeURIComponent(jatekforma);
+    if (sportag)                         testverpUrl += '&sportag=eq.'    + encodeURIComponent(sportag);
+    if (_rule.boritas && boritas)        testverpUrl += '&boritas=eq.'    + encodeURIComponent(boritas);
+    if (_rule.meret   && jatekforma)     testverpUrl += '&jatekforma=eq.' + encodeURIComponent(jatekforma);
+    // fedett: REST szinten NEM szűrünk – kliens oldalon szűrjük (csak ha a szabály szerint számít)
     testverpUrl += '&select=id,nev,slug,palya_szam,ar_per_ora,fedett';
     const testverpRaw = await sbFetch(testverpUrl);
 
@@ -1028,31 +1028,19 @@ async function init() {
     });
     console.log('[Sportingo Debug] REST válasz – nyers pályák száma:', (testverpRaw || []).length);
 
-    // Kliens oldali fedett szűrés – normalizeFedettTipus() azonos a helyszínoldali logikával
-    // Csak azok a pályák maradnak, amelyek fedett_tipusa megegyezik a jelenlegi pályáéval.
-    const testverpData = (testverpRaw || []).filter(p => {
-      const pNormFedett = normalizeFedettTipus(p.fedett);
-      const benne = pNormFedett === palya.fedett_tipus;
-      // [Sportingo Debug] Pályánkénti szűrési döntés
-      console.log('[Sportingo Debug] Szűrés –', (p.nev || p.id), '|',
-        'fedett_nyers:', JSON.stringify(p.fedett),
-        '| normalizált:', pNormFedett,
-        '| elvárt:', palya.fedett_tipus,
-        '|', benne ? '✅ bekerül' : '❌ kiesik (fedett mismatch)');
-      return benne;
-    });
-    console.log('[Sportingo Debug] Szűrés után maradt pályák:', testverpData.length,
-      testverpData.map(p => p.nev || p.id));
+    // Kliens oldali fedett szűrés – CSAK ha a sportág-szabály szerint számít
+    // Squashnál: fedett=false → nem szűrünk → minden squash pálya a csoportba kerül
+    const testverpData = _rule.fedett
+      ? (testverpRaw || []).filter(p => normalizeFedettTipus(p.fedett) === palya.fedett_tipus)
+      : (testverpRaw || []);
+    console.log('[Sportingo Debug] Testvérpályák (szabályalapú szűrés):', testverpData.length,
+      '| fedett_rule:', _rule.fedett, testverpData.map(p => p.nev || p.id));
 
-    // Fallback: ha az eredeti palya kiesett a szűrésen (inkonzisztens adatbázis-adat),
-    // adjuk hozzá a listához – nélküle a loadAndRenderCal semmit nem tudna megjeleníteni.
-    // Ez nem módosít logikát: a pálya már betöltve van, csak a selectorból esett ki.
+    // Fallback: ha az aktuális pálya nem kerül bele (pl. saját fedett értéke inkonzisztens),
+    // adjuk hozzá – nélküle a loadAndRenderCal semmit nem tudna megjeleníteni.
     const origBenne = testverpData.some(p => p.id === palya.id);
     if (!origBenne) {
-      console.warn('[Sportingo Debug] Fallback: az eredeti pálya kiesett a fedett szűrésen!',
-        'palya.id:', palya.id, '| palya.fedett:', JSON.stringify(palya.fedett),
-        '| palya.fedett_tipus:', palya.fedett_tipus,
-        '– hozzáadva a listához');
+      console.warn('[Sportingo Debug] Fallback: aktuális pálya kiesett a szűrésen – hozzáadva:', palya.id);
       testverpData.unshift({ id: palya.id, nev: palya.nev, slug: palya.slug,
         palya_szam: palya.palya_szam, ar_per_ora: palya.ar_per_ora, fedett: palya.fedett });
     }
