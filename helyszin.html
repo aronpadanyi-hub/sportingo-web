@@ -206,23 +206,62 @@ async function init() {
     else csoportok['Egyéb'].push(p);
   });
 
-  // ── fedett_tipus normalizáló – minden pályaobjektumra lefut a render előtt ──
-  // A p.fedett mező érintetlen marad. A fedett_tipus új, derivált mező.
-  // Lehetséges kimenetek: "fedett" | "kültéri" | "szezonális"
-  function normalizeFedettTipus(fedett) {
-    if (!fedett || fedett === false || fedett === 'false') return 'kültéri';
-    const v = String(fedett).toLowerCase().trim();
+
+  // ══════════════════════════════════════════════════════════════════
+  // SPORTÁG-SZABÁLY ALAPÚ GROUPING RENDSZER
+  // ══════════════════════════════════════════════════════════════════
+  const GROUPING_RULES = {
+    'Futball':          { meret: true,  boritas: true,  fedett: true  },
+    'Labdarúgás':       { meret: true,  boritas: true,  fedett: true  },
+    'Tenisz':           { meret: false, boritas: true,  fedett: true  },
+    'Padel':            { meret: false, boritas: false, fedett: true  },
+    'Squash':           { meret: false, boritas: false, fedett: false },
+    'Tollaslabda':      { meret: false, boritas: false, fedett: true  },
+    'Röplabda':         { meret: false, boritas: true,  fedett: false },
+    'Strandröplabda':   { meret: false, boritas: true,  fedett: false },
+    'Bowling':          { meret: false, boritas: false, fedett: false },
+    'Biliárd':          { meret: false, boritas: false, fedett: false },
+    'Pingpong':         { meret: false, boritas: false, fedett: true  },
+    'Kosárlabda':       { meret: false, boritas: false, fedett: true  },
+    'Teqball':          { meret: false, boritas: false, fedett: true  },
+    'Gokart':           { meret: false, boritas: false, fedett: true  },
+    'Lőtér':            { meret: false, boritas: false, fedett: true  },
+    'Kézilabda':        { meret: false, boritas: true,  fedett: true  },
+    'Egyéb':            { meret: false, boritas: true,  fedett: true  },
+  };
+  const GROUPING_DEFAULT = { meret: false, boritas: false, fedett: true };
+
+  function getGroupingRule(sportag) {
+    return GROUPING_RULES[(sportag || '').trim()] || GROUPING_DEFAULT;
+  }
+
+  // fedett normalizálás – szezonális: kompatibilitás, user-facing 'fedett'-ként jelenik meg
+  function normalizeFedettTipus(val) {
+    if (!val || val === false || val === 'false') return 'kültéri';
+    const v = String(val).toLowerCase().trim();
     if (v === 'true' || v === 'fedett') return 'fedett';
     if (v === 'kültéri') return 'kültéri';
-    if (v === 'szezonális' || v === 'szezonalis') return 'szezonális';
-    return 'kültéri'; // ismeretlen érték: stabil fallback, nem crash
+    if (v === 'szezonális' || v === 'szezonalis') return 'fedett'; // display: fedett
+    return 'kültéri';
   }
+
+  // Grouping key – sportág-szabály alapján
+  function buildGroupKey(p) {
+    const sportag = (p.sportag || '').trim() || 'Egyéb';
+    const rule    = getGroupingRule(sportag);
+    let key = sportag;
+    if (rule.boritas && (p.boritas || '').trim()) key += '|' + p.boritas.trim();
+    if (rule.meret   && (p.jatekforma || '').trim()) key += '|' + p.jatekforma.trim();
+    if (rule.fedett) key += '|' + (p.fedett_tipus || 'kültéri');
+    return key;
+  }
+  // ══════════════════════════════════════════════════════════════════
 
   // fedett_tipus mező hozzáadása minden pályaobjektumhoz (a render előtt)
   palyas.forEach(p => { p.fedett_tipus = normalizeFedettTipus(p.fedett); });
 
-  // UI megjelenítési leképezés: fedett_tipus → olvasható felirat
-  const fedettTipusLabel = { 'fedett': 'Fedett', 'kültéri': 'Kültéri', 'szezonális': 'Szezonálisan fedett' };
+  // User-facing fedett label – csak Fedett / Kültéri (szezonális → fedett)
+  const fedettTipusLabel = { 'fedett': 'Fedett', 'kültéri': 'Kültéri' };
 
   function palyaCardHTML(p) {
     const pUrl = p.slug ? `https://sportingo.hu/palya/${p.slug}` : '#';
@@ -265,27 +304,23 @@ async function init() {
   } else {
     try {
       // ── groupedPalyas: végleges típuscsoport-adatmodell ─────────────
-      // Group key: sportag + boritas + fedett_tipus
-      // KIVÉTEL: ha sportag = Futball, a key tartalmazza a jatekforma-t is,
-      // hogy kispálya és nagypálya soha ne kerüljön egy csoportba.
-      // Más sportágnál a jatekforma nem része a kulcsnak.
+      // Group key: sportag + boritas + (ha van) jatekforma
+      // fedett_tipus NEM része a kulcsnak – display dimenzió, nem grouping dimenzió.
+      // Ez garantálja, hogy pl. fedett és kültéri squash pályák egy csoportba kerülnek.
+      // Futballnál a jatekforma bekerül a kulcsba (kispálya/nagypálya szétválasztás).
       // Az eredeti palyas tömb érintetlen – ez csak származtatott struktúra.
       const groupedPalyasMap = new Map();
       palyas.forEach(p => {
-        const sportag      = (p.sportag      || '').trim() || 'Egyéb';
-        const boritas      = (p.boritas      || '').trim() || 'Egyéb';
-        const fedett_tipus = (p.fedett_tipus || 'kültéri');
-        // Futball-nál a jatekforma is bekerül a kulcsba (kispálya/nagypálya szétválasztás)
-        // Más sportágnál üres string – a kulcsban nem jelenik meg
-        const jatekformaKulcs = (sportag === 'Futball')
-          ? '|' + ((p.jatekforma || '').trim() || 'Egyéb')
-          : '';
-        const key = sportag + '|' + boritas + '|' + fedett_tipus + jatekformaKulcs;
+        const sportag      = (p.sportag  || '').trim() || 'Egyéb';
+        const boritas      = (p.boritas  || '').trim() || 'Egyéb';
+        const fedett_tipus = (p.fedett_tipus || 'kültéri'); // display-hez megőrizzük
+        const key = buildGroupKey(p);
 
         if (!groupedPalyasMap.has(key)) {
-          // jatekforma: Futball esetén a cím megjelenítéséhez tároljuk
-          const jatekformaLabel = (sportag === 'Futball')
-            ? ((p.jatekforma || '').trim() || 'Egyéb')
+          // jatekforma: csak ha a szabály szerint számít (meret: true)
+          const rule = getGroupingRule(sportag);
+          const jatekformaLabel = rule.meret
+            ? ((p.jatekforma || '').trim() || '')
             : '';
           groupedPalyasMap.set(key, {
             key:           key,
@@ -303,7 +338,7 @@ async function init() {
       });
 
       // groupedPalyas: rendezett tömb – sportag, majd boritas, majd fedett_tipus szerint
-      const fedettSorrend = { 'fedett': 0, 'szezonális': 1, 'kültéri': 2 };
+      const fedettSorrend = { 'fedett': 0, 'kültéri': 1 }; // szezonális → fedett (normalizált)
       groupedPalyas = Array.from(groupedPalyasMap.values()).sort((a, b) => {
         if (a.sportag   !== b.sportag)   return a.sportag.localeCompare(b.sportag,   'hu');
         if (a.boritas   !== b.boritas)   return a.boritas.localeCompare(b.boritas,   'hu');
@@ -315,10 +350,10 @@ async function init() {
         groupedPalyas.map(g => g.key + ' (' + g.count + ' db)'));
 
       // ── UI leképezés: fedett_tipus → olvasható felirat ───────────────
+      // User-facing: csak Fedett / Kültéri – szezonális user-facing eltávolítva
       const fedettCimLabel = {
-        'fedett':     'Fedett',
-        'szezonális': 'Szezonálisan fedett',
-        'kültéri':    'Kültéri'
+        'fedett':  'Fedett',
+        'kültéri': ''
       };
 
       // ── Típuskártyás render: minden csoport = 1 kártya ───────────────
@@ -332,9 +367,15 @@ async function init() {
         // Reprezentatív kép: első pálya képe, ha van
         const repKep = csoport.palyak.find(p => p.kep_url);
 
-        // Cím összerakása: sportag · boritas · fedett · [jatekforma ha Futball]
+        // Cím összerakása: csak az adott sportnál releváns dimenziók
         const fedettFelirat = fedettCimLabel[csoport.fedett_tipus] || csoport.fedett_tipus;
-        const cimReszek = [csoport.sportag, csoport.boritas, fedettFelirat];
+        const _rule = getGroupingRule(csoport.sportag);
+        const cimReszek = [
+          csoport.sportag,
+          _rule.boritas && csoport.boritas ? csoport.boritas : null,
+          _rule.meret   && csoport.jatekforma ? csoport.jatekforma : null,
+          _rule.fedett  && fedettFelirat ? fedettFelirat : null,
+        ].filter(Boolean);
         if (csoport.jatekforma) cimReszek.push(csoport.jatekforma); // Futball: Kispálya / Nagypálya
         const cim = cimReszek.map(r => esc(r)).join(' · ');
 
