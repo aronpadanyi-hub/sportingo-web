@@ -962,7 +962,7 @@ async function init() {
     const v = String(val).toLowerCase().trim();
     if (v === 'true' || v === 'fedett') return 'fedett';
     if (v === 'kültéri') return 'kültéri';
-    if (v === 'szezonális' || v === 'szezonalis') return 'szezonális';
+    if (v === 'szezonális' || v === 'szezonalis') return 'fedett'; // kompatibilitás: user-facing fedett
     return 'kültéri'; // ismeretlen érték: stabil fallback
   }
   palya.fedett_tipus = normalizeFedettTipus(palya.fedett);
@@ -1233,6 +1233,7 @@ async function init() {
 
   // Ha van naptár, mountoljuk (loadAkciok a spfMount-on belül fut)
   console.log('[INIT DEBUG 2] hasNaptar:', hasNaptar, '| palya.id:', palya && palya.id);
+  console.log('[INIT DEBUG 2b] foglalasTipus:', foglalasTipus, '| palya.foglalas_tipus (raw):', palya && palya.foglalas_tipus, '| palya obj:', JSON.stringify(palya && {id:palya.id, foglalas_tipus:palya.foglalas_tipus, nev:palya.nev}));
   if (hasNaptar) {
     spfMount(palya);
   } else if (palya.id) {
