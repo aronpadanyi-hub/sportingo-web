@@ -2070,6 +2070,16 @@ async function spfMount(origPalya) {
       const _fbDiv = document.createElement('div');
       _fbDiv.id = 'spf-fallback-form';
       console.log('[SPF FALLBACK FIX] fallback inserted');
+      // Autofill gomb: megmutatjuk ha be van jelentkezve
+      var _sb2 = window._spSb || window._sbGlobal;
+      if (_sb2) {
+        _sb2.auth.getSession().then(function(res) {
+          if (res.data && res.data.session) {
+            var _fbBtn = document.getElementById('spf-fb-autofill-btn');
+            if (_fbBtn) { _fbBtn.style.display = 'flex'; console.log('[SPF AUTOFILL] button shown'); }
+          }
+        });
+      }
       _fbDiv.className = 'sp-card';
       _fbDiv.style.marginTop = '16px';
       _fbDiv.innerHTML = `
@@ -2079,6 +2089,9 @@ async function spfMount(origPalya) {
           Küldj foglalási kérést, és felveszik veled a kapcsolatot.
         </p>
         <div id="spf-fb-form-wrap">
+          <button type="button" id="spf-fb-autofill-btn" class="sp-autofill-btn" onclick="spfFbAutofill()" style="display:none;">
+            ✨ Kitöltés a profilomból
+          </button>
           <div class="sp-form-grid">
             <div><label class="sp-form-label">Neved *</label><input type="text" id="spf-fb-nev" class="sp-form-input" placeholder="pl. Kiss János"></div>
             <div><label class="sp-form-label">Email *</label><input type="email" id="spf-fb-email" class="sp-form-input" placeholder="pl. kiss.janos@gmail.com"></div>
@@ -2153,11 +2166,15 @@ async function spfFbSend() {
   function showAutofillBtn() {
     var btn = document.getElementById('sp-autofill-btn');
     if (btn) btn.style.display = 'flex';
+    var fbBtn = document.getElementById('spf-fb-autofill-btn');
+    if (fbBtn) fbBtn.style.display = 'flex';
   }
 
   function hideAutofillBtn() {
     var btn = document.getElementById('sp-autofill-btn');
     if (btn) btn.style.display = 'none';
+    var fbBtn = document.getElementById('spf-fb-autofill-btn');
+    if (fbBtn) fbBtn.style.display = 'none';
   }
 
   // Figyelje az auth állapotot – ha be van jelentkezve, mutassa a gombot
@@ -2166,14 +2183,20 @@ async function spfFbSend() {
 
   // Oldalbetöltésnél ellenőrzés (a form akkor kerül DOM-ba amikor init() renderel)
   // Ezért MutationObserver-rel figyeljük a form megjelenését
+  // MutationObserver: sp-root DOM változáskor mindkét autofill gombot frissíti
+  var _autofillChecked = false;
   var observer = new MutationObserver(function() {
-    var btn = document.getElementById('sp-autofill-btn');
-    if (!btn) return;
-    observer.disconnect();
-    // Form megjelent – ellenőrizzük a session-t
+    if (_autofillChecked) return;
+    var btn   = document.getElementById('sp-autofill-btn');
+    var fbBtn = document.getElementById('spf-fb-autofill-btn');
+    if (!btn && !fbBtn) return;
+    // Legalább az egyik gomb megjelent – session ellenőrzés, majd figyelés folytatódik
+    // (ne disconnect, mert a fallback gomb később jelenik meg)
     sb.auth.getSession().then(function(res) {
       if (res.data && res.data.session) showAutofillBtn();
+      else hideAutofillBtn();
     });
+    if (btn && fbBtn) { _autofillChecked = true; observer.disconnect(); }
   });
   observer.observe(document.getElementById('sp-root') || document.body, { childList: true, subtree: true });
 
@@ -2183,6 +2206,36 @@ async function spfFbSend() {
     if (event === 'SIGNED_OUT') hideAutofillBtn();
   });
 })();
+
+// Fallback form autofill – azonos logika mint spAutofillForm, spf-fb-* mező ID-kkel
+window.spfFbAutofill = async function() {
+  var sb  = window._spSb || window._sbGlobal;
+  if (!sb) return;
+  var btn = document.getElementById('spf-fb-autofill-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Betöltés...'; }
+  try {
+    var res  = await sb.auth.getUser();
+    var user = res && res.data && res.data.user;
+    if (!user) { if (btn) btn.style.display = 'none'; return; }
+    var meta  = user.user_metadata || {};
+    var name  = meta.full_name || meta.name || '';
+    var email = user.email || '';
+    var phone = meta.telefon || meta.phone || '';
+    var nevEl   = document.getElementById('spf-fb-nev');
+    var emailEl = document.getElementById('spf-fb-email');
+    var telEl   = document.getElementById('spf-fb-telefon');
+    if (nevEl   && !nevEl.value.trim()   && name)  nevEl.value   = name;
+    if (emailEl && !emailEl.value.trim() && email) emailEl.value = email;
+    if (telEl   && !telEl.value.trim()   && phone) telEl.value   = phone;
+    console.log('[SPF AUTOFILL] filled from profile');
+    if (btn) { btn.textContent = '✅ Kitöltve!'; }
+    setTimeout(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '✨ Kitöltés a profilomból'; }
+    }, 2000);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Kitöltés a profilomból'; }
+  }
+};
 
 window.spAutofillForm = async function() {
   var sb  = window._spSb || window._sbGlobal;
