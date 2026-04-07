@@ -2100,16 +2100,16 @@ async function spfMount(origPalya) {
   }
 }
 
-// Fallback form küldés
+// Fallback form küldés – ugyanazt a send-email edge function-t használja mint a normál form
 async function spfFbSend() {
-  const nev  = (document.getElementById('spf-fb-nev')  || {}).value || '';
-  const email= (document.getElementById('spf-fb-email') || {}).value || '';
-  const tel  = (document.getElementById('spf-fb-telefon')|| {}).value || '';
-  const ido  = (document.getElementById('spf-fb-idopont')|| {}).value || '';
-  const meg  = (document.getElementById('spf-fb-megjegyzes')|| {}).value || '';
-  const errEl= document.getElementById('spf-fb-error');
+  const nevVal = (document.getElementById('spf-fb-nev')       || {}).value || '';
+  const emailVal=(document.getElementById('spf-fb-email')      || {}).value || '';
+  const tel    = (document.getElementById('spf-fb-telefon')    || {}).value || '';
+  const ido    = (document.getElementById('spf-fb-idopont')    || {}).value || '';
+  const meg    = (document.getElementById('spf-fb-megjegyzes') || {}).value || '';
+  const errEl  = document.getElementById('spf-fb-error');
 
-  if (!nev.trim() || !email.trim()) {
+  if (!nevVal.trim() || !emailVal.trim()) {
     if (errEl) { errEl.textContent = 'A neved és az email cím megadása kötelező.'; errEl.style.display='block'; }
     return;
   }
@@ -2119,26 +2119,26 @@ async function spfFbSend() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Küldés...'; }
 
   const palyaInfo = window._spPalya || {};
+  const { foglalasiEmail, nev, helyszinNev } = palyaInfo;
+
+  console.log('[SPF FALLBACK MAIL] submit start');
+
+  // Ugyanaz az email sablon mint a normál spSendFoglalas()
+  const html = `<!DOCTYPE html><html><body style="font-family:Arial;background:#f0f7fb;padding:20px;"><div style="max-width:500px;margin:0 auto;background:white;border-radius:16px;padding:24px;"><h2 style="color:#0a1628;">📋 Új foglalási igény</h2><p><b>Pálya:</b> ${helyszinNev || ''} – ${nev || ''}</p><p><b>Foglaló:</b> ${nevVal.trim()}</p><p><b>Email:</b> ${emailVal.trim()}</p>${tel?`<p><b>Telefon:</b> ${tel}</p>`:''}${ido?`<p><b>Kívánt időpont:</b> ${ido}</p>`:''}${meg?`<p><b>Megjegyzés:</b> ${meg}</p>`:''}</div></body></html>`;
+
   try {
-    await _sbGlobal.from('kapcsolat_uzenetek').insert({
-      nev: nev.trim(),
-      email: email.trim(),
-      uzenet: [
-        'Foglalási kérés (mentőöv)',
-        'Pálya: ' + (palyaInfo.nev || ''),
-        'Sportág: ' + (palyaInfo.sportag || ''),
-        ido ? 'Kívánt időpont: ' + ido : '',
-        tel ? 'Telefon: ' + tel : '',
-        meg ? 'Megjegyzés: ' + meg : ''
-      ].filter(Boolean).join('\n'),
-      palya_id: palyaInfo.palyaId || null
+    console.log('[SPF FALLBACK MAIL] send-email called | to:', foglalasiEmail);
+    await fetch(SUPABASE_URL+'/functions/v1/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({ to: foglalasiEmail, subject: `📋 Új foglalási igény – ${nev || ''}`, html })
     });
-    console.log('[SPF FALLBACK FIX] submit ok');
+    console.log('[SPF FALLBACK MAIL] send ok');
     const wrap = document.getElementById('spf-fb-form-wrap');
     if (wrap) wrap.innerHTML = `<div style="text-align:center;padding:24px;"><div style="font-size:2.5rem;margin-bottom:12px;">✅</div><div style="font-weight:800;font-size:1.1rem;color:#0a1628;margin-bottom:6px;">Elküldve!</div><div style="font-size:.85rem;color:#6b8a9a;">A pálya üzemeltetője hamarosan felveszi veled a kapcsolatot.</div></div>`;
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '📨 Küldés'; }
-    console.log('[SPF FALLBACK FIX] submit error:', e && e.message);
+    console.log('[SPF FALLBACK MAIL] send error:', e && e.message);
     if (errEl) { errEl.textContent = 'Hiba történt a küldés során. Kérjük, próbáld újra.'; errEl.style.display='block'; }
   }
 }
