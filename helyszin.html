@@ -388,10 +388,17 @@ async function init() {
           return p.foglalas_tipus === 'idopontos' || p.foglalas_tipus === 'email' || !!p.kulso_link;
         }
         var _celP = null;
-        // Prioritás 1: slug + booking
+        // Prioritás 1: slug + idopontos (naptáras landing)
         for (var _ci = 0; _ci < csoport.palyak.length; _ci++) {
           var _p = csoport.palyak[_ci];
-          if (_p.slug && _bookingKepesP(_p)) { _celP = _p; break; }
+          if (_p.slug && _p.foglalas_tipus === 'idopontos') { _celP = _p; break; }
+        }
+        // Prioritás 1b: slug + egyéb booking-képes
+        if (!_celP) {
+          for (var _ci = 0; _ci < csoport.palyak.length; _ci++) {
+            var _p = csoport.palyak[_ci];
+            if (_p.slug && _bookingKepesP(_p)) { _celP = _p; break; }
+          }
         }
         // Prioritás 2: slug (bármilyen)
         if (!_celP) {
