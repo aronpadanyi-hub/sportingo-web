@@ -1122,11 +1122,13 @@ async function init() {
 
   // ── CTA BLOKK ─────────────────────────────────────────────
   // Teljes döntési state log – egyetlen blokkban
+  // anyHasSlots a try blokkon belül él – SPF.palyaFreeCounts-ból számolható kívülről
+  const _anySlots = Object.values(SPF.palyaFreeCounts || {}).some(n => n > 0);
   console.log('[SPF FINAL STATE]', JSON.stringify({
     palyaId: palya.id, palyaNev: palya.nev,
     foglalasTipus, foglalasiEmail: !!foglalasiEmail, kulsoLink: !!kulsoLink,
-    anyHasSlots, csoportPalyakLength: SPF.csoportPalyak ? SPF.csoportPalyak.length : 0,
-    SPF_csoportPalyakLength: SPF.csoportPalyak ? SPF.csoportPalyak.length : 0,
+    anyHasSlots: _anySlots,
+    csoportPalyakLength: SPF.csoportPalyak ? SPF.csoportPalyak.length : 0,
     freeCounts: SPF.palyaFreeCounts || {},
     hasNaptar
   }));
