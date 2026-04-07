@@ -924,7 +924,7 @@ const SPF_SLOTS = spfGenSlots();
 
 // ── MAIN INIT ──────────────────────────────────────────
 async function init() {
-  console.log('[SPF BUILD] web-palya version: squash-grouping-rules-fix');
+  console.log('[SPF BUILD] web-palya version: fallback-form-v2-stable');
   console.log('[INIT DEBUG 0] init() elindult');
   const slug = getSlug();
   const idParam = new URLSearchParams(window.location.search).get('id') || '';
@@ -1069,6 +1069,7 @@ async function init() {
 
     // Szabad időpontok száma az összes testvérpályán (60 napon belül)
     const freeCounts = {};
+    const allCounts = {}; // összes slot (szabad + foglalt) – fallback döntéshez
     await Promise.all((testverpData||[]).map(async (p) => {
       try {
         const slotUrl = '/rest/v1/idopontok?palya_id=eq.' + p.id
@@ -1076,9 +1077,16 @@ async function init() {
           + '&select=id';
         const cnt = await sbFetch(slotUrl);
         freeCounts[p.id] = Array.isArray(cnt) ? cnt.length : 0;
-        console.log('[SPF SLOT QUERY] palyaId:', p.id, '| nev:', p.nev || '?', '| raw free count:', freeCounts[p.id]);
+        // Összes slot (szabad + foglalt) – a "nincs feltöltve" vs "minden foglalt" megkülönböztetéséhez
+        const allSlotUrl = '/rest/v1/idopontok?palya_id=eq.' + p.id
+          + '&datum=gte.' + today + '&datum=lte.' + in60
+          + '&select=id';
+        const allCnt = await sbFetch(allSlotUrl);
+        allCounts[p.id] = Array.isArray(allCnt) ? allCnt.length : 0;
+        console.log('[SPF SLOT QUERY] palyaId:', p.id, '| nev:', p.nev || '?', '| free:', freeCounts[p.id], '| total:', allCounts[p.id]);
       } catch(e) {
         freeCounts[p.id] = 0;
+        allCounts[p.id] = 0;
         console.warn('[SPF SLOT QUERY ERROR] palyaId:', p.id, '| error:', e.message || e);
       }
     }));
@@ -1091,6 +1099,13 @@ async function init() {
       (freeCounts[b.id] || 0) - (freeCounts[a.id] || 0)
     );
     const anyHasSlots = csoportSorted.some(p => (freeCounts[p.id] || 0) > 0);
+    // Van-e BÁRMILYEN (szabad vagy foglalt) slot a csoportban?
+    // Ha nem → tulajdonos még nem töltött fel → fallbackűrlap megjelenhet
+    const anySlotUploaded = csoportSorted.some(p => (allCounts[p.id] || 0) > 0);
+    console.log('[SPF FALLBACK FIX] anySlotUploaded:', anySlotUploaded,
+      '| anyHasSlots:', anyHasSlots,
+      '| csoport size:', csoportSorted.length,
+      '| showFallbackForm:', !anySlotUploaded);
 
     console.log('[Sportingo Debug] Teljes csoport (selector):', csoportSorted.length,
       csoportSorted.map(p => (p.nev || p.id) + ' (' + (freeCounts[p.id] || 0) + ' szabad)'));
@@ -1100,6 +1115,7 @@ async function init() {
       csoportPalyak = csoportSorted;
       SPF.csoportPalyak = csoportPalyak;
       SPF.palyaFreeCounts = freeCounts;
+      SPF.anySlotUploaded = anySlotUploaded;
       const origIdx = csoportPalyak.findIndex(p => p.id === palya.id);
       SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
       if (SPF.aktivIdx >= SPF.csoportPalyak.length) SPF.aktivIdx = 0;
@@ -1126,6 +1142,7 @@ async function init() {
     console.error('[SPF ERROR] hiba stack:', e && e.stack);
     // SPF.csoportPalyak korai fallback ([palya]) már be van állítva
     hasNaptar = foglalasTipus === 'idopontos';
+    SPF.anySlotUploaded = true; // hiba esetén óvatos: ne mutassuk a fallback-et
   }
 
   // ── META ITEMS ───────────────────────────────────────────
@@ -1213,27 +1230,32 @@ async function init() {
     </div>` : '';
 
   // Email form (csak ha nincs naptár és van email)
-  const formHTML = (!hasNaptar && foglalasiEmail && foglalasTipus !== 'nincs') ? `
-    <div class="sp-card" id="foglalas-form" style="margin-top:8px;">
-      <h2>📋 Foglalási kérés küldése</h2>
-      <p style="font-size:.85rem;color:#6b8a9a;margin-bottom:16px;line-height:1.6;">Küldd el a foglalási kérésed, és mi azonnal továbbítjuk a pálya üzemeltetőjének.</p>
-      <div id="sp-form-wrap">
-        <button type="button" id="sp-autofill-btn" class="sp-autofill-btn" onclick="spAutofillForm()">
-          ✨ Kitöltés a profilomból
-        </button>
-        <div class="sp-form-grid">
-          <div><label class="sp-form-label">Neved *</label><input type="text" id="sp-nev" class="sp-form-input" placeholder="pl. Kiss János"></div>
-          <div><label class="sp-form-label">Email *</label><input type="email" id="sp-email" class="sp-form-input" placeholder="pl. kiss.janos@gmail.com"></div>
-          <div><label class="sp-form-label">Telefonszám</label><input type="tel" id="sp-telefon" class="sp-form-input" placeholder="+36 30 123 4567"></div>
-          <div><label class="sp-form-label">Kívánt időpont</label><input type="text" id="sp-idopont" class="sp-form-input" placeholder="pl. 2026.04.15. 18:00"></div>
-          <div style="grid-column:1/-1;"><label class="sp-form-label">Megjegyzés</label><textarea id="sp-megjegyzes" rows="3" class="sp-form-input" style="resize:vertical;" placeholder="Egyéb kérések..."></textarea></div>
-        </div>
-        <div id="sp-form-error" style="display:none;color:#ef4444;font-size:.82rem;margin-top:8px;"></div>
-        <button onclick="spSendFoglalas()" id="sp-submit-btn" class="sp-submit-btn">📨 Küldés</button>
-      </div>
-    </div>` : '';
+  const _formTitle = '<h2>📋 Foglalási kérés küldése</h2><p style="font-size:.85rem;color:#6b8a9a;margin-bottom:16px;line-height:1.6;">Küldd el a foglalási kérésed, és mi azonnal továbbítjuk a pálya üzemeltetőjének.</p>';
 
-  // ── RENDER ───────────────────────────────────────────────
+  const _formBody = `
+    <div id="sp-form-wrap">
+      <button type="button" id="sp-autofill-btn" class="sp-autofill-btn" onclick="spAutofillForm()">
+        ✨ Kitöltés a profilomból
+      </button>
+      <div class="sp-form-grid">
+        <div><label class="sp-form-label">Neved *</label><input type="text" id="sp-nev" class="sp-form-input" placeholder="pl. Kiss János"></div>
+        <div><label class="sp-form-label">Email *</label><input type="email" id="sp-email" class="sp-form-input" placeholder="pl. kiss.janos@gmail.com"></div>
+        <div><label class="sp-form-label">Telefonszám</label><input type="tel" id="sp-telefon" class="sp-form-input" placeholder="+36 30 123 4567"></div>
+        <div><label class="sp-form-label">Kívánt időpont</label><input type="text" id="sp-idopont" class="sp-form-input" placeholder="pl. 2026.04.15. 18:00"></div>
+        <div style="grid-column:1/-1;"><label class="sp-form-label">Megjegyzés</label><textarea id="sp-megjegyzes" rows="3" class="sp-form-input" style="resize:vertical;" placeholder="Egyéb kérések..."></textarea></div>
+      </div>
+      <div id="sp-form-error" style="display:none;color:#ef4444;font-size:.82rem;margin-top:8px;"></div>
+      <button onclick="spSendFoglalas()" id="sp-submit-btn" class="sp-submit-btn">📨 Küldés</button>
+    </div>`;
+
+  // formHTML: csak ha nincs naptár és van email
+  const formHTML = (!hasNaptar && !!foglalasiEmail && foglalasTipus !== 'nincs')
+    ? `<div class="sp-card" id="foglalas-form" style="margin-top:8px;">${_formTitle}${_formBody}</div>`
+    : '';
+
+  // ── FŐ RENDER ─────────────────────────────────────────────
+  console.log('[SPF RENDER FIX] main render start | hasNaptar:', hasNaptar,
+    '| formHTML:', !!formHTML, '| spf-card:', hasNaptar);
   document.getElementById('sp-root').innerHTML = `
     <div class="sp-wrap">
       <div class="sp-breadcrumb">
@@ -1274,6 +1296,8 @@ async function init() {
 
       ${hasNaptar ? `<div id="spf-card"><div id="spf-mount"></div></div>` : formHTML}
     </div>`;
+  console.log('[SPF RENDER FIX] main render ok | spf-card rendered:', hasNaptar,
+    '| formHTML rendered:', !hasNaptar && !!formHTML);
 
   window._spPalya = { foglalasiEmail, nev, helyszinNev, palyaId: palya.id, sportag };
 
@@ -2032,6 +2056,90 @@ async function spfMount(origPalya) {
       navWrapFinal.innerHTML = navHtml;
       console.log('[SPF Nav] Nav újrarenderelve a loadAndRenderCal után');
     }
+  }
+
+  // ── FALLBACK FORM: 0 slot feltöltve → mentőöv az spf-card után ──
+  // Csak akkor, ha a csoportban egyetlen slot sincs feltöltve (nem "minden foglalt")
+  // és van email cím a kapcsolatfelvételhez
+  const _spfAnySlotUp = SPF.anySlotUploaded !== false;
+  const _spfEmail = window._spPalya && window._spPalya.foglalasiEmail;
+  console.log('[SPF FALLBACK FIX] anySlotUploaded:', _spfAnySlotUp, '| hasEmail:', !!_spfEmail);
+  if (!_spfAnySlotUp && _spfEmail) {
+    // Ne tegyük kétszer hozzá
+    if (!document.getElementById('spf-fallback-form')) {
+      const _fbDiv = document.createElement('div');
+      _fbDiv.id = 'spf-fallback-form';
+      console.log('[SPF FALLBACK FIX] fallback inserted');
+      _fbDiv.className = 'sp-card';
+      _fbDiv.style.marginTop = '16px';
+      _fbDiv.innerHTML = `
+        <h2 style="margin-bottom:4px;">Nem találsz elérhető időpontot?</h2>
+        <p style="font-size:.85rem;color:#6b8a9a;margin-bottom:16px;line-height:1.6;">
+          Előfordulhat, hogy a pálya üzemeltetője még nem töltötte fel az összes foglalható időpontot.
+          Küldj foglalási kérést, és felveszik veled a kapcsolatot.
+        </p>
+        <div id="spf-fb-form-wrap">
+          <div class="sp-form-grid">
+            <div><label class="sp-form-label">Neved *</label><input type="text" id="spf-fb-nev" class="sp-form-input" placeholder="pl. Kiss János"></div>
+            <div><label class="sp-form-label">Email *</label><input type="email" id="spf-fb-email" class="sp-form-input" placeholder="pl. kiss.janos@gmail.com"></div>
+            <div><label class="sp-form-label">Telefonszám</label><input type="tel" id="spf-fb-telefon" class="sp-form-input" placeholder="+36 30 123 4567"></div>
+            <div><label class="sp-form-label">Kívánt időpont</label><input type="text" id="spf-fb-idopont" class="sp-form-input" placeholder="pl. 2026.04.15. 18:00"></div>
+            <div style="grid-column:1/-1;"><label class="sp-form-label">Megjegyzés</label><textarea id="spf-fb-megjegyzes" rows="3" class="sp-form-input" style="resize:vertical;" placeholder="Egyéb kérések..."></textarea></div>
+          </div>
+          <div id="spf-fb-error" style="display:none;color:#ef4444;font-size:.82rem;margin-top:8px;"></div>
+          <button onclick="spfFbSend()" class="sp-submit-btn" style="margin-top:12px;">📨 Küldés</button>
+        </div>`;
+      // Beillesztés az spf-card után
+      const _spfCard = document.getElementById('spf-card');
+      if (_spfCard && _spfCard.parentNode) {
+        _spfCard.parentNode.insertBefore(_fbDiv, _spfCard.nextSibling);
+      }
+    }
+  } else {
+    console.log('[SPF FALLBACK FIX] fallback hidden (slots uploaded or no email)');
+  }
+}
+
+// Fallback form küldés
+async function spfFbSend() {
+  const nev  = (document.getElementById('spf-fb-nev')  || {}).value || '';
+  const email= (document.getElementById('spf-fb-email') || {}).value || '';
+  const tel  = (document.getElementById('spf-fb-telefon')|| {}).value || '';
+  const ido  = (document.getElementById('spf-fb-idopont')|| {}).value || '';
+  const meg  = (document.getElementById('spf-fb-megjegyzes')|| {}).value || '';
+  const errEl= document.getElementById('spf-fb-error');
+
+  if (!nev.trim() || !email.trim()) {
+    if (errEl) { errEl.textContent = 'A neved és az email cím megadása kötelező.'; errEl.style.display='block'; }
+    return;
+  }
+  if (errEl) errEl.style.display = 'none';
+
+  const btn = document.querySelector('#spf-fallback-form .sp-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Küldés...'; }
+
+  const palyaInfo = window._spPalya || {};
+  try {
+    await _sbGlobal.from('kapcsolat_uzenetek').insert({
+      nev: nev.trim(),
+      email: email.trim(),
+      uzenet: [
+        'Foglalási kérés (mentőöv)',
+        'Pálya: ' + (palyaInfo.nev || ''),
+        'Sportág: ' + (palyaInfo.sportag || ''),
+        ido ? 'Kívánt időpont: ' + ido : '',
+        tel ? 'Telefon: ' + tel : '',
+        meg ? 'Megjegyzés: ' + meg : ''
+      ].filter(Boolean).join('\n'),
+      palya_id: palyaInfo.palyaId || null
+    });
+    console.log('[SPF FALLBACK FIX] submit ok');
+    const wrap = document.getElementById('spf-fb-form-wrap');
+    if (wrap) wrap.innerHTML = `<div style="text-align:center;padding:24px;"><div style="font-size:2.5rem;margin-bottom:12px;">✅</div><div style="font-weight:800;font-size:1.1rem;color:#0a1628;margin-bottom:6px;">Elküldve!</div><div style="font-size:.85rem;color:#6b8a9a;">A pálya üzemeltetője hamarosan felveszi veled a kapcsolatot.</div></div>`;
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '📨 Küldés'; }
+    console.log('[SPF FALLBACK FIX] submit error:', e && e.message);
+    if (errEl) { errEl.textContent = 'Hiba történt a küldés során. Kérjük, próbáld újra.'; errEl.style.display='block'; }
   }
 }
 
