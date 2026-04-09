@@ -657,28 +657,21 @@
       } catch(e) { foglalasok = []; }
     }
 
-    // Saját értékelések lekérése – pályánként a legfrissebb
+    // Saját értékelések lekérése – ÖSSZES, nemcsak foglaláshoz kötött
     let sajatReviewMap = new Map(); // palya_id → legfrissebb review
-    if (palyaReviewMap.size > 0) {
-      // Ha a palyaReviewMap már feltöltve van (loadBookings futott), használjuk
-      sajatReviewMap = palyaReviewMap;
-    } else {
-      // Célzott lekérés
-      const palyaIds = [...new Set(foglalasok.map(f => f.palya_id).filter(Boolean))];
-      if (palyaIds.length) {
-        try {
-          const { data: ertList } = await sb.from('ertekelesek')
-            .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at')
-            .eq('user_id', currentUser.id)
-            .in('palya_id', palyaIds)
-            .order('letrehozas_datum', { ascending: false });
-          if (ertList) {
-            ertList.forEach(e => {
-              if (!sajatReviewMap.has(e.palya_id)) sajatReviewMap.set(e.palya_id, e);
-            });
-          }
-        } catch(e) { /* map üres marad */ }
+    try {
+      const { data: osszesSajat } = await sb.from('ertekelesek')
+        .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at, review_tipus, palyas(nev, slug, sportag, helyszin_id)')
+        .eq('user_id', currentUser.id)
+        .order('letrehozas_datum', { ascending: false });
+      if (osszesSajat) {
+        osszesSajat.forEach(e => {
+          if (!sajatReviewMap.has(e.palya_id)) sajatReviewMap.set(e.palya_id, e);
+        });
       }
+    } catch(e) {
+      // Fallback: palyaReviewMap ha van
+      if (palyaReviewMap.size > 0) sajatReviewMap = palyaReviewMap;
     }
 
     // Múltbeli jóváhagyott foglalások – pályánként csak egyszer (legfrissebb foglalás)
@@ -713,9 +706,26 @@
       if (!review) {
         varList.push({ palyaNev, slug, sportag, foglDatum, palyaId, foglalasId, helyszinId, review: null });
       } else {
-        // Van review → szerkeszthető (nincs 90 napos tiltás)
         meglevoList.push({ palyaNev, slug, sportag, foglDatum, palyaId, foglalasId, helyszinId, review });
       }
+    });
+
+    // ── PUBLIC REVIEW-K – foglalás nélküli értékelések hozzáadása ──
+    sajatReviewMap.forEach((review, palyaId) => {
+      // Ha ez a pálya már szerepel a foglalás alapú listában, skip
+      if (palyaFoglalasMap.has(palyaId)) return;
+      const palya = review.palyas || {};
+      meglevoList.push({
+        palyaNev: palya.nev || '–',
+        slug:     palya.slug || '',
+        sportag:  palya.sportag || '',
+        foglDatum: null,
+        palyaId,
+        foglalasId: '',
+        helyszinId: palya.helyszin_id || '',
+        review,
+        isPublic: true
+      });
     });
 
     // Render: A) Értékelésre vár
