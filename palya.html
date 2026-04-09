@@ -2657,56 +2657,66 @@ function renderReviewItem(r, isFeatured) {
 }
 
 // ── PUBLIC REVIEW – entry point (nem drawer, nem foglalás alapú) ──
-// Izolált handler, nem propagál, drawert bezárja nyitás előtt
-var _spPublicReviewOpening = false; // dupla kattintás védelem
+var _spPublicReviewOpening = false;
 
 window.spNyitPublicReviewModal = function spNyitPublicReviewModal(palyaId, palyaNev, e) {
-  // ── Event bubbling megállítása – drawer listener ne kapja el ──
   if (e && e.stopPropagation) e.stopPropagation();
   if (e && e.preventDefault)  e.preventDefault();
 
-  // ── Dupla kattintás védelem ──
   if (_spPublicReviewOpening) return;
   _spPublicReviewOpening = true;
-  setTimeout(function() { _spPublicReviewOpening = false; }, 800);
 
-  // ── Bejelentkezés ellenőrzés ──
-  var user = (window.SPF && window.SPF.loggedInUser) || null;
-  if (!user) {
-    // Nincs bejelentkezett user → pending state mentése, login modal nyitása
-    // A login után a drawer SIGNED_IN hook automatikusan visszatér ide
-    window._spPublicReviewPending = { palyaId: palyaId, palyaNev: palyaNev };
-    // Login modal nyitása a bridge exporton keresztül (nem authBtn.click – az drawert nyit!)
-    if (typeof window.sfdOpenLoginModalGlobal === 'function') {
-      window.sfdOpenLoginModalGlobal();
-    } else {
-      // Fallback: auth gomb közvetlen click – csak végső megoldás
-      var authBtn = document.querySelector('.sportingo-auth-btn');
-      if (authBtn) authBtn.click();
-    }
+  // ── 3. PENDING FIX: skip auth check, azonnal megnyit ──
+  if (window._spPublicReviewPending) {
+    window._spPublicReviewPending = null;
     _spPublicReviewOpening = false;
+    spNyitPublicReviewModalDirekt(palyaId, palyaNev);
     return;
   }
 
-  // ── Drawer bezárása ha nyitva van – nincs UI overlap ──
-  // FALLBACK: ha bridge nincs, a flow attól még folytatódik
-  if (typeof window.sfdCloseDrawerGlobal === 'function') {
-    window.sfdCloseDrawerGlobal();
+  // ── 2. AUTH FIX: Supabase getSession – nem SPF.loggedInUser ──
+  var sb = window._spSb || window._sbGlobal;
+  if (!sb) {
+    _spPublicReviewOpening = false;
+    if (typeof window.sfdOpenLoginModalGlobal === 'function') window.sfdOpenLoginModalGlobal();
+    return;
   }
 
-  // ── Public review state beállítása ──
-  window._spPublicReview = {
-    palyaId:  palyaId,
-    palyaNev: palyaNev,
-    isPublic: true
-  };
-  // Pending törlése (ha login után jöttünk vissza)
+  sb.auth.getSession().then(function(res) {
+    var session = res && res.data && res.data.session;
+    if (!session) {
+      // Nincs session → pending state + login modal (NEM authBtn.click – az drawert nyit)
+      window._spPublicReviewPending = { palyaId: palyaId, palyaNev: palyaNev };
+      _spPublicReviewOpening = false;
+      if (typeof window.sfdOpenLoginModalGlobal === 'function') {
+        window.sfdOpenLoginModalGlobal();
+      } else {
+        var authBtn = document.querySelector('.sportingo-auth-btn');
+        if (authBtn) authBtn.click();
+      }
+      return;
+    }
+    // Van session → közvetlen megnyitás
+    _spPublicReviewOpening = false;
+    spNyitPublicReviewModalDirekt(palyaId, palyaNev);
+  }).catch(function() {
+    _spPublicReviewOpening = false;
+  });
+};
+
+// ── Belső helper: auth ellenőrzés után közvetlen modal megnyitás ──
+function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
+  // Drawer bezárása – fallback safe ha bridge nincs
+  if (typeof window.sfdCloseDrawerGlobal === 'function') window.sfdCloseDrawerGlobal();
+
+  // Public state beállítása
+  window._spPublicReview = { palyaId: palyaId, palyaNev: palyaNev, isPublic: true };
   window._spPublicReviewPending = null;
 
   var ov = document.getElementById('sfd-review-modal-overlay');
-  if (!ov) { _spPublicReviewOpening = false; return; }
+  if (!ov) return;
 
-  // ── Hard reset – nincs state leakage ──
+  // Hard reset
   document.querySelectorAll('.sfd-review-star').forEach(function(s) { s.classList.remove('active'); });
   document.querySelectorAll('.sfd-review-cimke').forEach(function(c) { c.classList.remove('selected', 'disabled'); });
   var szEl = document.getElementById('sfd-review-szoveg');
@@ -2715,29 +2725,22 @@ window.spNyitPublicReviewModal = function spNyitPublicReviewModal(palyaId, palya
   if (lblEl) lblEl.textContent = 'Kattints egy csillagra az értékeléshez';
   var errEl = document.getElementById('sfd-review-error');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-
-  // Fejléc
   var nevEl = document.getElementById('sfd-review-modal-sub');
   if (nevEl) nevEl.textContent = palyaNev || 'Pálya értékelése';
-
-  // Submit gomb – public módban disabled amíg nincs rating
   var subBtn = document.getElementById('sfd-review-submit-btn');
   if (subBtn) { subBtn.disabled = true; subBtn.textContent = '🌐 Vélemény küldése'; }
 
-  // ── Modal megnyitás – drawer CSS transition (~300ms) + login modal overlay reset után ──
-  // 50ms elegendő közvetlen CTA kattintásnál; login flow-nál a _checkPublicReviewPending 500ms-t vár
+  // Modal megnyitás
   setTimeout(function() {
+    ov.style.display = '';
     ov.classList.add('open');
     document.body.style.overflow = 'hidden';
-    // ── Guard azonnali reset – sikeres megnyitás után felszabadul ──
-    _spPublicReviewOpening = false;
-    // Textarea focus
     setTimeout(function() {
       var ta = document.getElementById('sfd-review-szoveg');
       if (ta) ta.focus();
     }, 150);
   }, 50);
-};
+}
 
 async function loadPalyaReviews(palyaId) {
   var el = document.getElementById('sp-review-blokk');
@@ -2817,22 +2820,7 @@ async function loadPalyaReviews(palyaId) {
 function spPublicReviewCtaHTML(palyaId) {
   var palyaNev = (window._spPalya && window._spPalya.nev) || '';
   var palyaNevEsc = palyaNev.replace(/'/g, "\\'");
-  var user = (window.SPF && window.SPF.loggedInUser) || null;
-
-  if (!user) {
-    // ── Kijelentkezve: login CTA ──
-    return '<div class="sp-public-review-cta">' +
-      '<div class="sp-public-review-cta-text">' +
-        '<strong>Jártál már itt?</strong>' +
-        'Jelentkezz be, hogy véleményt írhass.' +
-      '</div>' +
-      '<button class="sp-public-review-btn" onclick="spNyitPublicReviewModal(\'' + esc(palyaId) + '\',\'' + palyaNevEsc + '\',event)">' +
-        '🔐 Bejelentkezés' +
-      '</button>' +
-    '</div>';
-  }
-
-  // ── Bejelentkezve: review CTA ──
+  // Auth check NEM itt fut – spNyitPublicReviewModal kezeli getSession()-nel
   return '<div class="sp-public-review-cta">' +
     '<div class="sp-public-review-cta-text">' +
       '<strong>Jártál már itt?</strong>' +
@@ -2877,6 +2865,7 @@ function spPublicReviewCtaHTML(palyaId) {
 </script>
 
 <!-- ── REVIEW MODAL (drawer) ── -->
+<div id="sfd-review-modal-overlay" style="display:none;">
   <div id="sfd-review-modal">
     <div class="sfd-review-modal-title">⭐ Pálya értékelése</div>
     <div class="sfd-review-modal-sub" id="sfd-review-modal-sub">–</div>
