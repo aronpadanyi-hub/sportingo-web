@@ -2754,55 +2754,51 @@ function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
     cta.parentNode.insertBefore(blokk, cta.nextSibling);
   }
 
-  // ── Star rating re-init public mode-ban ──
-  // A drawer IIFE closure-ban lévő listener _sfdRv.rating-et állítja,
-  // de public mode-ban window._spPublicReview.rating-et kell tárolni.
-  // cloneNode trükkel eltávolítjuk a régi listener-eket, majd újakat bindolunk.
-  document.querySelectorAll('.sfd-review-star').forEach(function(star) {
-    var freshStar = star.cloneNode(true);
-    star.parentNode.replaceChild(freshStar, star);
-  });
-  document.querySelectorAll('.sfd-review-star').forEach(function(star) {
-    star.addEventListener('click', function() {
-      var val = parseInt(this.dataset.val);
-      window._spPublicReview.rating = val;
-      document.querySelectorAll('.sfd-review-star').forEach(function(s) {
-        s.classList.toggle('active', parseInt(s.dataset.val) <= val);
-      });
-      var lbl = document.getElementById('sfd-review-rating-label');
-      var labels = {1:'Rossz élmény',2:'Alap elvárások alatt',3:'Átlagos',4:'Jó, ajánlom',5:'Kiváló, mindenképp ajánlom!'};
-      if (lbl) lbl.textContent = val + ' csillag – ' + (labels[val] || '');
-      var btn = document.getElementById('sfd-review-submit-btn');
-      if (btn) btn.disabled = false;
-    });
-  });
+  // ── Star és cimke re-init – event delegation a #sfd-review-modal szinten ──
+  // NEM cloneNode – a submit listener (drawer IIFE-ban) megmarad
+  // Minden click event a blokkon keresztül bubbolik fel, itt fogjuk el
+  if (!blokk._spDelegated) {
+    blokk._spDelegated = true;
 
-  // ── Cimke re-init public mode-ban ──
-  document.querySelectorAll('.sfd-review-cimke').forEach(function(el) {
-    var freshEl = el.cloneNode(true);
-    el.parentNode.replaceChild(freshEl, el);
-  });
-  document.querySelectorAll('.sfd-review-cimke').forEach(function(el) {
-    el.addEventListener('click', function() {
-      if (this.classList.contains('disabled')) return;
-      var cimke = this.dataset.cimke;
-      var pub = window._spPublicReview;
-      if (!pub) return;
-      if (!pub.cimkek) pub.cimkek = [];
-      if (this.classList.contains('selected')) {
-        this.classList.remove('selected');
-        pub.cimkek = pub.cimkek.filter(function(c) { return c !== cimke; });
-      } else {
-        if (pub.cimkek.length >= 3) return;
-        this.classList.add('selected');
-        pub.cimkek.push(cimke);
+    blokk.addEventListener('click', function(e) {
+      // Star kattintás
+      var star = e.target.closest('.sfd-review-star');
+      if (star && window._spPublicReview) {
+        var val = parseInt(star.dataset.val);
+        window._spPublicReview.rating = val;
+        blokk.querySelectorAll('.sfd-review-star').forEach(function(s) {
+          s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+        });
+        var lbl = blokk.querySelector('#sfd-review-rating-label');
+        var labels = {1:'Rossz élmény',2:'Alap elvárások alatt',3:'Átlagos',4:'Jó, ajánlom',5:'Kiváló, mindenképp ajánlom!'};
+        if (lbl) lbl.textContent = val + ' csillag – ' + (labels[val] || '');
+        var subBtn = blokk.querySelector('#sfd-review-submit-btn');
+        if (subBtn) subBtn.disabled = false;
+        return;
       }
-      var maxed = pub.cimkek.length >= 3;
-      document.querySelectorAll('.sfd-review-cimke').forEach(function(c) {
-        if (!c.classList.contains('selected')) c.classList.toggle('disabled', maxed);
-      });
+
+      // Cimke kattintás
+      var cimkeEl = e.target.closest('.sfd-review-cimke');
+      if (cimkeEl && window._spPublicReview) {
+        if (cimkeEl.classList.contains('disabled')) return;
+        var pub = window._spPublicReview;
+        if (!pub.cimkek) pub.cimkek = [];
+        var cimke = cimkeEl.dataset.cimke;
+        if (cimkeEl.classList.contains('selected')) {
+          cimkeEl.classList.remove('selected');
+          pub.cimkek = pub.cimkek.filter(function(c) { return c !== cimke; });
+        } else {
+          if (pub.cimkek.length >= 3) return;
+          cimkeEl.classList.add('selected');
+          pub.cimkek.push(cimke);
+        }
+        var maxed = pub.cimkek.length >= 3;
+        blokk.querySelectorAll('.sfd-review-cimke').forEach(function(c) {
+          if (!c.classList.contains('selected')) c.classList.toggle('disabled', maxed);
+        });
+      }
     });
-  });
+  }
 
   // Megjelenítés
   blokk.style.display = 'block';
