@@ -1387,7 +1387,7 @@ async function init() {
   console.log('[SPF RENDER FIX] main render ok | spf-card rendered:', hasNaptar,
     '| formHTML rendered:', !hasNaptar && !!formHTML);
 
-  window._spPalya = { foglalasiEmail, nev, helyszinNev, palyaId: palya.id, sportag };
+  window._spPalya = { foglalasiEmail, nev, helyszinNev, palyaId: palya.id, sportag, helyszinId: palya.helyszin_id || null };
 
   // Kedvenc gomb – render UTÁN
   initFavButton();
