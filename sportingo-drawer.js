@@ -1137,9 +1137,9 @@
       }
       if (!currentUser) {
         if (publicMode) {
-          // publicMode-ban fallback: getSession a drawer saját sb-jéből
           try {
-            const { data: { session: fallbackSession } } = await sb.auth.getSession();
+            var pubSbAuth = window._spSb || window._sbGlobal || sb;
+            const { data: { session: fallbackSession } } = await pubSbAuth.auth.getSession();
             if (fallbackSession) { currentUser = fallbackSession.user; }
           } catch(e) {}
         }
@@ -1180,8 +1180,9 @@
 
       try {
         if (publicMode) {
-          // ── PUBLIC INSERT – foglalas_id: null (DB-ben nullable kell legyen!) ──
-          var { error: pubErr } = await sb.from('ertekelesek').insert({
+          // ── PUBLIC INSERT – palya oldal saját sb kliensét használjuk (CORS fix) ──
+          var pubSb = window._spSb || window._sbGlobal || sb;
+          var { error: pubErr } = await pubSb.from('ertekelesek').insert({
             foglalas_id: null,
             palya_id:    publicPalyaId,
             helyszin_id: publicHelyszinId,
@@ -1195,13 +1196,13 @@
           // 23505 → már van public review → UPDATE
           if (pubErr && pubErr.code === '23505') {
             try {
-              var { data: existing } = await sb.from('ertekelesek')
+              var { data: existing } = await pubSb.from('ertekelesek')
                 .select('id')
                 .eq('user_id', currentUser.id)
                 .eq('palya_id', publicPalyaId)
                 .single();
               if (existing?.id) {
-                var { error: updErr } = await sb.from('ertekelesek')
+                var { error: updErr } = await pubSb.from('ertekelesek')
                   .update({
                     rating:     currentRating,
                     szoveg:     szoveg || null,
