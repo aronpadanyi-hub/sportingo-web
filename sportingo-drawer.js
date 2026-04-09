@@ -1134,8 +1134,17 @@
         return;
       }
       if (!currentUser) {
-        if (errEl) { errEl.textContent = 'Bejelentkezés szükséges!'; errEl.style.display = 'block'; }
-        return;
+        if (publicMode) {
+          // publicMode-ban fallback: getSession a drawer saját sb-jéből
+          try {
+            const { data: { session: fallbackSession } } = await sb.auth.getSession();
+            if (fallbackSession) { currentUser = fallbackSession.user; }
+          } catch(e) {}
+        }
+        if (!currentUser) {
+          if (errEl) { errEl.textContent = 'Bejelentkezés szükséges!'; errEl.style.display = 'block'; }
+          return;
+        }
       }
 
       // ── ORIGINAL TEXT ──
@@ -1286,7 +1295,18 @@
       // ── SMOOTH CLOSE ──
       setTimeout(() => { sfdZarjReviewModal(); }, 250);
       showSfdToast(isUpdate ? '✏️ Értékelésed frissítve!' : '⭐ Köszönjük az értékelést!');
-      await loadBookings();
+      // loadBookings csak drawer kontextusban fut – palya oldalon skip
+      if (!publicMode) {
+        await loadBookings();
+      } else {
+        // Palya oldalon: review blokk újratöltése
+        try {
+          var palyaCtx = window._spPalya;
+          if (palyaCtx && palyaCtx.palyaId && typeof loadPalyaReviews === 'function') {
+            await loadPalyaReviews(palyaCtx.palyaId);
+          }
+        } catch(e) { /* silent */ }
+      }
     });
   }
 
