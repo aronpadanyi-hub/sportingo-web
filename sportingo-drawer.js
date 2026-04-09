@@ -1114,12 +1114,16 @@
         if (errEl) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; }
         return;
       }
-      // Public mode: rating a csillag klikk állapotából jön
+      // Public mode: rating és cimkék window._spPublicReview-ból jön (re-init során oda kerül)
       var currentRating = _sfdRv.rating || 0;
       if (publicMode) {
-        // Rating kiolvasása a DOM-ból – public modal esetén _sfdRv nem mindig frissül
-        var activeStars = document.querySelectorAll('.sfd-review-star.active');
-        currentRating = activeStars.length || 0;
+        var pub = window._spPublicReview || {};
+        currentRating = pub.rating || 0;
+        // Fallback: DOM-ból olvassuk ha 0
+        if (!currentRating) {
+          var activeStars = document.querySelectorAll('.sfd-review-star.active');
+          currentRating = activeStars.length || 0;
+        }
       }
       if (!currentRating) {
         if (errEl) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; }
@@ -1157,7 +1161,7 @@
 
       // Cimkék kiolvasása
       var currentCimkek = publicMode
-        ? Array.from(document.querySelectorAll('.sfd-review-cimke.selected')).map(function(el) { return el.dataset.cimke; })
+        ? ((window._spPublicReview && window._spPublicReview.cimkek) || [])
         : (_sfdRv.cimkek || []);
 
       let dbError;
