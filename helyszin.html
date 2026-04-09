@@ -95,6 +95,35 @@
     .sh-review-updated {
       font-size: 10.5px; color: rgba(176,190,197,.8); margin-top: 1px;
     }
+
+    /* ── Featured review ── */
+    .sh-review-preview--featured {
+      background: rgba(45,191,126,.04);
+      border: 1.5px solid rgba(45,191,126,.18);
+      border-radius: 12px;
+      padding: 14px 14px 14px;
+      margin-bottom: 4px;
+    }
+    .sh-review-featured-label {
+      font-size: 10px; font-weight: 800; color: #2dbf7e;
+      text-transform: uppercase; letter-spacing: .8px;
+      margin-bottom: 8px; display: block;
+    }
+    /* ── Micro UX badge-ek ── */
+    .sh-review-micro {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 700;
+      padding: 2px 8px; border-radius: 999px;
+      margin-top: 3px; white-space: nowrap;
+    }
+    .sh-review-micro--fresh {
+      background: rgba(245,158,11,.10); color: #d97706;
+      border: 1px solid rgba(245,158,11,.22);
+    }
+    .sh-review-micro--verified {
+      background: rgba(45,191,126,.10); color: #2dbf7e;
+      border: 1px solid rgba(45,191,126,.22);
+    }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/sportingo-drawer.css">
@@ -561,6 +590,18 @@ function spFmtUpdated(letrehozas, updated) {
   return 'Frissítve: ' + new Date(updated).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+// ── Review score számítás (frontend, additív) ──
+function shReviewScore(r) {
+  var score = 0;
+  if (r.review_tipus === 'verified_booking')       score += 100;
+  else if (r.review_tipus === 'event_participant') score += 70;
+  else score += 30;
+  if (r.szoveg && r.szoveg.length > 20) score += 20;
+  var refDatum = r.updated_at || r.letrehozas_datum;
+  if (refDatum && (new Date() - new Date(refDatum)) < 7 * 24 * 60 * 60 * 1000) score += 15;
+  return score;
+}
+
 // renderReviewItem – egységes preview helper
 function shReviewBadgeHTML(tipus) {
   // CSAK megjelenítés – logika backendben marad
@@ -573,7 +614,7 @@ function shReviewBadgeHTML(tipus) {
   return '<span class="sh-review-badge-tipus ' + cfg.css + '">' + cfg.label + '</span>';
 }
 
-function renderReviewItem(r) {
+function renderReviewItem(r, isFeatured) {
   var nev        = spFormatNev(r.user_nev);
   // Dátum logika: ha updated_at létezik és >1 perccel eltér → azt mutatjuk "Frissítve" előtaggal
   var isUpdated  = r.updated_at && r.letrehozas_datum
@@ -584,13 +625,26 @@ function renderReviewItem(r) {
     ? datumLabel + new Date(datumAlap).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
     : '';
   var badgeHTML  = shReviewBadgeHTML(r.review_tipus);
-  return '<div class="sh-review-preview">' +
+
+  // ── Micro UX badge-ek ──
+  var microHTML = '';
+  var refDatum = r.updated_at || r.letrehozas_datum;
+  var isFresh = refDatum && (new Date() - new Date(refDatum)) < 7 * 24 * 60 * 60 * 1000;
+  if (isFresh) microHTML += '<span class="sh-review-micro sh-review-micro--fresh">🔥 Friss élmény</span>';
+  if (r.review_tipus === 'verified_booking') microHTML += '<span class="sh-review-micro sh-review-micro--verified">✔ Valódi foglalásból</span>';
+
+  var itemClass = 'sh-review-preview' + (isFeatured ? ' sh-review-preview--featured' : '');
+  var featuredLabel = isFeatured ? '<span class="sh-review-featured-label">⭐ Kiemelt értékelés</span>' : '';
+
+  return '<div class="' + itemClass + '">' +
+    featuredLabel +
     '<div class="sh-review-preview-header">' +
       '<div class="sh-review-stars-sm">' + shStars(r.rating) + '</div>' +
       '<span class="sh-review-date">' + displayDatum + '</span>' +
     '</div>' +
     '<span class="sh-review-user-sm">' + esc(nev) + '</span>' +
     badgeHTML +
+    (microHTML ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px;">' + microHTML + '</div>' : '') +
     (r.palyas && r.palyas.nev ? '<div class="sh-review-palya-nev">' + esc(r.palyas.nev) + '</div>' : '') +
     (r.szoveg ? '<div class="sh-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
     (r.tulaj_valasz ? '<div class="sh-review-valasz"><span class="sh-review-valasz-label">Pálya válasza</span><span class="sh-review-valasz-text">' + esc(r.tulaj_valasz) + '</span></div>' : '') +
@@ -621,7 +675,7 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
 
   if (!totalCount) {
     el.innerHTML = '<div class="sh-card"><div class="sh-card-title">⭐ Értékelések</div>' +
-      '<div class="sh-review-empty">Még nincsenek értékelések ehhez a helyszínhez.</div></div>';
+      '<div class="sh-review-empty">Légy az első, aki értékel!</div></div>';
     return;
   }
 
@@ -647,12 +701,21 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
   }
   var withText     = allPreview.filter(function(r){ return r.szoveg && r.szoveg.trim(); });
   var withoutText  = allPreview.filter(function(r){ return !r.szoveg || !r.szoveg.trim(); });
-  var previewData  = withText.concat(withoutText).slice(0, 3);
+  var combined     = withText.concat(withoutText);
+
+  // ── Score alapú rendezés (additív) ──
+  combined.sort(function(a, b) {
+    var scoreDiff = shReviewScore(b) - shReviewScore(a);
+    if (scoreDiff !== 0) return scoreDiff;
+    return new Date(b.letrehozas_datum) - new Date(a.letrehozas_datum);
+  });
+  var previewData = combined.slice(0, 3);
 
   var countText = totalCount + ' értékelés alapján';
 
-  var previewHTML = previewData.map(function(r) {
-    return renderReviewItem(r);
+  // ── Featured: első elem kap kiemelt class-t ──
+  var previewHTML = previewData.map(function(r, idx) {
+    return renderReviewItem(r, idx === 0);
   }).join('');
 
   el.innerHTML = '<div class="sh-card"><div class="sh-card-title">⭐ Értékelések</div>' +
