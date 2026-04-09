@@ -344,7 +344,7 @@
     if (palyaIds.length && currentUser) {
       try {
         const { data: meglevoErt } = await sb.from('ertekelesek')
-          .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum')
+          .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at')
           .eq('user_id', currentUser.id)
           .in('palya_id', palyaIds)
           .order('letrehozas_datum', { ascending: false });
@@ -443,16 +443,9 @@
         const palyaNev = (f.palyas?.helyszin_nev || f.palyas?.nev || '').replace(/"/g, '&quot;');
         const helyszinId = f.palyas?.helyszin_id || '';
         if (meglevoReview) {
-          const ertDatum = meglevoReview.letrehozas_datum ? new Date(meglevoReview.letrehozas_datum) : null;
-          const nap90 = 90 * 24 * 60 * 60 * 1000;
-          const ertOta = ertDatum ? (Date.now() - ertDatum.getTime()) : Infinity;
-          if (ertOta >= nap90) {
-            // 90 nap eltelt → új értékelés engedélyezett (insert lesz)
-            reviewBtn = `<button class="sfd-btn-ertekeles" data-fid="${f.id}" data-pid="${f.palya_id}" data-hid="${helyszinId}" data-nev="${palyaNev}" onclick="sfdNyitReviewModal(this)">⭐ Újra értékelem</button>`;
-          } else {
-            // 90 napon belül → tájékoztató, nem szerkeszthető
-            reviewBtn = '';
-          }
+          // Van meglévő review → edit mód: data-rv átadja az id-t a modalnak
+          const rvJson = encodeURIComponent(JSON.stringify({ id: meglevoReview.id, rating: meglevoReview.rating, szoveg: meglevoReview.szoveg || '', cimkek: meglevoReview.cimkek || [] }));
+          reviewBtn = `<button class="sfd-btn-ertekeles" data-fid="${f.id}" data-pid="${f.palya_id}" data-hid="${helyszinId}" data-nev="${palyaNev}" data-rv="${rvJson}" onclick="sfdNyitReviewModal(this)">✏️ Értékelés módosítása</button>`;
         } else {
           reviewBtn = `<button class="sfd-btn-ertekeles" data-fid="${f.id}" data-pid="${f.palya_id}" data-hid="${helyszinId}" data-nev="${palyaNev}" onclick="sfdNyitReviewModal(this)">⭐ Értékelem</button>`;
         }
@@ -671,7 +664,7 @@
       if (palyaIds.length) {
         try {
           const { data: ertList } = await sb.from('ertekelesek')
-            .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum')
+            .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at')
             .eq('user_id', currentUser.id)
             .in('palya_id', palyaIds)
             .order('letrehozas_datum', { ascending: false });
@@ -686,21 +679,20 @@
 
     // Múltbeli jóváhagyott foglalások – pályánként csak egyszer (legfrissebb foglalás)
     const now = new Date();
-    const nap90 = 90 * 24 * 60 * 60 * 1000;
     const multbeliJovahagyott = foglalasok.filter(f => {
       if (f.statusz !== 'jovahagyva') return false;
       return !isFoglalasFuture(f);
     });
 
-    // Pályánként a legfrissebb múltbeli foglalás (created_at DESC → első találat)
+    // Pályánként a legfrissebb múltbeli foglalás
     const palyaFoglalasMap = new Map();
     multbeliJovahagyott.forEach(f => {
       if (!palyaFoglalasMap.has(f.palya_id)) palyaFoglalasMap.set(f.palya_id, f);
     });
 
-    // A) Értékelésre vár: van foglalás, de nincs review VAGY 90 nap eltelt
+    // Egységes lista: minden pálya ahol volt foglalás
+    // ha van review → szerkeszthető; ha nincs → értékelhető
     const varList = [];
-    // B) Korábbi értékelések: van review és 90 napon belül
     const meglevoList = [];
 
     palyaFoglalasMap.forEach((f, palyaId) => {
@@ -717,13 +709,8 @@
       if (!review) {
         varList.push({ palyaNev, slug, sportag, foglDatum, palyaId, foglalasId, helyszinId, review: null });
       } else {
-        const ertDatum = review.letrehozas_datum ? new Date(review.letrehozas_datum) : null;
-        const ertOta = ertDatum ? (Date.now() - ertDatum.getTime()) : 0;
-        if (ertOta >= nap90) {
-          varList.push({ palyaNev, slug, sportag, foglDatum, palyaId, foglalasId, helyszinId, review, ujraErtekelheto: true });
-        } else {
-          meglevoList.push({ palyaNev, slug, sportag, foglDatum, palyaId, foglalasId, helyszinId, review });
-        }
+        // Van review → szerkeszthető (nincs 90 napos tiltás)
+        meglevoList.push({ palyaNev, slug, sportag, foglDatum, palyaId, foglalasId, helyszinId, review });
       }
     });
 
@@ -743,9 +730,8 @@
             ? `<a href="https://sportingo.hu/palya/${spEsc(item.slug)}" class="sfd-booking-name-link">${spEsc(item.palyaNev)}</a>`
             : spEsc(item.palyaNev);
           const foglMeta = item.foglDatum ? `📅 ${item.foglDatum}` : '';
-          const ctaSzoveg = item.ujraErtekelheto ? '⭐ Újra értékelem' : '⭐ Értékelem';
           const nevEscaped = spEsc(item.palyaNev).replace(/"/g, '&quot;');
-          const ctaGomb = `<button class="sfd-btn-ertekeles" data-fid="${spEsc(item.foglalasId)}" data-pid="${spEsc(item.palyaId)}" data-hid="${spEsc(item.helyszinId||'')}" data-nev="${nevEscaped}" onclick="sfdNyitReviewModal(this)">${ctaSzoveg}</button>`;
+          const ctaGomb = `<button class="sfd-btn-ertekeles" data-fid="${spEsc(item.foglalasId)}" data-pid="${spEsc(item.palyaId)}" data-hid="${spEsc(item.helyszinId||'')}" data-nev="${nevEscaped}" onclick="sfdNyitReviewModal(this)">⭐ Értékelem</button>`;
           return `<div class="sfd-ert-card">
             <div class="sfd-ert-card-top">
               <div class="sfd-ert-card-nev">${emojiSport} ${linkNev}</div>
@@ -775,26 +761,33 @@
           // Csillagok
           const csillagSzam = rv.rating || 0;
           const csillagok = '★'.repeat(csillagSzam) + '☆'.repeat(5 - csillagSzam);
-          // Dátumok
-          const ertDatumStr = rv.letrehozas_datum
-            ? new Date(rv.letrehozas_datum).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
-            : '';
-          const kovetkezoD = rv.letrehozas_datum
-            ? new Date(new Date(rv.letrehozas_datum).getTime() + nap90).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
+          // Dátum – updated_at ha van, különben letrehozas_datum
+          // ── 9. DEFENZÍV DATE PARSE ──
+          const _safeDate = (v) => { if (!v) return null; const d = new Date(v); return isNaN(d.getTime()) ? null : d; };
+          const isUpdated = _safeDate(rv.updated_at) && _safeDate(rv.letrehozas_datum)
+            && (_safeDate(rv.updated_at) - _safeDate(rv.letrehozas_datum)) > 60000;
+          const datumAlap = isUpdated ? rv.updated_at : rv.letrehozas_datum;
+          const datumLabel = isUpdated ? 'Frissítve' : 'Értékelve';
+          const ertDatumStr = _safeDate(datumAlap)
+            ? _safeDate(datumAlap).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
             : '';
           // Cimkék
           const cimkekHTML = rv.cimkek && rv.cimkek.length
             ? rv.cimkek.map(c => `<span class="sfd-ert-cimke">${spEsc(c)}</span>`).join('')
             : '';
+          // Edit gomb – meglevoId átadása a modalnak
+          const nevEscaped = spEsc(item.palyaNev).replace(/"/g, '&quot;');
+          const rvJson = encodeURIComponent(JSON.stringify({ id: rv.id, rating: rv.rating, szoveg: rv.szoveg || '', cimkek: rv.cimkek || [] }));
+          const editGomb = `<button class="sfd-btn-ertekeles" data-fid="${spEsc(item.foglalasId)}" data-pid="${spEsc(item.palyaId)}" data-hid="${spEsc(item.helyszinId||'')}" data-nev="${nevEscaped}" data-rv="${rvJson}" onclick="sfdNyitReviewModal(this)">✏️ Módosítás</button>`;
           return `<div class="sfd-ert-card">
             <div class="sfd-ert-card-top">
               <div class="sfd-ert-card-nev">${emojiSport} ${linkNev}</div>
               <div class="sfd-ert-stars">${csillagok}</div>
             </div>
-            <div class="sfd-ert-card-meta">${ertDatumStr ? `Értékelve: ${ertDatumStr}` : ''}</div>
+            <div class="sfd-ert-card-meta">${ertDatumStr ? `${datumLabel}: ${ertDatumStr}` : ''}</div>
             ${rv.szoveg ? `<div class="sfd-ert-card-preview">${spEsc(rv.szoveg)}</div>` : ''}
             ${cimkekHTML ? `<div style="margin-top:4px;">${cimkekHTML}</div>` : ''}
-            ${kovetkezoD ? `<div class="sfd-ert-cooldown">🔒 Újra értékelhető: ${kovetkezoD}</div>` : ''}
+            <div class="sfd-ert-cta-wrap" style="margin-top:8px;">${editGomb}</div>
           </div>`;
         }).join('');
       }
@@ -964,30 +957,50 @@
 
   // ── REVIEW MODAL (drawer) ──────────────────────────────────────
   const SFD_RATING_LABELS = {1:'Rossz élmény',2:'Alap elvárások alatt',3:'Átlagos',4:'Jó, ajánlom',5:'Kiváló, mindenképp ajánlom!'};
-  let _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[], meglevoId:null };
+  // submitting mező a dupla submit ellen (state szintű guard)
+  let _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[], meglevoId:null, submitting:false };
 
   window.sfdNyitReviewModal = function(btn) {
+    // ── 5. DEFENZÍV JSON PARSE – crash safe ──
     let rv = null;
     if (btn.dataset.rv) {
-      try { rv = JSON.parse(btn.dataset.rv.replace(/&quot;/g, '"')); } catch(e) {}
+      try {
+        rv = JSON.parse(decodeURIComponent(btn.dataset.rv));
+      } catch(e) {
+        console.warn('[sfdNyitReviewModal] Review JSON parse hiba:', e);
+        rv = {};
+      }
     }
+
+    // ── 6. MODAL HARD RESET – nincs state leakage ──
+    document.querySelectorAll('.sfd-review-star').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sfd-review-cimke').forEach(c => c.classList.remove('selected', 'disabled'));
+
+    // ── NO FLICKER: state reset ELŐBB, render UTÁNA ──
+    // ── EMPTY STATE HARDENING: null-safe értékek ──
     _sfdRv = {
-      foglalasId: btn.dataset.fid, palyaId: btn.dataset.pid, helyszinId: btn.dataset.hid || null,
-      rating: rv ? rv.rating : 0,
-      cimkek: rv && rv.cimkek ? rv.cimkek.slice() : [],
-      meglevoId: rv ? rv.id : null
+      foglalasId:  btn.dataset.fid,
+      palyaId:     btn.dataset.pid,
+      helyszinId:  btn.dataset.hid || null,
+      rating:      (rv && rv.rating)  ? (rv.rating  || 0) : 0,
+      cimkek:      (rv && rv.cimkek)  ? rv.cimkek.slice() : [],
+      meglevoId:   (rv && rv.id)      ? rv.id              : null,
+      submitting:  false   // reset minden megnyitásnál
     };
+
     const ov = document.getElementById('sfd-review-modal-overlay');
     if (!ov) return;
 
+    // Render – state már tiszta, nincs flicker
     const nevEl = document.getElementById('sfd-review-modal-sub');
     if (nevEl) nevEl.textContent = btn.dataset.nev || 'Pálya értékelése';
 
     const errEl = document.getElementById('sfd-review-error');
     if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
 
+    // ── 2. EDIT BETÖLTÉS – NULL SAFE ──
     const szEl = document.getElementById('sfd-review-szoveg');
-    if (szEl) szEl.value = rv && rv.szoveg ? rv.szoveg : '';
+    if (szEl) szEl.value = (rv && rv.szoveg) ? (rv.szoveg || '') : '';
 
     document.querySelectorAll('.sfd-review-star').forEach(s => {
       s.classList.toggle('active', _sfdRv.rating > 0 && parseInt(s.dataset.val) <= _sfdRv.rating);
@@ -998,11 +1011,11 @@
       ? _sfdRv.rating + ' csillag – ' + (SFD_RATING_LABELS[_sfdRv.rating] || '')
       : 'Kattints egy csillagra az értékeléshez';
 
+    // ── 4. CTA KONZISZTENCIA ──
     const subBtn = document.getElementById('sfd-review-submit-btn');
     if (subBtn) {
       subBtn.disabled = _sfdRv.rating === 0;
-      // Ha meglévő review → gomb szövege jelzi a frissítést
-      subBtn.textContent = _sfdRv.meglevoId ? 'Értékelés frissítése' : 'Értékelés küldése';
+      subBtn.textContent = _sfdRv.meglevoId ? '✏️ Értékelés módosítása' : '⭐ Értékelem';
     }
 
     document.querySelectorAll('.sfd-review-cimke').forEach(el => {
@@ -1017,13 +1030,18 @@
 
     ov.classList.add('open');
     document.body.style.overflow = 'hidden';
+
+    // ── 3. EDIT UX BOOST – focus delay ──
+    setTimeout(function() {
+      document.getElementById('sfd-review-szoveg')?.focus();
+    }, 200);
   };
 
   function sfdZarjReviewModal() {
     const ov = document.getElementById('sfd-review-modal-overlay');
     if (ov) ov.classList.remove('open');
     document.body.style.overflow = '';
-    _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[], meglevoId:null };
+    _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[], meglevoId:null, submitting:false };
   }
 
   document.querySelectorAll('.sfd-review-star').forEach(star => {
@@ -1069,102 +1087,193 @@
     }
   });
 
-  let _sfdRvSubmitting = false;
   const sfdRvSubmitBtn = document.getElementById('sfd-review-submit-btn');
   if (sfdRvSubmitBtn) {
     sfdRvSubmitBtn.addEventListener('click', async function() {
-      if (_sfdRvSubmitting) return;
-      const errEl = document.getElementById('sfd-review-error');
-      errEl.style.display = 'none';
-      if (!_sfdRv.rating) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; return; }
-      if (!_sfdRv.foglalasId || !_sfdRv.palyaId) { errEl.textContent = 'Hiányzó foglalás adat. Próbáld újra!'; errEl.style.display = 'block'; return; }
-      if (!currentUser) { errEl.textContent = 'Bejelentkezés szükséges!'; errEl.style.display = 'block'; return; }
+      // ── 1+2. SUBMIT GUARD ──
+      if (_sfdRv.submitting || window._reviewSubmitting) return;
 
-      _sfdRvSubmitting = true;
-      this.disabled = true; this.textContent = '⏳ Küldés...';
+      // ── PUBLIC MODE DETEKTÁLÁS ──
+      // Ha window._spPublicReview van beállítva → public entry point-ból jöttünk
+      var publicMode = !!(window._spPublicReview && window._spPublicReview.isPublic);
+      var publicPalyaId = publicMode ? window._spPublicReview.palyaId : null;
+
+      // ── NULL-SAFE errEl ──
+      const errEl = document.getElementById('sfd-review-error');
+      if (errEl) errEl.style.display = 'none';
+
+      // Validációk
+      if (!_sfdRv.rating && !publicMode) {
+        if (errEl) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; }
+        return;
+      }
+      // Public mode: rating a csillag klikk állapotából jön
+      var currentRating = _sfdRv.rating || 0;
+      if (publicMode) {
+        // Rating kiolvasása a DOM-ból – public modal esetén _sfdRv nem mindig frissül
+        var activeStars = document.querySelectorAll('.sfd-review-star.active');
+        currentRating = activeStars.length || 0;
+      }
+      if (!currentRating) {
+        if (errEl) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (!publicMode && (!_sfdRv.foglalasId || !_sfdRv.palyaId)) {
+        if (errEl) { errEl.textContent = 'Hiányzó foglalás adat. Próbáld újra!'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (!currentUser) {
+        if (errEl) { errEl.textContent = 'Bejelentkezés szükséges!'; errEl.style.display = 'block'; }
+        return;
+      }
+
+      // ── ORIGINAL TEXT ──
+      const originalText = this.textContent;
+
+      // Guardok be
+      _sfdRv.submitting = true;
+      window._reviewSubmitting = true;
+      this.disabled = true;
+      this.textContent = '⏳ Küldés...';
+
       const szoveg = (document.getElementById('sfd-review-szoveg')?.value || '').trim();
+
+      // Szöveg limit
+      if (szoveg.length > 1000) {
+        if (errEl) { errEl.textContent = 'Maximum 1000 karakter lehet.'; errEl.style.display = 'block'; }
+        _sfdRv.submitting = false;
+        window._reviewSubmitting = false;
+        this.disabled = false;
+        this.textContent = originalText;
+        return;
+      }
+
+      // Cimkék kiolvasása
+      var currentCimkek = publicMode
+        ? Array.from(document.querySelectorAll('.sfd-review-cimke.selected')).map(function(el) { return el.dataset.cimke; })
+        : (_sfdRv.cimkek || []);
+
       let dbError;
       let isUpdate = false;
 
-      // ── 1. DUPLA SUBMIT VÉDELEM (window szintű fallback) ──
-      if (window._reviewSubmitting) { _sfdRvSubmitting = false; this.disabled = false; this.textContent = 'Értékelés küldése'; return; }
-      window._reviewSubmitting = true;
+      try {
+        if (publicMode) {
+          // ── PUBLIC INSERT – foglalas_id: null, review_tipus a trigger dönti el ──
+          // FAIL-SAFE: ha null foglalás → 'public' típus (trigger és frontend default)
+          var { error: pubErr } = await sb.from('ertekelesek').insert({
+            foglalas_id: null,                     // szándékosan null – public review
+            palya_id:    publicPalyaId,
+            helyszin_id: null,
+            user_id:     currentUser.id,
+            user_nev:    currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
+            rating:      currentRating,
+            szoveg:      szoveg || null,
+            cimkek:      currentCimkek.length ? currentCimkek : null
+            // review_tipus-t a DB trigger állítja – frontend nem dönt
+          });
 
-      // ── 2. INSERT kísérlet ──
-      // Ha már létezik meglevoId (drawer átadta), azonnal UPDATE-re ugrunk
-      if (_sfdRv.meglevoId) {
-        // Ismert meglévő review → direkt UPDATE, nincs szükség INSERT-re
-        const { error: updErr } = await sb.from('ertekelesek')
-          .update({
-            rating: _sfdRv.rating,
-            szoveg: szoveg || null,
-            cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', _sfdRv.meglevoId);
-        dbError = updErr;
-        isUpdate = true;
-      } else {
-        // Nincs ismert ID → INSERT kísérlet
-        const { error: insErr } = await sb.from('ertekelesek').insert({
-          foglalas_id: _sfdRv.foglalasId, palya_id: _sfdRv.palyaId,
-          helyszin_id: _sfdRv.helyszinId || null, user_id: currentUser.id,
-          user_nev: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
-          rating: _sfdRv.rating, szoveg: szoveg || null,
-          cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null
-        });
+          // 23505 → már van public review → UPDATE
+          if (pubErr && pubErr.code === '23505') {
+            try {
+              var { data: existing } = await sb.from('ertekelesek')
+                .select('id')
+                .eq('user_id', currentUser.id)
+                .eq('palya_id', publicPalyaId)
+                .single();
+              if (existing?.id) {
+                var { error: updErr } = await sb.from('ertekelesek')
+                  .update({
+                    rating:     currentRating,
+                    szoveg:     szoveg || null,
+                    cimkek:     currentCimkek.length ? currentCimkek : null,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', existing.id);
+                dbError = updErr;
+                isUpdate = true;
+              } else {
+                dbError = pubErr;
+              }
+            } catch(e) { dbError = pubErr; }
+          } else {
+            dbError = pubErr;
+          }
 
-        // ── 3. 23505 UNIQUE constraint hiba → UPDATE fallback ──
-        if (insErr && insErr.code === '23505') {
-          try {
-            const { data: existing } = await sb.from('ertekelesek')
-              .select('id')
-              .eq('user_id', currentUser.id)
-              .eq('palya_id', _sfdRv.palyaId)
-              .single();
+        } else if (_sfdRv.meglevoId) {
+          // ── DRAWER: ismert meglévő review → UPDATE ──
+          var { error: updErr } = await sb.from('ertekelesek')
+            .update({
+              rating:     _sfdRv.rating,
+              szoveg:     szoveg || null,
+              cimkek:     _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', _sfdRv.meglevoId);
+          dbError = updErr;
+          isUpdate = true;
 
-            if (existing?.id) {
-              const { error: updErr } = await sb.from('ertekelesek')
-                .update({
-                  rating: _sfdRv.rating,
-                  szoveg: szoveg || null,
-                  cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
-                  updated_at: new Date().toISOString()
-                  // user_id / palya_id NEM változik – identity lock
-                })
-                .eq('id', existing.id);
-              dbError = updErr;
-              isUpdate = true;
-            } else {
-              // Nem találtuk a meglévő rekordot – eredeti hibát tartjuk
-              dbError = insErr;
-            }
-          } catch(e) {
-            // Fallback lekérés hibázott – eredeti hibát tartjuk
+        } else {
+          // ── DRAWER: INSERT kísérlet ──
+          var { error: insErr } = await sb.from('ertekelesek').insert({
+            foglalas_id: _sfdRv.foglalasId, palya_id: _sfdRv.palyaId,
+            helyszin_id: _sfdRv.helyszinId || null, user_id: currentUser.id,
+            user_nev:    currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
+            rating:      _sfdRv.rating, szoveg: szoveg || null,
+            cimkek:      _sfdRv.cimkek.length ? _sfdRv.cimkek : null
+          });
+
+          if (insErr && insErr.code === '23505') {
+            try {
+              var { data: existing } = await sb.from('ertekelesek')
+                .select('id')
+                .eq('user_id', currentUser.id)
+                .eq('palya_id', _sfdRv.palyaId)
+                .single();
+              if (existing?.id) {
+                var { error: updErr } = await sb.from('ertekelesek')
+                  .update({
+                    rating:     _sfdRv.rating,
+                    szoveg:     szoveg || null,
+                    cimkek:     _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', existing.id);
+                dbError = updErr;
+                isUpdate = true;
+              } else { dbError = insErr; }
+            } catch(e) { dbError = insErr; }
+          } else {
             dbError = insErr;
           }
-        } else {
-          dbError = insErr;
         }
-      }
 
-      window._reviewSubmitting = false;
-      _sfdRvSubmitting = false;
+      } catch(unexpectedErr) {
+        console.error('[sfdReviewSubmit] Váratlan hiba:', unexpectedErr);
+        dbError = { message: 'Váratlan hiba történt.' };
+      } finally {
+        // ── GUARANTEED RESET ──
+        _sfdRv.submitting = false;
+        window._reviewSubmitting = false;
+        this.disabled = false;
+        this.textContent = originalText;
+        // Public state törlése
+        if (publicMode) window._spPublicReview = null;
+      }
 
       if (dbError) {
         let uzenet = 'Hiba történt. Kérjük próbáld újra!';
-        if (dbError.code === '23505' || dbError.message?.includes('egy_user_egy_palya')) uzenet = 'Ehhez a pályához jelenleg már van értékelésed.';
+        if (dbError.code === '23505' || dbError.message?.includes('egy_user_egy_palya')) uzenet = 'Ehhez a pályához már van értékelésed.';
         else if (dbError.message?.includes('nem a te foglalásod')) uzenet = 'Ez a foglalás nem a te foglalásod.';
         else if (dbError.message?.includes('jóváhagyott')) uzenet = 'Csak jóváhagyott foglaláshoz lehet értékelést írni.';
         else if (dbError.message?.includes('lezajlott')) uzenet = 'Csak már lezajlott foglaláshoz lehet értékelést írni.';
         else if (dbError.message?.includes('Review identity')) uzenet = 'Hiba történt az értékelés mentésénél.';
-        errEl.textContent = uzenet; errEl.style.display = 'block';
-        this.disabled = false; this.textContent = 'Értékelés küldése';
+        else if (dbError.message?.includes('Váratlan')) uzenet = 'Váratlan hiba. Kérjük próbáld újra!';
+        if (errEl) { errEl.textContent = uzenet; errEl.style.display = 'block'; }
         return;
       }
 
-      sfdZarjReviewModal();
-      // ── 4. UX: INSERT vs UPDATE különböző toast ──
+      // ── SMOOTH CLOSE ──
+      setTimeout(() => { sfdZarjReviewModal(); }, 250);
       showSfdToast(isUpdate ? '✏️ Értékelésed frissítve!' : '⭐ Köszönjük az értékelést!');
       await loadBookings();
     });
