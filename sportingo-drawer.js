@@ -992,8 +992,9 @@
       submitting:  false   // reset minden megnyitásnál
     };
 
-    const ov = document.getElementById('sfd-review-modal-overlay');
-    if (!ov) return;
+    // Inline blokk megjelenítése (overlay nincs)
+    const blokk = document.getElementById('sfd-review-modal');
+    if (!blokk) return;
 
     // Render – state már tiszta, nincs flicker
     const nevEl = document.getElementById('sfd-review-modal-sub');
@@ -1032,8 +1033,8 @@
       });
     }
 
-    ov.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    // Inline display – NEM overlay, NEM body.overflow
+    blokk.style.display = 'block';
 
     // ── 3. EDIT UX BOOST – focus delay ──
     setTimeout(function() {
@@ -1042,14 +1043,13 @@
   };
 
   function sfdZarjReviewModal() {
-    const ov = document.getElementById('sfd-review-modal-overlay');
-    if (ov) {
-      ov.classList.remove('open');
-      // Inline display:none visszaállítása – fail-safe az inline style miatt
-      setTimeout(function() { ov.style.display = 'none'; }, 230);
-    }
+    // Inline blokk elrejtése (overlay nincs többé)
+    const blokk = document.getElementById('sfd-review-modal');
+    if (blokk) blokk.style.display = 'none';
     document.body.style.overflow = '';
     _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[], meglevoId:null, submitting:false };
+    // Inline state reset ha elérhető
+    if (typeof window.spZarjInlineReview === 'function') window.spZarjInlineReview();
   }
 
   document.querySelectorAll('.sfd-review-star').forEach(star => {
@@ -1087,10 +1087,9 @@
 
   const sfdRvCancelBtn = document.getElementById('sfd-review-cancel-btn');
   if (sfdRvCancelBtn) sfdRvCancelBtn.addEventListener('click', sfdZarjReviewModal);
-  const sfdRvOverlay = document.getElementById('sfd-review-modal-overlay');
-  if (sfdRvOverlay) sfdRvOverlay.addEventListener('click', e => { if (e.target === sfdRvOverlay) sfdZarjReviewModal(); });
+  // Overlay listener ELTÁVOLÍTVA – nincs overlay, inline blokk van
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('sfd-review-modal-overlay')?.classList.contains('open')) {
+    if (e.key === 'Escape' && window._spInlineReviewOpen) {
       sfdZarjReviewModal();
     }
   });
