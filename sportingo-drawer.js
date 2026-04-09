@@ -1001,7 +1001,8 @@
     const subBtn = document.getElementById('sfd-review-submit-btn');
     if (subBtn) {
       subBtn.disabled = _sfdRv.rating === 0;
-      subBtn.textContent = 'Értékelés küldése';
+      // Ha meglévő review → gomb szövege jelzi a frissítést
+      subBtn.textContent = _sfdRv.meglevoId ? 'Értékelés frissítése' : 'Értékelés küldése';
     }
 
     document.querySelectorAll('.sfd-review-cimke').forEach(el => {
@@ -1083,18 +1084,71 @@
       this.disabled = true; this.textContent = '⏳ Küldés...';
       const szoveg = (document.getElementById('sfd-review-szoveg')?.value || '').trim();
       let dbError;
+      let isUpdate = false;
 
-      // Mindig új insert – a 90 napos szabály UI szinten garantálja,
-      // hogy ide csak engedélyezett esetben kerül sor.
-      const { error } = await sb.from('ertekelesek').insert({
-        foglalas_id: _sfdRv.foglalasId, palya_id: _sfdRv.palyaId,
-        helyszin_id: _sfdRv.helyszinId || null, user_id: currentUser.id,
-        user_nev: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
-        rating: _sfdRv.rating, szoveg: szoveg || null,
-        cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null
-      });
-      dbError = error;
+      // ── 1. DUPLA SUBMIT VÉDELEM (window szintű fallback) ──
+      if (window._reviewSubmitting) { _sfdRvSubmitting = false; this.disabled = false; this.textContent = 'Értékelés küldése'; return; }
+      window._reviewSubmitting = true;
 
+      // ── 2. INSERT kísérlet ──
+      // Ha már létezik meglevoId (drawer átadta), azonnal UPDATE-re ugrunk
+      if (_sfdRv.meglevoId) {
+        // Ismert meglévő review → direkt UPDATE, nincs szükség INSERT-re
+        const { error: updErr } = await sb.from('ertekelesek')
+          .update({
+            rating: _sfdRv.rating,
+            szoveg: szoveg || null,
+            cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', _sfdRv.meglevoId);
+        dbError = updErr;
+        isUpdate = true;
+      } else {
+        // Nincs ismert ID → INSERT kísérlet
+        const { error: insErr } = await sb.from('ertekelesek').insert({
+          foglalas_id: _sfdRv.foglalasId, palya_id: _sfdRv.palyaId,
+          helyszin_id: _sfdRv.helyszinId || null, user_id: currentUser.id,
+          user_nev: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
+          rating: _sfdRv.rating, szoveg: szoveg || null,
+          cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null
+        });
+
+        // ── 3. 23505 UNIQUE constraint hiba → UPDATE fallback ──
+        if (insErr && insErr.code === '23505') {
+          try {
+            const { data: existing } = await sb.from('ertekelesek')
+              .select('id')
+              .eq('user_id', currentUser.id)
+              .eq('palya_id', _sfdRv.palyaId)
+              .single();
+
+            if (existing?.id) {
+              const { error: updErr } = await sb.from('ertekelesek')
+                .update({
+                  rating: _sfdRv.rating,
+                  szoveg: szoveg || null,
+                  cimkek: _sfdRv.cimkek.length ? _sfdRv.cimkek : null,
+                  updated_at: new Date().toISOString()
+                  // user_id / palya_id NEM változik – identity lock
+                })
+                .eq('id', existing.id);
+              dbError = updErr;
+              isUpdate = true;
+            } else {
+              // Nem találtuk a meglévő rekordot – eredeti hibát tartjuk
+              dbError = insErr;
+            }
+          } catch(e) {
+            // Fallback lekérés hibázott – eredeti hibát tartjuk
+            dbError = insErr;
+          }
+        } else {
+          dbError = insErr;
+        }
+      }
+
+      window._reviewSubmitting = false;
       _sfdRvSubmitting = false;
 
       if (dbError) {
@@ -1103,13 +1157,15 @@
         else if (dbError.message?.includes('nem a te foglalásod')) uzenet = 'Ez a foglalás nem a te foglalásod.';
         else if (dbError.message?.includes('jóváhagyott')) uzenet = 'Csak jóváhagyott foglaláshoz lehet értékelést írni.';
         else if (dbError.message?.includes('lezajlott')) uzenet = 'Csak már lezajlott foglaláshoz lehet értékelést írni.';
+        else if (dbError.message?.includes('Review identity')) uzenet = 'Hiba történt az értékelés mentésénél.';
         errEl.textContent = uzenet; errEl.style.display = 'block';
         this.disabled = false; this.textContent = 'Értékelés küldése';
         return;
       }
 
       sfdZarjReviewModal();
-      showSfdToast('⭐ Köszönjük az értékelést!');
+      // ── 4. UX: INSERT vs UPDATE különböző toast ──
+      showSfdToast(isUpdate ? '✏️ Értékelésed frissítve!' : '⭐ Köszönjük az értékelést!');
       await loadBookings();
     });
   }
