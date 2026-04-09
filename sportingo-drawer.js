@@ -1043,7 +1043,11 @@
 
   function sfdZarjReviewModal() {
     const ov = document.getElementById('sfd-review-modal-overlay');
-    if (ov) ov.classList.remove('open');
+    if (ov) {
+      ov.classList.remove('open');
+      // Inline display:none visszaállítása – fail-safe az inline style miatt
+      setTimeout(function() { ov.style.display = 'none'; }, 230);
+    }
     document.body.style.overflow = '';
     _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[], meglevoId:null, submitting:false };
   }
