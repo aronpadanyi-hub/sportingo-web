@@ -384,6 +384,29 @@
     .sp-review-empty { text-align: center; padding: 2.5rem 0; }
     .sp-review-empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: .5; }
     .sp-review-empty-text { font-size: .85rem; font-weight: 600; color: #94a3b8; }
+
+    /* ── Review badge (review_tipus) ── */
+    .sp-review-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 999px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px;
+      white-space: nowrap; margin-top: 3px;
+    }
+    .sp-review-badge--verified {
+      background: rgba(45,191,126,.10); color: #2dbf7e;
+      border: 1px solid rgba(45,191,126,.22);
+    }
+    .sp-review-badge--event {
+      background: rgba(59,130,246,.10); color: #3b82f6;
+      border: 1px solid rgba(59,130,246,.22);
+    }
+    .sp-review-badge--public {
+      background: rgba(148,163,184,.09); color: #94a3b8;
+      border: 1px solid rgba(148,163,184,.18);
+    }
+    .sp-review-updated {
+      font-size: 10.5px; color: rgba(176,190,197,.8); margin-top: 1px;
+    }
     /* ── Akciós promo sáv ── */
     #spf-promo-sav {
       display: none;
@@ -2501,13 +2524,28 @@ function spStars(rating, size) {
 }
 
 // Közös review item renderer – palya és helyszín oldalon egyaránt
+function spReviewBadgeHTML(tipus) {
+  // CSAK megjelenítés – logika backendben marad
+  var BADGE = {
+    'verified_booking':  { label: '✔ Hitelesített foglalás', css: 'sp-review-badge--verified' },
+    'event_participant': { label: '🎯 Esemény résztvevő',    css: 'sp-review-badge--event'    },
+    'public':            { label: 'Vélemény',                css: 'sp-review-badge--public'   }
+  };
+  var cfg = BADGE[tipus] || BADGE['public'];
+  return '<span class="sp-review-badge ' + cfg.css + '">' + cfg.label + '</span>';
+}
+
 function renderReviewItem(r) {
   var nev        = spFormatNev(r.user_nev);
-  var datumStr   = r.letrehozas_datum
-    ? new Date(r.letrehozas_datum).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
+  // Dátum logika: ha updated_at létezik és >1 perccel eltér → azt mutatjuk "Frissítve" előtaggal
+  var isUpdated  = r.updated_at && r.letrehozas_datum
+    && (new Date(r.updated_at) - new Date(r.letrehozas_datum)) > 60000;
+  var datumAlap  = isUpdated ? r.updated_at : r.letrehozas_datum;
+  var datumLabel = isUpdated ? 'Frissítve: ' : 'Értékelve: ';
+  var displayDatum = datumAlap
+    ? datumLabel + new Date(datumAlap).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
     : '';
-  var updatedStr = spFmtUpdated(r.letrehozas_datum, r.updated_at);
-  var displayDatum = datumStr; // letrehozas_datum alapú – megbízható fallback
+  var badgeHTML  = spReviewBadgeHTML(r.review_tipus);
   var cimkekHTML = (r.cimkek && r.cimkek.length)
     ? '<div class="sp-review-cimkek">' +
         r.cimkek.map(function(cc){
@@ -2525,6 +2563,7 @@ function renderReviewItem(r) {
     '<div class="sp-review-item-top">' +
       '<div class="sp-review-meta">' +
         '<span class="sp-review-user">' + esc(nev) + '</span>' +
+        badgeHTML +
         '<span class="sp-review-date">' + displayDatum + '</span>' +
       '</div>' +
       '<div class="sp-review-stars-sm">' + spStars(r.rating, 'sm') + '</div>' +
@@ -2569,7 +2608,7 @@ async function loadPalyaReviews(palyaId) {
 
   // ── Preview lista: legfrissebb, szövegesek előnyben, userenként 1 db ──
   var listRes = await sb.from('ertekelesek')
-    .select('id, rating, szoveg, cimkek, tulaj_valasz, letrehozas_datum, user_id, user_nev')
+    .select('id, rating, szoveg, cimkek, tulaj_valasz, letrehozas_datum, updated_at, user_id, user_nev, review_tipus, review_status')
     .eq('palya_id', palyaId)
     .order('letrehozas_datum', { ascending: false })
     .limit(20);
