@@ -79,7 +79,11 @@
       setLoggedInUI(session.user);
       if (document.getElementById('sp-login-modal-overlay')?.classList.contains('open')) {
         closeLoginModal();
-        setTimeout(openDrawer, 350);
+        // ── RACE CONDITION FIX: ha public review pending van, NEM nyitjuk a drawert ──
+        // A _checkPublicReviewPending fogja kezelni a visszatérést
+        if (!window._spPublicReviewPending) {
+          setTimeout(openDrawer, 350);
+        }
       }
     }
     if (event === 'SIGNED_OUT') { currentUser = null; setLoggedOutUI(); closeDrawer(); }
@@ -1278,5 +1282,39 @@
       await loadBookings();
     });
   }
+
+  // ── WINDOW BRIDGE – külső kód (pl. web-palya-29.html) eléri ezeket ──
+  window.sfdZarjReviewModalGlobal = sfdZarjReviewModal;
+  window.sfdOpenLoginModalGlobal  = openLoginModal;
+  window.sfdCloseDrawerGlobal     = closeDrawer;
+
+  // ── PUBLIC REVIEW SIGNED_IN HOOK ──
+  // Ha login után window._spPublicReviewPending van → review modal megnyitása
+  // Ez az onAuthStateChange-ben már fut, kiegészítjük itt
+  const _origOnAuth = sb.auth.onAuthStateChange;
+  // A hook a meglévő onAuthStateChange callback után fut
+  // window._spPublicReviewPending = { palyaId, palyaNev } – a palya oldal állítja be
+  const _checkPublicReviewPending = function() {
+    var pending = window._spPublicReviewPending;
+    if (!pending || !currentUser) return;
+    window._spPublicReviewPending = null;
+
+    // ── Drawer bezárása garantáltan, MAJD modal nyitás ──
+    // Az eredeti SIGNED_IN handler closeLoginModal()-t hív (body overflow reset kell)
+    // + drawer animáció: 350ms + buffer = 500ms elegendő
+    closeDrawer(); // explicit bezárás – safe ha már zárva
+    setTimeout(function() {
+      if (typeof window.spNyitPublicReviewModal === 'function') {
+        window.spNyitPublicReviewModal(pending.palyaId, pending.palyaNev, null);
+      }
+    }, 500);
+  };
+
+  // Felülírjuk az auth state change callback-et hogy a pending hook fusson
+  sb.auth.onAuthStateChange(function(event, session) {
+    if (event === 'SIGNED_IN' && session) {
+      _checkPublicReviewPending();
+    }
+  });
 
 })();
