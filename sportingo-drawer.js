@@ -1094,9 +1094,11 @@
     }
   });
 
-  const sfdRvSubmitBtn = document.getElementById('sfd-review-submit-btn');
-  if (sfdRvSubmitBtn) {
-    sfdRvSubmitBtn.addEventListener('click', async function() {
+  // Submit listener – document szintű delegation
+  // (a #sfd-review-submit-btn a JS betöltésekor még nem létezhet a DOM-ban)
+  document.addEventListener('click', async function(e) {
+    var submitBtn = e.target.closest('#sfd-review-submit-btn');
+    if (!submitBtn) return;
       // ── 1+2. SUBMIT GUARD ──
       if (_sfdRv.submitting || window._reviewSubmitting) return;
 
@@ -1148,13 +1150,13 @@
       }
 
       // ── ORIGINAL TEXT ──
-      const originalText = this.textContent;
+      const originalText = submitBtn.textContent;
 
       // Guardok be
       _sfdRv.submitting = true;
       window._reviewSubmitting = true;
-      this.disabled = true;
-      this.textContent = '⏳ Küldés...';
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Küldés...';
 
       const szoveg = (document.getElementById('sfd-review-szoveg')?.value || '').trim();
 
@@ -1163,8 +1165,8 @@
         if (errEl) { errEl.textContent = 'Maximum 1000 karakter lehet.'; errEl.style.display = 'block'; }
         _sfdRv.submitting = false;
         window._reviewSubmitting = false;
-        this.disabled = false;
-        this.textContent = originalText;
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
         return;
       }
 
@@ -1274,8 +1276,8 @@
         // ── GUARANTEED RESET ──
         _sfdRv.submitting = false;
         window._reviewSubmitting = false;
-        this.disabled = false;
-        this.textContent = originalText;
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
         // Public state törlése
         if (publicMode) window._spPublicReview = null;
       }
@@ -1307,8 +1309,7 @@
           }
         } catch(e) { /* silent */ }
       }
-    });
-  }
+  });
 
   // ── WINDOW BRIDGE – külső kód (pl. web-palya-29.html) eléri ezeket ──
   window.sfdZarjReviewModalGlobal = sfdZarjReviewModal;
