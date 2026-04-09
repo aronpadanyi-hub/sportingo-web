@@ -660,19 +660,22 @@
     // Saját értékelések lekérése – ÖSSZES, nemcsak foglaláshoz kötött
     let sajatReviewMap = new Map(); // palya_id → legfrissebb review
     try {
-      const { data: osszesSajat } = await sb.from('ertekelesek')
+      const { data: osszesSajat, error: ertErr } = await sb.from('ertekelesek')
         .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at, review_tipus, palyas(nev, slug, sportag, helyszin_id)')
         .eq('user_id', currentUser.id)
         .order('letrehozas_datum', { ascending: false });
+      console.log('[loadErtekelesek] osszesSajat:', osszesSajat, 'error:', ertErr);
       if (osszesSajat) {
         osszesSajat.forEach(e => {
           if (!sajatReviewMap.has(e.palya_id)) sajatReviewMap.set(e.palya_id, e);
         });
       }
     } catch(e) {
+      console.warn('[loadErtekelesek] sajatReviewMap hiba:', e);
       // Fallback: palyaReviewMap ha van
       if (palyaReviewMap.size > 0) sajatReviewMap = palyaReviewMap;
     }
+    console.log('[loadErtekelesek] sajatReviewMap size:', sajatReviewMap.size, 'palyaFoglalasMap size után megnézzük');
 
     // Múltbeli jóváhagyott foglalások – pályánként csak egyszer (legfrissebb foglalás)
     const now = new Date();
@@ -711,6 +714,8 @@
     });
 
     // ── PUBLIC REVIEW-K – foglalás nélküli értékelések hozzáadása ──
+    console.log('[loadErtekelesek] sajatReviewMap entries:', [...sajatReviewMap.keys()]);
+    console.log('[loadErtekelesek] palyaFoglalasMap keys:', [...palyaFoglalasMap.keys()]);
     sajatReviewMap.forEach((review, palyaId) => {
       // Ha ez a pálya már szerepel a foglalás alapú listában, skip
       if (palyaFoglalasMap.has(palyaId)) return;
