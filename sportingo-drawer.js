@@ -664,18 +664,15 @@
         .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at, review_tipus, palyas(nev, slug, sportag, helyszin_id)')
         .eq('user_id', currentUser.id)
         .order('letrehozas_datum', { ascending: false });
-      console.log('[loadErtekelesek] osszesSajat:', osszesSajat, 'error:', ertErr);
       if (osszesSajat) {
         osszesSajat.forEach(e => {
           if (!sajatReviewMap.has(e.palya_id)) sajatReviewMap.set(e.palya_id, e);
         });
       }
     } catch(e) {
-      console.warn('[loadErtekelesek] sajatReviewMap hiba:', e);
       // Fallback: palyaReviewMap ha van
       if (palyaReviewMap.size > 0) sajatReviewMap = palyaReviewMap;
     }
-    console.log('[loadErtekelesek] sajatReviewMap size:', sajatReviewMap.size, 'palyaFoglalasMap size után megnézzük');
 
     // Múltbeli jóváhagyott foglalások – pályánként csak egyszer (legfrissebb foglalás)
     const now = new Date();
@@ -714,8 +711,6 @@
     });
 
     // ── PUBLIC REVIEW-K – foglalás nélküli értékelések hozzáadása ──
-    console.log('[loadErtekelesek] sajatReviewMap entries:', [...sajatReviewMap.keys()]);
-    console.log('[loadErtekelesek] palyaFoglalasMap keys:', [...palyaFoglalasMap.keys()]);
     sajatReviewMap.forEach((review, palyaId) => {
       // Ha ez a pálya már szerepel a foglalás alapú listában, skip
       if (palyaFoglalasMap.has(palyaId)) return;
@@ -1147,8 +1142,11 @@
         return;
       }
       if (!publicMode && (!_sfdRv.foglalasId || !_sfdRv.palyaId)) {
-        if (errEl) { errEl.textContent = 'Hiányzó foglalás adat. Próbáld újra!'; errEl.style.display = 'block'; }
-        return;
+        // Kivétel: ha meglevoId van (meglévő review szerkesztése) → engedélyezett
+        if (!_sfdRv.meglevoId) {
+          if (errEl) { errEl.textContent = 'Hiányzó foglalás adat. Próbáld újra!'; errEl.style.display = 'block'; }
+          return;
+        }
       }
       if (!currentUser) {
         if (publicMode) {
