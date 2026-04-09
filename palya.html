@@ -2723,7 +2723,7 @@ function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
   if (typeof window.sfdCloseDrawerGlobal === 'function') window.sfdCloseDrawerGlobal();
 
   // Public state beállítása
-  window._spPublicReview = { palyaId: palyaId, palyaNev: palyaNev, isPublic: true };
+  window._spPublicReview = { palyaId: palyaId, palyaNev: palyaNev, isPublic: true, rating: 0, cimkek: [] };
   window._spPublicReviewPending = null;
   window._spInlineReviewOpen = true;
 
@@ -2745,16 +2745,67 @@ function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
   var subBtn = document.getElementById('sfd-review-submit-btn');
   if (subBtn) { subBtn.disabled = true; subBtn.textContent = '🌐 Vélemény küldése'; }
 
-  // Inline megjelenítés – a CTA után kerül (sp-public-review-cta szülője = sp-card)
-  // A blokk már a DOM végén van – mozgatjuk a CTA mellé
+  // ── CTA elrejtése – felváltja a review blokk ──
   var cta = document.querySelector('.sp-public-review-cta');
+  if (cta) cta.style.display = 'none';
+
+  // Inline megjelenítés – blokk a CTA helyére kerül (szülő = sp-card)
   if (cta && cta.parentNode && blokk.parentNode !== cta.parentNode) {
     cta.parentNode.insertBefore(blokk, cta.nextSibling);
   }
 
+  // ── Star rating re-init public mode-ban ──
+  // A drawer IIFE closure-ban lévő listener _sfdRv.rating-et állítja,
+  // de public mode-ban window._spPublicReview.rating-et kell tárolni.
+  // cloneNode trükkel eltávolítjuk a régi listener-eket, majd újakat bindolunk.
+  document.querySelectorAll('.sfd-review-star').forEach(function(star) {
+    var freshStar = star.cloneNode(true);
+    star.parentNode.replaceChild(freshStar, star);
+  });
+  document.querySelectorAll('.sfd-review-star').forEach(function(star) {
+    star.addEventListener('click', function() {
+      var val = parseInt(this.dataset.val);
+      window._spPublicReview.rating = val;
+      document.querySelectorAll('.sfd-review-star').forEach(function(s) {
+        s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+      });
+      var lbl = document.getElementById('sfd-review-rating-label');
+      var labels = {1:'Rossz élmény',2:'Alap elvárások alatt',3:'Átlagos',4:'Jó, ajánlom',5:'Kiváló, mindenképp ajánlom!'};
+      if (lbl) lbl.textContent = val + ' csillag – ' + (labels[val] || '');
+      var btn = document.getElementById('sfd-review-submit-btn');
+      if (btn) btn.disabled = false;
+    });
+  });
+
+  // ── Cimke re-init public mode-ban ──
+  document.querySelectorAll('.sfd-review-cimke').forEach(function(el) {
+    var freshEl = el.cloneNode(true);
+    el.parentNode.replaceChild(freshEl, el);
+  });
+  document.querySelectorAll('.sfd-review-cimke').forEach(function(el) {
+    el.addEventListener('click', function() {
+      if (this.classList.contains('disabled')) return;
+      var cimke = this.dataset.cimke;
+      var pub = window._spPublicReview;
+      if (!pub) return;
+      if (!pub.cimkek) pub.cimkek = [];
+      if (this.classList.contains('selected')) {
+        this.classList.remove('selected');
+        pub.cimkek = pub.cimkek.filter(function(c) { return c !== cimke; });
+      } else {
+        if (pub.cimkek.length >= 3) return;
+        this.classList.add('selected');
+        pub.cimkek.push(cimke);
+      }
+      var maxed = pub.cimkek.length >= 3;
+      document.querySelectorAll('.sfd-review-cimke').forEach(function(c) {
+        if (!c.classList.contains('selected')) c.classList.toggle('disabled', maxed);
+      });
+    });
+  });
+
   // Megjelenítés
   blokk.style.display = 'block';
-  // NEM body.overflow – nem overlay
   setTimeout(function() {
     var ta = document.getElementById('sfd-review-szoveg');
     if (ta) ta.focus();
@@ -2856,6 +2907,11 @@ function spPublicReviewCtaHTML(palyaId) {
   function spZarjInlineReview() {
     var blokk = document.getElementById('sfd-review-modal');
     if (blokk) blokk.style.display = 'none';
+
+    // ── CTA visszaállítása ──
+    var cta = document.querySelector('.sp-public-review-cta');
+    if (cta) cta.style.display = '';
+
     window._spPublicReview = null;
     window._spInlineReviewOpen = false;
     // _spPublicReviewPending NEM törlődik – login flow esetén kell maradjon
