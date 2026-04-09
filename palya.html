@@ -459,6 +459,19 @@
       cursor: pointer; font-family: inherit; transition: all .2s; white-space: nowrap;
     }
     .sp-public-review-btn:hover { border-color: #94a3b8; color: #3a5060; background: rgba(148,163,184,.08); }
+
+    /* ── Inline review blokk (nem modal/overlay) ── */
+    #sfd-review-modal {
+      position: static !important;
+      display: none;
+      margin-top: 16px;
+      border-radius: 14px;
+      border: 1.5px solid #d4e8f0;
+      background: white;
+      box-shadow: 0 2px 16px rgba(10,22,40,.08);
+      padding: 20px 20px 18px;
+      max-width: 100%;
+    }
     /* ── Akciós promo sáv ── */
     #spf-promo-sav {
       display: none;
@@ -2704,7 +2717,7 @@ window.spNyitPublicReviewModal = function spNyitPublicReviewModal(palyaId, palya
   });
 };
 
-// ── Belső helper: auth ellenőrzés után közvetlen modal megnyitás ──
+// ── Belső helper: auth ellenőrzés után inline blokk megjelenítése ──
 function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
   // Drawer bezárása – fallback safe ha bridge nincs
   if (typeof window.sfdCloseDrawerGlobal === 'function') window.sfdCloseDrawerGlobal();
@@ -2712,9 +2725,11 @@ function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
   // Public state beállítása
   window._spPublicReview = { palyaId: palyaId, palyaNev: palyaNev, isPublic: true };
   window._spPublicReviewPending = null;
+  window._spInlineReviewOpen = true;
 
-  var ov = document.getElementById('sfd-review-modal-overlay');
-  if (!ov) return;
+  // Inline blokk – #sfd-review-modal közvetlen, NEM overlay
+  var blokk = document.getElementById('sfd-review-modal');
+  if (!blokk) return;
 
   // Hard reset
   document.querySelectorAll('.sfd-review-star').forEach(function(s) { s.classList.remove('active'); });
@@ -2730,16 +2745,20 @@ function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
   var subBtn = document.getElementById('sfd-review-submit-btn');
   if (subBtn) { subBtn.disabled = true; subBtn.textContent = '🌐 Vélemény küldése'; }
 
-  // Modal megnyitás
+  // Inline megjelenítés – a CTA után kerül (sp-public-review-cta szülője = sp-card)
+  // A blokk már a DOM végén van – mozgatjuk a CTA mellé
+  var cta = document.querySelector('.sp-public-review-cta');
+  if (cta && cta.parentNode && blokk.parentNode !== cta.parentNode) {
+    cta.parentNode.insertBefore(blokk, cta.nextSibling);
+  }
+
+  // Megjelenítés
+  blokk.style.display = 'block';
+  // NEM body.overflow – nem overlay
   setTimeout(function() {
-    ov.style.display = '';
-    ov.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setTimeout(function() {
-      var ta = document.getElementById('sfd-review-szoveg');
-      if (ta) ta.focus();
-    }, 150);
-  }, 50);
+    var ta = document.getElementById('sfd-review-szoveg');
+    if (ta) ta.focus();
+  }, 100);
 }
 
 async function loadPalyaReviews(palyaId) {
@@ -2832,41 +2851,32 @@ function spPublicReviewCtaHTML(palyaId) {
   '</div>';
 }
 
-// ── PUBLIC REVIEW STATE RESET – modal bezáráskor ──
+// ── INLINE REVIEW RESET – bezáráskor ──
 (function() {
-  function spResetPublicReviewState() {
-    // _spPublicReview törlése – modal bezáráskor nem kell maradjon
+  function spZarjInlineReview() {
+    var blokk = document.getElementById('sfd-review-modal');
+    if (blokk) blokk.style.display = 'none';
     window._spPublicReview = null;
-    // _spPublicReviewOpening guard reset – biztos felszabadul
-    if (typeof _spPublicReviewOpening !== 'undefined') {
-      // closure-ön kívül vagyunk, window-on keresztül nem elérhető
-      // de a 800ms auto-reset gondoskodik róla
-    }
-    // _spPublicReviewPending: NEM törlődik – login flow esetén kell maradjon
+    window._spInlineReviewOpen = false;
+    // _spPublicReviewPending NEM törlődik – login flow esetén kell maradjon
   }
 
-  // Cancel gomb
+  // Cancel gomb – csak elrejti, NEM törli DOM-ból
   var cancelBtn = document.getElementById('sfd-review-cancel-btn');
-  if (cancelBtn) cancelBtn.addEventListener('click', spResetPublicReviewState);
+  if (cancelBtn) cancelBtn.addEventListener('click', spZarjInlineReview);
 
-  // Overlay kattintás
-  var ov = document.getElementById('sfd-review-modal-overlay');
-  if (ov) {
-    ov.addEventListener('click', function(e) {
-      if (e.target === ov) spResetPublicReviewState();
-    });
-  }
-
-  // Escape
+  // Escape – inline esetén is bezár
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') spResetPublicReviewState();
+    if (e.key === 'Escape' && window._spInlineReviewOpen) spZarjInlineReview();
   });
+
+  // window exportálás – drawer submit success után is hívható
+  window.spZarjInlineReview = spZarjInlineReview;
 })();
 </script>
 
-<!-- ── REVIEW MODAL (drawer) ── -->
-<div id="sfd-review-modal-overlay" style="display:none;">
-  <div id="sfd-review-modal">
+<!-- ── REVIEW FORM (inline blokk – nem modal/overlay) ── -->
+<div id="sfd-review-modal" style="display:none;">
     <div class="sfd-review-modal-title">⭐ Pálya értékelése</div>
     <div class="sfd-review-modal-sub" id="sfd-review-modal-sub">–</div>
     <div class="sfd-review-stars" id="sfd-review-stars">
@@ -2891,7 +2901,6 @@ function spPublicReviewCtaHTML(palyaId) {
       <button class="sfd-review-cancel-btn" id="sfd-review-cancel-btn">Mégse</button>
       <button class="sfd-review-submit-btn" id="sfd-review-submit-btn" disabled>Értékelés küldése</button>
     </div>
-  </div>
 </div>
 
 </body>
