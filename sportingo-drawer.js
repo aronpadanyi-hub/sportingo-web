@@ -1103,9 +1103,9 @@
       if (_sfdRv.submitting || window._reviewSubmitting) return;
 
       // ── PUBLIC MODE DETEKTÁLÁS ──
-      // Ha window._spPublicReview van beállítva → public entry point-ból jöttünk
       var publicMode = !!(window._spPublicReview && window._spPublicReview.isPublic);
-      var publicPalyaId = publicMode ? window._spPublicReview.palyaId : null;
+      var publicPalyaId   = publicMode ? window._spPublicReview.palyaId : null;
+      var publicHelyszinId = publicMode ? (window._spPalya && window._spPalya.helyszinId) || null : null;
 
       // ── NULL-SAFE errEl ──
       const errEl = document.getElementById('sfd-review-error');
@@ -1180,18 +1180,16 @@
 
       try {
         if (publicMode) {
-          // ── PUBLIC INSERT – foglalas_id: null, review_tipus a trigger dönti el ──
-          // FAIL-SAFE: ha null foglalás → 'public' típus (trigger és frontend default)
+          // ── PUBLIC INSERT – foglalas_id: null (DB-ben nullable kell legyen!) ──
           var { error: pubErr } = await sb.from('ertekelesek').insert({
-            foglalas_id: null,                     // szándékosan null – public review
+            foglalas_id: null,
             palya_id:    publicPalyaId,
-            helyszin_id: null,
+            helyszin_id: publicHelyszinId,
             user_id:     currentUser.id,
             user_nev:    currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null,
             rating:      currentRating,
             szoveg:      szoveg || null,
             cimkek:      currentCimkek.length ? currentCimkek : null
-            // review_tipus-t a DB trigger állítja – frontend nem dönt
           });
 
           // 23505 → már van public review → UPDATE
@@ -1290,7 +1288,9 @@
         else if (dbError.message?.includes('lezajlott')) uzenet = 'Csak már lezajlott foglaláshoz lehet értékelést írni.';
         else if (dbError.message?.includes('Review identity')) uzenet = 'Hiba történt az értékelés mentésénél.';
         else if (dbError.message?.includes('Váratlan')) uzenet = 'Váratlan hiba. Kérjük próbáld újra!';
-        if (errEl) { errEl.textContent = uzenet; errEl.style.display = 'block'; }
+        // DEBUG: Supabase pontos hibaüzenet a konzolban
+        console.error('[sfdReviewSubmit] DB hiba:', dbError.code, dbError.message, dbError.details, dbError.hint);
+        if (errEl) { errEl.textContent = uzenet + (dbError.message ? ' (' + dbError.message + ')' : ''); errEl.style.display = 'block'; }
         return;
       }
 
