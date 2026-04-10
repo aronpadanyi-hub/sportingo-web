@@ -72,58 +72,6 @@
     .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
     .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
     .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
-
-    /* ── Review badge (review_tipus) ── */
-    .sh-review-badge-tipus {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 9px; border-radius: 999px;
-      font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px;
-      white-space: nowrap; margin-top: 3px;
-    }
-    .sh-review-badge-tipus--verified {
-      background: rgba(45,191,126,.10); color: #2dbf7e;
-      border: 1px solid rgba(45,191,126,.22);
-    }
-    .sh-review-badge-tipus--event {
-      background: rgba(59,130,246,.10); color: #3b82f6;
-      border: 1px solid rgba(59,130,246,.22);
-    }
-    .sh-review-badge-tipus--public {
-      background: rgba(148,163,184,.09); color: #94a3b8;
-      border: 1px solid rgba(148,163,184,.18);
-    }
-    .sh-review-updated {
-      font-size: 10.5px; color: rgba(176,190,197,.8); margin-top: 1px;
-    }
-
-    /* ── Featured review ── */
-    .sh-review-preview--featured {
-      background: rgba(45,191,126,.04);
-      border: 1.5px solid rgba(45,191,126,.18);
-      border-radius: 12px;
-      padding: 14px 14px 14px;
-      margin-bottom: 4px;
-    }
-    .sh-review-featured-label {
-      font-size: 10px; font-weight: 800; color: #2dbf7e;
-      text-transform: uppercase; letter-spacing: .8px;
-      margin-bottom: 8px; display: block;
-    }
-    /* ── Micro UX badge-ek ── */
-    .sh-review-micro {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 10.5px; font-weight: 700;
-      padding: 2px 8px; border-radius: 999px;
-      margin-top: 3px; white-space: nowrap;
-    }
-    .sh-review-micro--fresh {
-      background: rgba(245,158,11,.10); color: #d97706;
-      border: 1px solid rgba(245,158,11,.22);
-    }
-    .sh-review-micro--verified {
-      background: rgba(45,191,126,.10); color: #2dbf7e;
-      border: 1px solid rgba(45,191,126,.22);
-    }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/sportingo-drawer.css">
@@ -152,7 +100,7 @@
       <div class="sportingo-auth-wrap">
         <button type="button" class="sportingo-auth-btn">
           <span class="sportingo-auth-icon">👤</span>
-          <span class="sportingo-auth-label">Bejelentkezés</span>
+          <span class="sportingo-auth-label">…</span>
         </button>
       </div>
     </div>
@@ -245,73 +193,7 @@ async function init() {
   const mapsUrl      = helyszin.google_maps_url || '';
   const mapsLink     = helyszin.maps_link || '';
   // Hero kép: helyszínnek nincs kep_url (törölve), az első pálya képét használjuk
-  // ── DEFAULT KÉP HELPER (shared) ──────────────────────────────────
-  const PALYA_DEFAULT_IMAGES = {
-    billiard:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/billiard.PNG',
-    bowling:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/bowling.PNG',
-    foci_kispalya_terem: 'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya-terem.PNG',
-    foci_kispalya:       'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya.PNG',
-    foci_nagypalya:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-nagypalya.PNG',
-    gokart:              'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/gokart.PNG',
-    kosarlabda:          'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/kosarpalya.PNG',
-    loter:               'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/loter.PNG',
-    padel:               'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/padel.PNG',
-    roplabda_homok:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/roplabda%20homok.PNG',
-    roplabda_terem:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/roplabda-terem.PNG',
-    squash:              'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/squash.PNG',
-    tenisz_kemeny:       'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-kemeny.PNG',
-    tenisz_mufu:         'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-mufu.PNG',
-    tenisz_salak:        'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-salak.PNG',
-    tenisz_szonyeg:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-szonyeg.PNG',
-    teqball:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/teqball.PNG',
-    tollaslabda:         'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tollas.PNG',
-    fallback:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya.PNG'
-  };
-  function _normVal(v) {
-    return String(v || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  }
-  function getDefaultPalyaImage(p) {
-    const sg  = _normVal(p.sportag);
-    const bor = _normVal(p.boritas);
-    const jf  = _normVal(p.jatekforma);
-    const fed = _normVal(p.fedett);
-    if (sg === 'biliard' || sg === 'billiard') return PALYA_DEFAULT_IMAGES.billiard;
-    if (sg === 'bowling') return PALYA_DEFAULT_IMAGES.bowling;
-    if (sg === 'gokart') return PALYA_DEFAULT_IMAGES.gokart;
-    if (sg === 'kosarlabda' || sg === 'kosar' || sg === 'basketball') return PALYA_DEFAULT_IMAGES.kosarlabda;
-    if (sg.includes('loter')) return PALYA_DEFAULT_IMAGES.loter;
-    if (sg === 'padel') return PALYA_DEFAULT_IMAGES.padel;
-    if (sg === 'squash') return PALYA_DEFAULT_IMAGES.squash;
-    if (sg === 'teqball') return PALYA_DEFAULT_IMAGES.teqball;
-    if (sg === 'tollaslabda' || sg === 'tollas' || sg === 'badminton') return PALYA_DEFAULT_IMAGES.tollaslabda;
-    if (sg === 'tenisz') {
-      if (bor.includes('salak')) return PALYA_DEFAULT_IMAGES.tenisz_salak;
-      if (bor.includes('mufu')) return PALYA_DEFAULT_IMAGES.tenisz_mufu;
-      if (bor.includes('kemeny')) return PALYA_DEFAULT_IMAGES.tenisz_kemeny;
-      if (bor.includes('szonyeg') || bor.includes('parketta')) return PALYA_DEFAULT_IMAGES.tenisz_szonyeg;
-      return PALYA_DEFAULT_IMAGES.tenisz_kemeny;
-    }
-    if (sg.includes('roplabda')) {
-      if (bor.includes('homok') || sg.includes('strand')) return PALYA_DEFAULT_IMAGES.roplabda_homok;
-      return PALYA_DEFAULT_IMAGES.roplabda_terem;
-    }
-    if (sg === 'futball' || sg === 'labdarugas') {
-      if (jf === 'nagypalya') return PALYA_DEFAULT_IMAGES.foci_nagypalya;
-      if (fed === 'fedett' || fed === 'true') return PALYA_DEFAULT_IMAGES.foci_kispalya_terem;
-      return PALYA_DEFAULT_IMAGES.foci_kispalya;
-    }
-    return PALYA_DEFAULT_IMAGES.fallback;
-  }
-  function getPalyaImage(p) {
-    if (!p) return PALYA_DEFAULT_IMAGES.fallback;
-    const own = typeof p.kep_url === 'string' ? p.kep_url.trim() : '';
-    if (own) return own;
-    try { return getDefaultPalyaImage(p); } catch(e) {}
-    return PALYA_DEFAULT_IMAGES.fallback;
-  }
-  // ── DEFAULT KÉP HELPER VÉGE ──────────────────────────────────────
-
-  const kepUrl = getPalyaImage(palyas[0] || {});
+  const kepUrl       = (palyas[0] && palyas[0].kep_url) ? palyas[0].kep_url : '';
 
   document.title = nev + (varos ? ' – ' + varos : '') + ' | Sportingo';
 
@@ -388,8 +270,8 @@ async function init() {
     return `
       <a href="${esc(pUrl)}" class="sh-palya-card">
         <div class="sh-palya-thumb">
-          ${getPalyaImage(p)
-            ? `<img src="${esc(getPalyaImage(p))}" alt="${esc(p.nev || '')}" loading="lazy" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">`
+          ${p.kep_url
+            ? `<img src="${esc(p.kep_url)}" alt="${esc(p.nev || '')}" loading="lazy">`
             : `<div class="sh-palya-thumb-placeholder">${sportIcon(p.sportag)}</div>`}
         </div>
         <div class="sh-palya-body">
@@ -482,9 +364,8 @@ async function init() {
       groupedPalyas.forEach(csoport => {
         if (csoport.palyak.length === 0) return;
 
-        // Reprezentatív kép: első pálya képe ha van, egyébként default típuskép
+        // Reprezentatív kép: első pálya képe, ha van
         const repKep = csoport.palyak.find(p => p.kep_url);
-        const repKepUrl = repKep ? repKep.kep_url : getDefaultPalyaImage(csoport.palyak[0] || { sportag: csoport.sportag, boritas: csoport.boritas, jatekforma: csoport.jatekforma, fedett: csoport.fedett_tipus });
 
         // Cím összerakása: csak az adott sportnál releváns dimenziók
         const fedettFelirat = fedettCimLabel[csoport.fedett_tipus] || csoport.fedett_tipus;
@@ -536,8 +417,8 @@ async function init() {
         palyakHTML += `
           <a href="${esc(_href)}" class="sh-palya-card sh-tipus-card" data-key="${esc(csoport.key)}" data-href="${esc(_href)}" style="cursor:pointer;text-decoration:none;">
             <div class="sh-palya-thumb">
-              ${repKepUrl
-                ? `<img src="${esc(repKepUrl)}" alt="${esc(csoport.sportag)}" loading="lazy" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">`
+              ${repKep
+                ? `<img src="${esc(repKep.kep_url)}" alt="${esc(csoport.sportag)}" loading="lazy">`
                 : `<div class="sh-palya-thumb-placeholder">${sportIcon(csoport.sportag)}</div>`}
             </div>
             <div class="sh-palya-body">
@@ -584,7 +465,7 @@ async function init() {
     </div>
 
     <div class="sh-hero">
-      ${kepUrl ? `<img src="${esc(kepUrl)}" alt="${esc(nev)}" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">` : ''}
+      ${kepUrl ? `<img src="${esc(kepUrl)}" alt="${esc(nev)}">` : ''}
       <div class="sh-hero-overlay"></div>
       <div class="sh-hero-content">
         <h1>${esc(nev)}</h1>
@@ -657,61 +538,20 @@ function spFmtUpdated(letrehozas, updated) {
   return 'Frissítve: ' + new Date(updated).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-// ── Review score számítás (frontend, additív) ──
-function shReviewScore(r) {
-  var score = 0;
-  if (r.review_tipus === 'verified_booking')       score += 100;
-  else if (r.review_tipus === 'event_participant') score += 70;
-  else score += 30;
-  if (r.szoveg && r.szoveg.length > 20) score += 20;
-  var refDatum = r.updated_at || r.letrehozas_datum;
-  if (refDatum && (new Date() - new Date(refDatum)) < 7 * 24 * 60 * 60 * 1000) score += 15;
-  return score;
-}
-
 // renderReviewItem – egységes preview helper
-function shReviewBadgeHTML(tipus) {
-  // CSAK megjelenítés – logika backendben marad
-  var BADGE = {
-    'verified_booking':  { label: '✔ Hitelesített foglalás', css: 'sh-review-badge-tipus--verified' },
-    'event_participant': { label: '🎯 Esemény résztvevő',    css: 'sh-review-badge-tipus--event'    },
-    'public':            { label: 'Vélemény',                css: 'sh-review-badge-tipus--public'   }
-  };
-  var cfg = BADGE[tipus] || BADGE['public'];
-  return '<span class="sh-review-badge-tipus ' + cfg.css + '">' + cfg.label + '</span>';
-}
-
-function renderReviewItem(r, isFeatured) {
+function renderReviewItem(r) {
   var nev        = spFormatNev(r.user_nev);
-  // Dátum logika: ha updated_at létezik és >1 perccel eltér → azt mutatjuk "Frissítve" előtaggal
-  var isUpdated  = r.updated_at && r.letrehozas_datum
-    && (new Date(r.updated_at) - new Date(r.letrehozas_datum)) > 60000;
-  var datumAlap  = isUpdated ? r.updated_at : r.letrehozas_datum;
-  var datumLabel = isUpdated ? 'Frissítve: ' : 'Értékelve: ';
-  var displayDatum = datumAlap
-    ? datumLabel + new Date(datumAlap).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
+  var datumStr   = r.letrehozas_datum
+    ? new Date(r.letrehozas_datum).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
     : '';
-  var badgeHTML  = shReviewBadgeHTML(r.review_tipus);
-
-  // ── Micro UX badge-ek ──
-  var microHTML = '';
-  var refDatum = r.updated_at || r.letrehozas_datum;
-  var isFresh = refDatum && (new Date() - new Date(refDatum)) < 7 * 24 * 60 * 60 * 1000;
-  if (isFresh) microHTML += '<span class="sh-review-micro sh-review-micro--fresh">🔥 Friss élmény</span>';
-  if (r.review_tipus === 'verified_booking') microHTML += '<span class="sh-review-micro sh-review-micro--verified">✔ Valódi foglalásból</span>';
-
-  var itemClass = 'sh-review-preview' + (isFeatured ? ' sh-review-preview--featured' : '');
-  var featuredLabel = isFeatured ? '<span class="sh-review-featured-label">⭐ Kiemelt értékelés</span>' : '';
-
-  return '<div class="' + itemClass + '">' +
-    featuredLabel +
+  var updatedStr = spFmtUpdated(r.letrehozas_datum, r.updated_at);
+  var displayDatum = datumStr; // letrehozas_datum – megbízható fallback
+  return '<div class="sh-review-preview">' +
     '<div class="sh-review-preview-header">' +
       '<div class="sh-review-stars-sm">' + shStars(r.rating) + '</div>' +
       '<span class="sh-review-date">' + displayDatum + '</span>' +
     '</div>' +
     '<span class="sh-review-user-sm">' + esc(nev) + '</span>' +
-    badgeHTML +
-    (microHTML ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px;">' + microHTML + '</div>' : '') +
     (r.palyas && r.palyas.nev ? '<div class="sh-review-palya-nev">' + esc(r.palyas.nev) + '</div>' : '') +
     (r.szoveg ? '<div class="sh-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
     (r.tulaj_valasz ? '<div class="sh-review-valasz"><span class="sh-review-valasz-label">Pálya válasza</span><span class="sh-review-valasz-text">' + esc(r.tulaj_valasz) + '</span></div>' : '') +
@@ -742,7 +582,7 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
 
   if (!totalCount) {
     el.innerHTML = '<div class="sh-card"><div class="sh-card-title">⭐ Értékelések</div>' +
-      '<div class="sh-review-empty">Még nincsenek értékelések ehhez a helyszínhez. A vélemények a pályákhoz tartoznak.</div></div>';
+      '<div class="sh-review-empty">Még nincsenek értékelések ehhez a helyszínhez.</div></div>';
     return;
   }
 
@@ -751,7 +591,7 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
 
   // ── Preview lista: top 5 legfrissebb → szövegesek előre, max 3 megjelenítve ──
   var previewRes = await sb.from('ertekelesek')
-    .select('rating, szoveg, user_nev, letrehozas_datum, updated_at, tulaj_valasz, review_tipus, palyas(nev)')
+    .select('rating, szoveg, user_nev, letrehozas_datum, updated_at, tulaj_valasz, palyas(nev)')
     .eq('helyszin_id', helyszinId)
     .order('letrehozas_datum', { ascending: false })
     .limit(5);
@@ -760,7 +600,7 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
   var allPreview = previewRes.data || [];
   if (!allPreview.length && previewRes.error) {
     var previewRes2 = await sb.from('ertekelesek')
-      .select('rating, szoveg, user_nev, letrehozas_datum, review_tipus, tulaj_valasz, palyas(nev)')
+      .select('rating, szoveg, user_nev, letrehozas_datum, tulaj_valasz, palyas(nev)')
       .eq('helyszin_id', helyszinId)
       .order('letrehozas_datum', { ascending: false })
       .limit(5);
@@ -768,21 +608,12 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
   }
   var withText     = allPreview.filter(function(r){ return r.szoveg && r.szoveg.trim(); });
   var withoutText  = allPreview.filter(function(r){ return !r.szoveg || !r.szoveg.trim(); });
-  var combined     = withText.concat(withoutText);
-
-  // ── Score alapú rendezés (additív) ──
-  combined.sort(function(a, b) {
-    var scoreDiff = shReviewScore(b) - shReviewScore(a);
-    if (scoreDiff !== 0) return scoreDiff;
-    return new Date(b.letrehozas_datum) - new Date(a.letrehozas_datum);
-  });
-  var previewData = combined.slice(0, 3);
+  var previewData  = withText.concat(withoutText).slice(0, 3);
 
   var countText = totalCount + ' értékelés alapján';
 
-  // ── Featured: első elem kap kiemelt class-t ──
-  var previewHTML = previewData.map(function(r, idx) {
-    return renderReviewItem(r, idx === 0);
+  var previewHTML = previewData.map(function(r) {
+    return renderReviewItem(r);
   }).join('');
 
   el.innerHTML = '<div class="sh-card"><div class="sh-card-title">⭐ Értékelések</div>' +
