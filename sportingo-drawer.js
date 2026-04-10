@@ -1363,11 +1363,13 @@
       // ── SMOOTH CLOSE ──
       setTimeout(() => { sfdZarjReviewModal(); }, 250);
       showSfdToast(isUpdate ? '✏️ Értékelésed frissítve!' : '⭐ Köszönjük az értékelést!');
-      // loadBookings csak drawer kontextusban fut – palya oldalon skip
       if (!publicMode) {
         await loadBookings();
+        // Értékelések tab frissítése is
+        if (isUpdate) {
+          setTimeout(() => { loadErtekelesek(); }, 300);
+        }
       } else {
-        // Palya oldalon: review blokk újratöltése
         try {
           var palyaCtx = window._spPalya;
           if (palyaCtx && palyaCtx.palyaId && typeof loadPalyaReviews === 'function') {
