@@ -2406,6 +2406,7 @@ function initFavButton() {
   var favIcon  = document.getElementById('sp-fav-icon');
   var favLabel = document.getElementById('sp-fav-label');
   var toast    = document.getElementById('sp-fav-toast');
+  console.log('[SP FAVORITE INIT] favBtn found:', !!favBtn);
   if (!favBtn) return;
 
   var isSaved = false, isLoading = false, savedKedvencId = null, toastTimer = null;
@@ -2420,6 +2421,7 @@ function initFavButton() {
 
   function setFavUI(saved, animate) {
     isSaved = saved;
+    console.log('[SP FAVORITE STATE] saved:', saved, '| animate:', animate);
     if (animate) {
       favBtn.classList.remove('pop'); void favBtn.offsetWidth; favBtn.classList.add('pop');
       setTimeout(function() { favBtn.classList.remove('pop'); }, 400);
@@ -2446,14 +2448,18 @@ function initFavButton() {
     var sb = window._spSb; if (!sb) return;
     var res = await sb.auth.getSession();
     var user = res && res.data && res.data.session && res.data.session.user;
+    console.log('[SP FAVORITE RESTORE] user logged in:', !!user);
     if (!user) return;
     var palyaId = window._spPalya && window._spPalya.palyaId;
+    console.log('[SP FAVORITE RESTORE] palyaId:', palyaId);
     if (!palyaId) return;
     var check = await sb.from('kedvencek').select('id').eq('ugyfel_email', user.email).eq('palya_id', palyaId).maybeSingle();
+    console.log('[SP FAVORITE RESTORE] DB check result:', check.data ? 'saved (id:'+check.data.id+')' : 'not saved');
     if (check.data) { savedKedvencId = check.data.id; setFavUI(true, false); }
   }
 
   favBtn.addEventListener('click', async function() {
+    console.log('[SP FAVORITE TOGGLE] clicked | isSaved:', isSaved, '| isLoading:', isLoading);
     if (isLoading) return;
     var sb = window._spSb; if (!sb) return;
     var res = await sb.auth.getSession();
