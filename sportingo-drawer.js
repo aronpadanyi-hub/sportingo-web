@@ -1058,11 +1058,16 @@
       });
     }
 
+    console.log('[DEBUG] sfdNyitReviewModal hívva');
+    console.log('[DEBUG] btn.dataset:', JSON.stringify(btn.dataset));
+    console.log('[DEBUG] rv (parsed):', rv);
+    console.log('[DEBUG] _sfdRv after set:', JSON.stringify(_sfdRv));
+
     // Inline display – drawer módban a panel-be mozgatjuk
     const drawerPanel = document.getElementById('sfd-panel-ertekelesek');
     const ertContent  = document.getElementById('sfd-ert-content');
-    // Drawer aktív ha az értékelések panel nyitva van (active class)
     const isDrawerMode = !!(drawerPanel && drawerPanel.classList.contains('active'));
+    console.log('[DEBUG] drawerPanel found:', !!drawerPanel, '| isDrawerMode:', isDrawerMode);
 
     if (isDrawerMode) {
       // DRAWER mód: blokk a drawer panelbe kerül, ert-content elrejtve
@@ -1143,6 +1148,10 @@
   document.addEventListener('click', async function(e) {
     var submitBtn = e.target.closest('#sfd-review-submit-btn');
     if (!submitBtn) return;
+    console.log('[DEBUG] submit gomb kattintva');
+    console.log('[DEBUG] _sfdRv:', JSON.stringify(_sfdRv));
+    console.log('[DEBUG] window._spPublicReview:', JSON.stringify(window._spPublicReview));
+    console.log('[DEBUG] currentUser:', currentUser ? currentUser.id : 'NULL');
       // ── 1+2. SUBMIT GUARD ──
       if (_sfdRv.submitting || window._reviewSubmitting) return;
 
