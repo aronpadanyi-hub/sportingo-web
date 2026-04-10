@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sportingo – Foglalj sportpályát online</title>
   <meta name="description" content="Sport- és élménypályák keresése és foglalása Magyarországon. Futball, tenisz, padel, squash.">
-  <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
+  <link rel="icon" href="/favicon.ico?v=1">
+  <link rel="icon" href="/favicon-32x32.png?v=1" sizes="32x32">
+  <link rel="icon" href="/favicon-16x16.png?v=1" sizes="16x16">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/sportingo-drawer.css">
@@ -97,7 +100,7 @@
     .sp-card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
     .sp-card { background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; overflow: hidden; transition: all .25s; box-shadow: 0 2px 12px rgba(10,22,40,.06); height: 100%; display: flex; flex-direction: column; }
     .sp-card:hover { border-color: #1a8fc1; box-shadow: 0 8px 32px rgba(26,143,193,.15); transform: translateY(-3px); }
-    .sp-card-thumb { aspect-ratio: 16/9; overflow: hidden; background: linear-gradient(135deg,rgba(26,143,193,.08),rgba(45,191,126,.08)); position: relative; }
+    .sp-card-thumb { aspect-ratio: 16/9; min-height: 160px; overflow: hidden; background: linear-gradient(135deg,rgba(26,143,193,.08),rgba(45,191,126,.08)); position: relative; }
     .sp-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
     .sp-card:hover .sp-card-thumb img { transform: scale(1.04); }
     .sp-card-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: rgba(26,143,193,.25); }
@@ -270,7 +273,7 @@
       <div class="sportingo-auth-wrap">
         <button type="button" class="sportingo-auth-btn">
           <span class="sportingo-auth-icon">👤</span>
-          <span class="sportingo-auth-label">…</span>
+          <span class="sportingo-auth-label">Bejelentkezés</span>
         </button>
       </div>
       <button id="sp-hamburger" aria-label="Menü" aria-expanded="false" onclick="spToggleMenu()">
@@ -322,8 +325,17 @@
         <button class="sp-sportag-btn" data-sport="Tenisz">🎾 Tenisz</button>
         <button class="sp-sportag-btn" data-sport="Padel">🏸 Padel</button>
         <button class="sp-sportag-btn" data-sport="Squash">🟡 Squash</button>
+        <button class="sp-sportag-btn" data-sport="Röplabda">🏐 Röplabda</button>
+        <button class="sp-sportag-btn" data-sport="Kézilabda">🤾 Kézilabda</button>
+        <button class="sp-sportag-btn" data-sport="Kosárlabda">🏀 Kosárlabda</button>
+        <button class="sp-sportag-btn" data-sport="Tollaslabda">🏸 Tollaslabda</button>
+        <button class="sp-sportag-btn" data-sport="Biliárd">🎱 Biliárd</button>
+        <button class="sp-sportag-btn" data-sport="Bowling">🎳 Bowling</button>
+        <button class="sp-sportag-btn" data-sport="Gokart">🏎 Gokart</button>
+        <button class="sp-sportag-btn" data-sport="Lőtér">🎯 Lőtér</button>
+        <button class="sp-sportag-btn" data-sport="Teqball">🟢 Teqball</button>
       </div>
-      <div class="sp-letszam-wrap">
+      <div class="sp-letszam-wrap" id="sp-letszam-wrap">
         <span class="sp-letszam-label">👥</span>
         <button class="sp-letszam-btn" data-letszam="" data-min="" data-max="">Bármennyi</button>
         <button class="sp-letszam-btn" data-letszam="2-4" data-min="2" data-max="4">2–4 fő</button>
@@ -347,8 +359,8 @@
   <div class="sp-results-header">
     <div id="sp-count" class="sp-count"></div>
     <select id="sp-sort" class="sp-sort-select" aria-label="Rendezés">
-      <option value="alapertelmezett">Alapértelmezett</option>
-      <option value="ertekeles">⭐ Legjobb értékelés</option>
+      <option value="nepszeru">🔥 Népszerű</option>
+      <option value="legolcsobb">💰 Legalacsonyabb ár</option>
     </select>
   </div>
   <div id="sp-grid" class="sp-grid">
@@ -692,12 +704,55 @@
       { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
     ],
     'Squash': [],
+    'Röplabda': [
+      { id:'boritas', label:'🌿 Borítás', options:[{value:'',label:'Összes borítás'},{value:'Homok',label:'Homok'},{value:'Parketta / PVC',label:'Parketta'}] },
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Kézilabda': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Kosárlabda': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Tollaslabda': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Biliárd': [],
+    'Bowling': [],
+    'Gokart': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Lőtér': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Teqball': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+  };
+
+  // ── Sportáganként releváns létszám bucketek ──────────────────────
+  // Értékek: '' = Bármennyi, '2-4', '4-8', '8-14', '14+'
+  // null = összes bucket látszik (Összes sportág / ismeretlen)
+  const SPORT_LETSZAM_BUCKETS = {
+    'Futball':     ['', '2-4', '4-8', '8-14', '14+'],
+    'Tenisz':      ['', '2-4'],
+    'Padel':       ['', '2-4'],
+    'Squash':      ['', '2-4'],
+    'Röplabda':    ['', '2-4', '4-8', '8-14'],
+    'Kézilabda':   ['', '4-8', '8-14', '14+'],
+    'Kosárlabda':  ['', '2-4', '4-8', '8-14'],
+    'Tollaslabda': ['', '2-4'],
+    'Biliárd':     ['', '2-4'],
+    'Bowling':     ['', '2-4', '4-8', '8-14', '14+'],
+    'Gokart':      ['', '2-4', '4-8', '8-14', '14+'],
+    'Lőtér':       ['', '2-4', '4-8'],
+    'Teqball':     ['', '2-4'],
   };
 
   let allHelyszinek=[], filtered=[], activeFilters={}, activeSport='', debounceTimer=null;
   const grid=document.getElementById('sp-grid'), countEl=document.getElementById('sp-count');
   const sortEl=document.getElementById('sp-sort');
-  let activeSort='alapertelmezett';
+  let activeSort='nepszeru';
   if(sortEl) sortEl.addEventListener('change',()=>{ activeSort=sortEl.value; applyFilters(); });
 
   // Létszám szűrő
@@ -725,7 +780,7 @@
       const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer '+SUPABASE_KEY } });
       if(!res.ok) throw new Error();
       const data = await res.json();
-      const PRIO = ['Futball','Tenisz','Padel','Squash'];
+      const PRIO = ['Futball','Tenisz','Padel','Squash','Röplabda','Kézilabda','Kosárlabda','Tollaslabda','Biliárd','Bowling','Gokart','Lőtér','Teqball'];
       allHelyszinek = data.map(h => {
         const jov = (h.palyas||[]).filter(p => p.statusz==='jovahagyva');
         const sportok = [...new Set(jov.map(p=>p.sportag).filter(Boolean))];
@@ -783,14 +838,34 @@
 
   function renderDynamicFilters(){
     const filters=SPORT_FILTERS[activeSport]||[];
-    if(!filters.length){ dynPanel.style.display='none'; selectsWrap.innerHTML=''; return; }
-    dynPanel.style.display='flex';
-    selectsWrap.innerHTML=filters.map(f=>`
-      <select class="sp-select" data-filter-id="${f.id}">
-        ${f.options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
-      </select>`).join('');
-    selectsWrap.querySelectorAll('.sp-select').forEach(sel=>{
-      sel.addEventListener('change',()=>{ activeFilters[sel.dataset.filterId]=sel.value; applyFilters(); });
+    if(!filters.length){ dynPanel.style.display='none'; selectsWrap.innerHTML=''; }
+    else {
+      dynPanel.style.display='flex';
+      selectsWrap.innerHTML=filters.map(f=>`
+        <select class="sp-select" data-filter-id="${f.id}">
+          ${f.options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
+        </select>`).join('');
+      selectsWrap.querySelectorAll('.sp-select').forEach(sel=>{
+        sel.addEventListener('change',()=>{ activeFilters[sel.dataset.filterId]=sel.value; applyFilters(); });
+      });
+    }
+
+    // ── Létszám bucketek frissítése sportág alapján ──
+    const allowedBuckets = SPORT_LETSZAM_BUCKETS[activeSport] || null; // null = összes
+    document.querySelectorAll('.sp-letszam-btn').forEach(btn => {
+      const bv = btn.dataset.letszam;
+      if (allowedBuckets === null || allowedBuckets.includes(bv)) {
+        btn.style.display = '';
+      } else {
+        btn.style.display = 'none';
+        // Ha ez a gomb volt aktív, reseteljük a Bármennyi-re
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+          activeLetszam = { min: null, max: null };
+          var anyBtn = document.querySelector('.sp-letszam-btn[data-letszam=""]');
+          if (anyBtn) anyBtn.classList.add('active');
+        }
+      }
     });
   }
 
@@ -830,19 +905,38 @@
       }
       return true;
     });
-    // Rendezés: legjobb értékelés szerint
-    if (activeSort === 'ertekeles') {
+    // ── RENDEZÉS ──────────────────────────────────────────────────
+    // Helper: helyszín legalacsonyabb releváns pályaára
+    function getVenueLowestPrice(h, sport) {
+      var palyas = sport ? h._palyas.filter(function(p){ return p.sportag === sport; }) : h._palyas;
+      var arak = palyas.map(function(p){ return p.ar_per_ora; }).filter(function(a){ return a != null && a > 0; });
+      if (!arak.length) return null;
+      return Math.min.apply(null, arak);
+    }
+
+    if (activeSort === 'nepszeru') {
+      // Népszerű: review count DESC → átlag DESC → pályaszám DESC → név ASC
       filtered = filtered.slice().sort(function(a, b) {
         var ra = reviewMap[a.id], rb = reviewMap[b.id];
-        // review nélküli helyszínek hátrébb
-        if (!ra && !rb) return 0;
-        if (!ra) return 1;
-        if (!rb) return -1;
-        // magasabb átlag előre
-        var diff = parseFloat(rb.atlag) - parseFloat(ra.atlag);
-        if (diff !== 0) return diff;
-        // azonos átlag esetén több review előre
-        return rb.count - ra.count;
+        var ca = ra ? ra.count : 0, cb = rb ? rb.count : 0;
+        if (cb !== ca) return cb - ca;
+        var aa = ra ? parseFloat(ra.atlag) : 0, ab = rb ? parseFloat(rb.atlag) : 0;
+        if (ab !== aa) return ab - aa;
+        var pa = a._palyas.length, pb = b._palyas.length;
+        if (pb !== pa) return pb - pa;
+        return (a.nev||'').localeCompare(b.nev||'', 'hu');
+      });
+    } else if (activeSort === 'legolcsobb') {
+      // Legalacsonyabb ár: helyszínenként a releváns minimum ár ASC
+      // hiányzó áras helyszín a lista végére kerül
+      filtered = filtered.slice().sort(function(a, b) {
+        var pa = getVenueLowestPrice(a, activeSport);
+        var pb = getVenueLowestPrice(b, activeSport);
+        if (pa === null && pb === null) return (a.nev||'').localeCompare(b.nev||'', 'hu');
+        if (pa === null) return 1;
+        if (pb === null) return -1;
+        if (pa !== pb) return pa - pb;
+        return (a.nev||'').localeCompare(b.nev||'', 'hu');
       });
     }
     renderCards();
@@ -898,7 +992,10 @@
     document.querySelectorAll('.sp-sportag-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
     // Létszám szűrő reset
     activeLetszam = { min: null, max: null };
-    document.querySelectorAll('.sp-letszam-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.querySelectorAll('.sp-letszam-btn').forEach((b,i)=>{
+      b.classList.toggle('active',i===0);
+      b.style.display = ''; // összes bucket visszaállítása
+    });
     dynPanel.style.display='none'; selectsWrap.innerHTML=''; applyFilters();
   });
 
