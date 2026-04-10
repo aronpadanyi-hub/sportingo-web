@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helyszín adatlap | Sportingo</title>
+  <link rel="icon" href="/favicon.ico?v=1">
+  <link rel="icon" href="/favicon-32x32.png?v=1" sizes="32x32">
+  <link rel="icon" href="/favicon-16x16.png?v=1" sizes="16x16">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=1">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f9fc; color: #0a1628; }
@@ -117,6 +121,69 @@
 <script>
 const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
+
+// ── DEFAULT KÉP HELPER (1:1 a listából) ────────────────────────
+const PALYA_DEFAULT_IMAGES = {
+  billiard:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/billiard.PNG',
+  bowling:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/bowling.PNG',
+  foci_kispalya_terem: 'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya-terem.PNG',
+  foci_kispalya:       'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya.PNG',
+  foci_nagypalya:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-nagypalya.PNG',
+  gokart:              'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/gokart.PNG',
+  kosarlabda:          'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/kosarpalya.PNG',
+  loter:               'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/loter.PNG',
+  padel:               'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/padel.PNG',
+  roplabda_homok:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/roplabda%20homok.PNG',
+  roplabda_terem:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/roplabda-terem.PNG',
+  squash:              'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/squash.PNG',
+  tenisz_kemeny:       'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-kemeny.PNG',
+  tenisz_mufu:         'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-mufu.PNG',
+  tenisz_salak:        'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-salak.PNG',
+  tenisz_szonyeg:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-szonyeg.PNG',
+  teqball:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/teqball.PNG',
+  tollaslabda:         'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tollas.PNG',
+  fallback:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya.PNG'
+};
+function _normVal(v) { return String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function getDefaultPalyaImage(p) {
+  const sg=_normVal(p.sportag), bor=_normVal(p.boritas), jf=_normVal(p.jatekforma), fed=_normVal(p.fedett);
+  if(sg==='biliard'||sg==='billiard') return PALYA_DEFAULT_IMAGES.billiard;
+  if(sg==='bowling') return PALYA_DEFAULT_IMAGES.bowling;
+  if(sg==='gokart') return PALYA_DEFAULT_IMAGES.gokart;
+  if(sg==='kosarlabda'||sg==='kosar'||sg==='basketball') return PALYA_DEFAULT_IMAGES.kosarlabda;
+  if(sg.includes('loter')) return PALYA_DEFAULT_IMAGES.loter;
+  if(sg==='padel') return PALYA_DEFAULT_IMAGES.padel;
+  if(sg==='squash') return PALYA_DEFAULT_IMAGES.squash;
+  if(sg==='teqball') return PALYA_DEFAULT_IMAGES.teqball;
+  if(sg==='tollaslabda'||sg==='tollas'||sg==='badminton') return PALYA_DEFAULT_IMAGES.tollaslabda;
+  if(sg==='tenisz') {
+    if(bor.includes('salak')) return PALYA_DEFAULT_IMAGES.tenisz_salak;
+    if(bor.includes('mufu')) return PALYA_DEFAULT_IMAGES.tenisz_mufu;
+    if(bor.includes('kemeny')) return PALYA_DEFAULT_IMAGES.tenisz_kemeny;
+    if(bor.includes('szonyeg')||bor.includes('parketta')) return PALYA_DEFAULT_IMAGES.tenisz_szonyeg;
+    return PALYA_DEFAULT_IMAGES.tenisz_kemeny;
+  }
+  if(sg.includes('roplabda')) {
+    if(bor.includes('homok')||sg.includes('strand')) return PALYA_DEFAULT_IMAGES.roplabda_homok;
+    return PALYA_DEFAULT_IMAGES.roplabda_terem;
+  }
+  if(sg==='futball'||sg==='labdarugas') {
+    if(jf==='nagypalya') return PALYA_DEFAULT_IMAGES.foci_nagypalya;
+    if(fed==='fedett'||fed==='true') return PALYA_DEFAULT_IMAGES.foci_kispalya_terem;
+    return PALYA_DEFAULT_IMAGES.foci_kispalya;
+  }
+  return PALYA_DEFAULT_IMAGES.fallback;
+}
+function getPalyaImage(p) {
+  if(!p) return PALYA_DEFAULT_IMAGES.fallback;
+  const own = typeof p.kep_url==='string' ? p.kep_url.trim() : '';
+  if(own) { console.log('[IMG RESOLVE HELYSZIN DETAIL] saját kép'); return own; }
+  const def = getDefaultPalyaImage(p);
+  console.log('[IMG RESOLVE HELYSZIN DETAIL] fallback | sportag:', p.sportag);
+  return def;
+}
+// ── DEFAULT KÉP HELPER VÉGE ─────────────────────────────────────
+
 // Egyetlen globális Supabase kliens – minden auth/db hívás ezt használja
 const _sbGlobal = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 window._spSb = _sbGlobal;
@@ -193,7 +260,7 @@ async function init() {
   const mapsUrl      = helyszin.google_maps_url || '';
   const mapsLink     = helyszin.maps_link || '';
   // Hero kép: helyszínnek nincs kep_url (törölve), az első pálya képét használjuk
-  const kepUrl       = (palyas[0] && palyas[0].kep_url) ? palyas[0].kep_url : '';
+  const kepUrl = getPalyaImage(palyas[0] || {});
 
   document.title = nev + (varos ? ' – ' + varos : '') + ' | Sportingo';
 
@@ -270,8 +337,8 @@ async function init() {
     return `
       <a href="${esc(pUrl)}" class="sh-palya-card">
         <div class="sh-palya-thumb">
-          ${p.kep_url
-            ? `<img src="${esc(p.kep_url)}" alt="${esc(p.nev || '')}" loading="lazy">`
+          ${getPalyaImage(p)
+            ? `<img src="${esc(getPalyaImage(p))}" alt="${esc(p.nev || '')}" loading="lazy" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">`
             : `<div class="sh-palya-thumb-placeholder">${sportIcon(p.sportag)}</div>`}
         </div>
         <div class="sh-palya-body">
@@ -366,6 +433,7 @@ async function init() {
 
         // Reprezentatív kép: első pálya képe, ha van
         const repKep = csoport.palyak.find(p => p.kep_url);
+        const repKepUrl = repKep ? repKep.kep_url : getDefaultPalyaImage(csoport.palyak[0] || { sportag: csoport.sportag, boritas: csoport.boritas, jatekforma: csoport.jatekforma, fedett: csoport.fedett_tipus });
 
         // Cím összerakása: csak az adott sportnál releváns dimenziók
         const fedettFelirat = fedettCimLabel[csoport.fedett_tipus] || csoport.fedett_tipus;
@@ -417,8 +485,8 @@ async function init() {
         palyakHTML += `
           <a href="${esc(_href)}" class="sh-palya-card sh-tipus-card" data-key="${esc(csoport.key)}" data-href="${esc(_href)}" style="cursor:pointer;text-decoration:none;">
             <div class="sh-palya-thumb">
-              ${repKep
-                ? `<img src="${esc(repKep.kep_url)}" alt="${esc(csoport.sportag)}" loading="lazy">`
+              ${repKepUrl
+                ? `<img src="${esc(repKepUrl)}" alt="${esc(csoport.sportag)}" loading="lazy" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">`
                 : `<div class="sh-palya-thumb-placeholder">${sportIcon(csoport.sportag)}</div>`}
             </div>
             <div class="sh-palya-body">
@@ -465,7 +533,7 @@ async function init() {
     </div>
 
     <div class="sh-hero">
-      ${kepUrl ? `<img src="${esc(kepUrl)}" alt="${esc(nev)}">` : ''}
+      ${kepUrl ? `<img src="${esc(kepUrl)}" alt="${esc(nev)}" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">` : ''}
       <div class="sh-hero-overlay"></div>
       <div class="sh-hero-content">
         <h1>${esc(nev)}</h1>
