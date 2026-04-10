@@ -1058,7 +1058,20 @@
       });
     }
 
-    // Inline display – NEM overlay, NEM body.overflow
+    // Inline display – drawer módban a panel-be mozgatjuk
+    const drawerPanel = document.getElementById('sfd-panel-ertekelesek');
+    const ertContent  = document.getElementById('sfd-ert-content');
+    // Drawer aktív ha az értékelések panel nyitva van (active class)
+    const isDrawerMode = !!(drawerPanel && drawerPanel.classList.contains('active'));
+
+    if (isDrawerMode) {
+      // DRAWER mód: blokk a drawer panelbe kerül, ert-content elrejtve
+      if (ertContent) ertContent.style.display = 'none';
+      if (blokk.parentNode !== drawerPanel) drawerPanel.appendChild(blokk);
+      blokk._drawerMode = true;
+    } else {
+      blokk._drawerMode = false;
+    }
     blokk.style.display = 'block';
 
     // ── 3. EDIT UX BOOST – focus delay ──
@@ -1068,12 +1081,18 @@
   };
 
   function sfdZarjReviewModal() {
-    // Inline blokk elrejtése (overlay nincs többé)
     const blokk = document.getElementById('sfd-review-modal');
-    if (blokk) blokk.style.display = 'none';
+    if (blokk) {
+      blokk.style.display = 'none';
+      // Ha drawer módban volt, ert-content visszaállítása
+      if (blokk._drawerMode) {
+        const ertContent = document.getElementById('sfd-ert-content');
+        if (ertContent) ertContent.style.display = 'block';
+        blokk._drawerMode = false;
+      }
+    }
     document.body.style.overflow = '';
     _sfdRv = { foglalasId:null, palyaId:null, helyszinId:null, rating:0, cimkek:[], meglevoId:null, submitting:false };
-    // Inline state reset ha elérhető
     if (typeof window.spZarjInlineReview === 'function') window.spZarjInlineReview();
   }
 
