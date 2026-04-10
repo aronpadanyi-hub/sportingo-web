@@ -567,6 +567,40 @@
       padding: 1px 3px; border-radius: 3px;
       pointer-events: none; white-space: nowrap;
     }
+    /* ── Public review CTA (nem hitelesített beküldés) ── */
+    .sp-public-review-cta {
+      margin-top: 14px; padding: 11px 16px;
+      background: rgba(148,163,184,.07);
+      border: 1.5px dashed rgba(148,163,184,.3);
+      border-radius: 12px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .sp-public-review-cta-text {
+      font-size: .8rem; color: #94a3b8; line-height: 1.4;
+    }
+    .sp-public-review-cta-text strong {
+      display: block; color: #6b8a9a; font-weight: 700; margin-bottom: 2px;
+    }
+    .sp-public-review-btn {
+      flex-shrink: 0; padding: 7px 16px; border-radius: 20px;
+      border: 1.5px solid rgba(148,163,184,.4); background: white;
+      font-size: .8rem; font-weight: 700; color: #6b8a9a;
+      cursor: pointer; font-family: inherit; transition: all .2s; white-space: nowrap;
+    }
+    .sp-public-review-btn:hover { border-color: #94a3b8; color: #3a5060; background: rgba(148,163,184,.08); }
+    /* ── Inline review blokk (nem modal/overlay) ── */
+    #sfd-review-modal {
+      position: static !important;
+      display: none;
+      margin-top: 16px;
+      border-radius: 14px;
+      border: 1.5px solid #d4e8f0;
+      background: white;
+      box-shadow: 0 2px 16px rgba(10,22,40,.08);
+      padding: 20px 20px 18px;
+      max-width: 100%;
+    }
 </style>
 </head>
 <body>
@@ -2670,11 +2704,353 @@ async function loadPalyaReviews(palyaId) {
     listHTML + '</div>';
 }
 
+// ── Review score számítás (frontend, additív) ──
+function spReviewScore(r) {
+  var score = 0;
+  // Típus súly
+  if (r.review_tipus === 'verified_booking')  score += 100;
+  else if (r.review_tipus === 'event_participant') score += 70;
+  else score += 30;
+  // Szöveges bónusz
+  if (r.szoveg && r.szoveg.length > 20) score += 20;
+  // Friss bónusz (7 napon belül)
+  var refDatum = r.updated_at || r.letrehozas_datum;
+  if (refDatum && (new Date() - new Date(refDatum)) < 7 * 24 * 60 * 60 * 1000) score += 15;
+  return score;
+}
+
+// Közös review item renderer – palya és helyszín oldalon egyaránt
+function spReviewBadgeHTML(tipus) {
+  // CSAK megjelenítés – logika backendben marad
+  var BADGE = {
+    'verified_booking':  { label: '✔ Hitelesített foglalás', css: 'sp-review-badge--verified' },
+    'event_participant': { label: '🎯 Esemény résztvevő',    css: 'sp-review-badge--event'    },
+    'public':            { label: '🌐 Vélemény',             css: 'sp-review-badge--public'   }
+  };
+  var cfg = BADGE[tipus] || BADGE['public'];
+  return '<span class="sp-review-badge ' + cfg.css + '">' + cfg.label + '</span>';
+}
+
+function renderReviewItem(r, isFeatured) {
+  var nev        = spFormatNev(r.user_nev);
+  // Dátum logika: ha updated_at létezik és >1 perccel eltér → azt mutatjuk "Frissítve" előtaggal
+  var isUpdated  = r.updated_at && r.letrehozas_datum
+    && (new Date(r.updated_at) - new Date(r.letrehozas_datum)) > 60000;
+  var datumAlap  = isUpdated ? r.updated_at : r.letrehozas_datum;
+  var datumLabel = isUpdated ? 'Frissítve: ' : 'Értékelve: ';
+  var displayDatum = datumAlap
+    ? datumLabel + new Date(datumAlap).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' })
+    : '';
+  var badgeHTML  = spReviewBadgeHTML(r.review_tipus);
+
+  // ── Micro UX badge-ek ──
+  var microHTML = '';
+  var refDatum = r.updated_at || r.letrehozas_datum;
+  var isFresh = refDatum && (new Date() - new Date(refDatum)) < 7 * 24 * 60 * 60 * 1000;
+  if (isFresh) microHTML += '<span class="sp-review-micro sp-review-micro--fresh">🔥 Friss élmény</span>';
+  if (r.review_tipus === 'verified_booking') microHTML += '<span class="sp-review-micro sp-review-micro--verified">✔ Valódi foglalásból</span>';
+
+  var cimkekHTML = (r.cimkek && r.cimkek.length)
+    ? '<div class="sp-review-cimkek">' +
+        r.cimkek.map(function(cc){
+          return '<span class="sp-review-cimke">' + esc(cc) + '</span>';
+        }).join('') +
+      '</div>'
+    : '';
+  var tulajHTML = r.tulaj_valasz
+    ? '<div class="sp-review-tulaj">' +
+        '<div class="sp-review-tulaj-label">Pálya válasza</div>' +
+        '<div class="sp-review-tulaj-text">' + esc(r.tulaj_valasz) + '</div>' +
+      '</div>'
+    : '';
+
+  var itemClass = 'sp-review-item' + (isFeatured ? ' sp-review-item--featured' : '');
+  var featuredLabel = isFeatured ? '<span class="sp-review-featured-label">⭐ Kiemelt értékelés</span>' : '';
+
+  return '<div class="' + itemClass + '">' +
+    featuredLabel +
+    '<div class="sp-review-item-top">' +
+      '<div class="sp-review-meta">' +
+        '<span class="sp-review-user">' + esc(nev) + '</span>' +
+        badgeHTML +
+        (microHTML ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px;">' + microHTML + '</div>' : '') +
+        '<span class="sp-review-date">' + displayDatum + '</span>' +
+      '</div>' +
+      '<div class="sp-review-stars-sm">' + spStars(r.rating, 'sm') + '</div>' +
+    '</div>' +
+    (r.szoveg
+      ? '<p class="sp-review-szoveg">' + esc(r.szoveg) + '</p>'
+      : '') +
+    cimkekHTML + tulajHTML +
+  '</div>';
+}
+
+// ── PUBLIC REVIEW – entry point (nem drawer, nem foglalás alapú) ──
+var _spPublicReviewOpening = false;
+
+window.spNyitPublicReviewModal = function spNyitPublicReviewModal(palyaId, palyaNev, e) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  if (e && e.preventDefault)  e.preventDefault();
+
+  if (_spPublicReviewOpening) return;
+  _spPublicReviewOpening = true;
+
+  // ── 3. PENDING FIX: skip auth check, azonnal megnyit ──
+  if (window._spPublicReviewPending) {
+    window._spPublicReviewPending = null;
+    _spPublicReviewOpening = false;
+    spNyitPublicReviewModalDirekt(palyaId, palyaNev);
+    return;
+  }
+
+  // ── 2. AUTH FIX: Supabase getSession – nem SPF.loggedInUser ──
+  var sb = window._spSb || window._sbGlobal;
+  if (!sb) {
+    _spPublicReviewOpening = false;
+    if (typeof window.sfdOpenLoginModalGlobal === 'function') window.sfdOpenLoginModalGlobal();
+    return;
+  }
+
+  sb.auth.getSession().then(function(res) {
+    var session = res && res.data && res.data.session;
+    if (!session) {
+      // Nincs session → pending state + login modal (NEM authBtn.click – az drawert nyit)
+      window._spPublicReviewPending = { palyaId: palyaId, palyaNev: palyaNev };
+      _spPublicReviewOpening = false;
+      if (typeof window.sfdOpenLoginModalGlobal === 'function') {
+        window.sfdOpenLoginModalGlobal();
+      } else {
+        var authBtn = document.querySelector('.sportingo-auth-btn');
+        if (authBtn) authBtn.click();
+      }
+      return;
+    }
+    // Van session → közvetlen megnyitás
+    _spPublicReviewOpening = false;
+    spNyitPublicReviewModalDirekt(palyaId, palyaNev);
+  }).catch(function() {
+    _spPublicReviewOpening = false;
+  });
+};
+
+// ── Belső helper: auth ellenőrzés után inline blokk megjelenítése ──
+function spNyitPublicReviewModalDirekt(palyaId, palyaNev) {
+  // Drawer bezárása – fallback safe ha bridge nincs
+  if (typeof window.sfdCloseDrawerGlobal === 'function') window.sfdCloseDrawerGlobal();
+
+  // Public state beállítása
+  window._spPublicReview = { palyaId: palyaId, palyaNev: palyaNev, isPublic: true, rating: 0, cimkek: [] };
+  window._spPublicReviewPending = null;
+  window._spInlineReviewOpen = true;
+
+  // Submit guard reset – ragadt state elkerülése
+  if (window._reviewSubmitting) window._reviewSubmitting = false;
+
+  // Inline blokk – #sfd-review-modal közvetlen, NEM overlay
+  var blokk = document.getElementById('sfd-review-modal');
+  if (!blokk) return;
+
+  // Hard reset
+  document.querySelectorAll('.sfd-review-star').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.sfd-review-cimke').forEach(function(c) { c.classList.remove('selected', 'disabled'); });
+  var szEl = document.getElementById('sfd-review-szoveg');
+  if (szEl) szEl.value = '';
+  var lblEl = document.getElementById('sfd-review-rating-label');
+  if (lblEl) lblEl.textContent = 'Kattints egy csillagra az értékeléshez';
+  var errEl = document.getElementById('sfd-review-error');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  var nevEl = document.getElementById('sfd-review-modal-sub');
+  if (nevEl) nevEl.textContent = palyaNev || 'Pálya értékelése';
+  var subBtn = document.getElementById('sfd-review-submit-btn');
+  if (subBtn) { subBtn.disabled = true; subBtn.textContent = '🌐 Vélemény küldése'; }
+
+  // ── CTA elrejtése – felváltja a review blokk ──
+  var cta = document.querySelector('.sp-public-review-cta');
+  if (cta) cta.style.display = 'none';
+
+  // Inline megjelenítés – blokk a CTA helyére kerül (szülő = sp-card)
+  if (cta && cta.parentNode && blokk.parentNode !== cta.parentNode) {
+    cta.parentNode.insertBefore(blokk, cta.nextSibling);
+  }
+
+  // ── Star és cimke re-init – event delegation a #sfd-review-modal szinten ──
+  // NEM cloneNode – a submit listener (drawer IIFE-ban) megmarad
+  // Minden click event a blokkon keresztül bubbolik fel, itt fogjuk el
+  if (!blokk._spDelegated) {
+    blokk._spDelegated = true;
+
+    blokk.addEventListener('click', function(e) {
+      // Star kattintás
+      var star = e.target.closest('.sfd-review-star');
+      if (star && window._spPublicReview) {
+        var val = parseInt(star.dataset.val);
+        window._spPublicReview.rating = val;
+        blokk.querySelectorAll('.sfd-review-star').forEach(function(s) {
+          s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+        });
+        var lbl = blokk.querySelector('#sfd-review-rating-label');
+        var labels = {1:'Rossz élmény',2:'Alap elvárások alatt',3:'Átlagos',4:'Jó, ajánlom',5:'Kiváló, mindenképp ajánlom!'};
+        if (lbl) lbl.textContent = val + ' csillag – ' + (labels[val] || '');
+        var subBtn = blokk.querySelector('#sfd-review-submit-btn');
+        if (subBtn) subBtn.disabled = false;
+        return;
+      }
+
+      // Cimke kattintás
+      var cimkeEl = e.target.closest('.sfd-review-cimke');
+      if (cimkeEl && window._spPublicReview) {
+        if (cimkeEl.classList.contains('disabled')) return;
+        var pub = window._spPublicReview;
+        if (!pub.cimkek) pub.cimkek = [];
+        var cimke = cimkeEl.dataset.cimke;
+        if (cimkeEl.classList.contains('selected')) {
+          cimkeEl.classList.remove('selected');
+          pub.cimkek = pub.cimkek.filter(function(c) { return c !== cimke; });
+        } else {
+          if (pub.cimkek.length >= 3) return;
+          cimkeEl.classList.add('selected');
+          pub.cimkek.push(cimke);
+        }
+        var maxed = pub.cimkek.length >= 3;
+        blokk.querySelectorAll('.sfd-review-cimke').forEach(function(c) {
+          if (!c.classList.contains('selected')) c.classList.toggle('disabled', maxed);
+        });
+      }
+    });
+  }
+
+  // Megjelenítés
+  blokk.style.display = 'block';
+  setTimeout(function() {
+    var ta = document.getElementById('sfd-review-szoveg');
+    if (ta) ta.focus();
+  }, 100);
+}
+
+async function loadPalyaReviews(palyaId) {
+  var el = document.getElementById('sp-review-blokk');
+  if (!el || !palyaId) return;
+  var sb = window._spSb;
+  if (!sb) return;
+
+  // ── Valódi aggregáció: az összes review az egész pályára ──
+  var aggRes = await sb.from('ertekelesek')
+    .select('rating', { count: 'exact', head: false })
+    .eq('palya_id', palyaId);
+
+  var allRatings = aggRes.data || [];
+  var totalCount = aggRes.count || allRatings.length;
+
+  if (!totalCount) {
+    el.innerHTML = '<div class="sp-card"><h2>⭐ Értékelések</h2>' +
+      '<div class="sp-review-empty">' +
+      '<div class="sp-review-empty-icon">💬</div>' +
+      '<div class="sp-review-empty-text">Légy az első, aki értékel!</div>' +
+      '</div>' +
+      spPublicReviewCtaHTML(palyaId) +
+      '</div>';
+    return;
+  }
+
+  var sum = allRatings.reduce(function(a, r) { return a + r.rating; }, 0);
+  var atlag = (sum / allRatings.length).toFixed(1);
+
+  // ── Preview lista: legfrissebb, szövegesek előnyben, userenként 1 db ──
+  var listRes = await sb.from('ertekelesek')
+    .select('id, rating, szoveg, cimkek, tulaj_valasz, letrehozas_datum, updated_at, user_id, user_nev, review_tipus, review_status')
+    .eq('palya_id', palyaId)
+    .order('letrehozas_datum', { ascending: false })
+    .limit(20);
+
+  var allItems = listRes.data || [];
+  // Deduplikálás: userenként csak a legfrissebb review (a query már csökkenő sorrendű)
+  var seenUsers = {};
+  var dedupItems = allItems.filter(function(r) {
+    var key = r.user_id || r.user_nev || ('__' + r.id);
+    if (seenUsers[key]) return false;
+    seenUsers[key] = true;
+    return true;
+  });
+
+  // ── Score alapú rendezés (additív, meglévő deduplikálás után) ──
+  dedupItems.sort(function(a, b) {
+    var scoreDiff = spReviewScore(b) - spReviewScore(a);
+    if (scoreDiff !== 0) return scoreDiff;
+    // Azonos score → legfrissebb előre
+    return new Date(b.letrehozas_datum) - new Date(a.letrehozas_datum);
+  });
+
+  var listData = dedupItems.slice(0, 3);
+
+  // ── Featured: első elem kap kiemelt class-t (csak ha legalább 1 van) ──
+  var listHTML = listData.map(function(r, idx) {
+    return renderReviewItem(r, idx === 0);
+  }).join('');
+
+  el.innerHTML = '<div class="sp-card">' +
+    '<div class="sp-review-summary">' +
+      '<div class="sp-review-score">' + atlag + '</div>' +
+      '<div class="sp-review-score-details">' +
+        '<div class="sp-review-stars-row">' + spStars(Math.round(parseFloat(atlag)), 'lg') + '</div>' +
+        '<div class="sp-review-count">' + totalCount + ' értékelés alapján</div>' +
+      '</div>' +
+    '</div>' +
+    listHTML +
+    // ── PUBLIC REVIEW CTA – mindig megjelenik (bejelentkezés szükséges) ──
+    spPublicReviewCtaHTML(palyaId) +
+  '</div>';
+}
+
+// ── Public CTA HTML helper ──
+function spPublicReviewCtaHTML(palyaId) {
+  var palyaNev = (window._spPalya && window._spPalya.nev) || '';
+  var palyaNevEsc = palyaNev.replace(/'/g, "\\'");
+  // Auth check NEM itt fut – spNyitPublicReviewModal kezeli getSession()-nel
+  return '<div class="sp-public-review-cta">' +
+    '<div class="sp-public-review-cta-text">' +
+      '<strong>Jártál már itt?</strong>' +
+      'Oszd meg a véleményedet – nem hitelesített értékelésként jelenik meg.' +
+    '</div>' +
+    '<button class="sp-public-review-btn" onclick="spNyitPublicReviewModal(\'' + esc(palyaId) + '\',\'' + palyaNevEsc + '\',event)">' +
+      '🌐 Írj véleményt' +
+    '</button>' +
+  '</div>';
+}
+
+// ── INLINE REVIEW RESET – bezáráskor ──
+(function() {
+  function spZarjInlineReview() {
+    var blokk = document.getElementById('sfd-review-modal');
+    if (blokk) blokk.style.display = 'none';
+
+    // ── CTA visszaállítása ──
+    var cta = document.querySelector('.sp-public-review-cta');
+    if (cta) cta.style.display = '';
+
+    window._spPublicReview = null;
+    window._spInlineReviewOpen = false;
+    // _spPublicReviewPending NEM törlődik – login flow esetén kell maradjon
+  }
+
+  // Cancel gomb – csak elrejti, NEM törli DOM-ból
+  var cancelBtn = document.getElementById('sfd-review-cancel-btn');
+  if (cancelBtn) cancelBtn.addEventListener('click', spZarjInlineReview);
+
+  // Escape – inline esetén is bezár
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && window._spInlineReviewOpen) spZarjInlineReview();
+  });
+
+  // window exportálás – drawer submit success után is hívható
+  window.spZarjInlineReview = spZarjInlineReview;
+})();
 </script>
 
-<!-- ── REVIEW MODAL (drawer) ── -->
-<div id="sfd-review-modal-overlay">
-  <div id="sfd-review-modal">
+</script>
+
+<!-- ── REVIEW FORM (inline blokk – nem modal/overlay) ── -->
+
+<div id="sfd-review-modal" style="display:none;">
     <div class="sfd-review-modal-title">⭐ Pálya értékelése</div>
     <div class="sfd-review-modal-sub" id="sfd-review-modal-sub">–</div>
     <div class="sfd-review-stars" id="sfd-review-stars">
@@ -2699,7 +3075,6 @@ async function loadPalyaReviews(palyaId) {
       <button class="sfd-review-cancel-btn" id="sfd-review-cancel-btn">Mégse</button>
       <button class="sfd-review-submit-btn" id="sfd-review-submit-btn" disabled>Értékelés küldése</button>
     </div>
-  </div>
 </div>
 
 </body>
