@@ -809,6 +809,20 @@
 
     if (loadingEl) loadingEl.style.display = 'none';
     if (contentEl) contentEl.style.display = 'block';
+
+    // ── 90 NAPOS SZÖVEG ELTÁVOLÍTÁSA – bármelyik HTML verzióból ──
+    document.querySelectorAll('.sfd-ert-szekció-alcím').forEach(function(el) {
+      if (el.textContent && el.textContent.indexOf('90 nap') !== -1) {
+        el.textContent = 'Bármikor módosíthatod a véleményedet.';
+        console.log('[REVIEW FIX] 90 napos szöveg eltávolítva');
+      }
+    });
+    // Szekció cím javítása ha "Korábbi értékeléseim" van
+    document.querySelectorAll('.sfd-ert-szekció-cím').forEach(function(el) {
+      if (el.textContent && el.textContent.indexOf('Korábbi') !== -1) {
+        el.textContent = 'Értékeléseim';
+      }
+    });
   }
 
   // ── Login modal (változatlan logika, új ID-k mentén) ──
@@ -999,8 +1013,9 @@
       rating:      (rv && rv.rating)  ? (rv.rating  || 0) : 0,
       cimkek:      (rv && rv.cimkek)  ? rv.cimkek.slice() : [],
       meglevoId:   (rv && rv.id)      ? rv.id              : null,
-      submitting:  false   // reset minden megnyitásnál
+      submitting:  false
     };
+    console.log('[REVIEW FIX] edit megnyitva:', _sfdRv.meglevoId, '| palyaId:', _sfdRv.palyaId);
 
     // Inline blokk megjelenítése (overlay nincs)
     const blokk = document.getElementById('sfd-review-modal');
@@ -1141,12 +1156,10 @@
         if (errEl) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; }
         return;
       }
-      if (!publicMode && (!_sfdRv.foglalasId || !_sfdRv.palyaId)) {
-        // Kivétel: ha meglevoId van (meglévő review szerkesztése) → engedélyezett
-        if (!_sfdRv.meglevoId) {
-          if (errEl) { errEl.textContent = 'Hiányzó foglalás adat. Próbáld újra!'; errEl.style.display = 'block'; }
-          return;
-        }
+      if (!publicMode && !isEdit && (!_sfdRv.foglalasId || !_sfdRv.palyaId)) {
+        console.warn('[REVIEW FIX] blokkolt submit – nincs foglalasId');
+        if (errEl) { errEl.textContent = 'Hiányzó foglalás adat. Próbáld újra!'; errEl.style.display = 'block'; }
+        return;
       }
       if (!currentUser) {
         if (publicMode) {
@@ -1164,6 +1177,15 @@
 
       // ── ORIGINAL TEXT ──
       const originalText = submitBtn.textContent;
+      const isEdit = !!_sfdRv.meglevoId;
+
+      console.log('[REVIEW FIX] submit state:', {
+        publicMode,
+        isEdit,
+        foglalasId: _sfdRv.foglalasId,
+        meglevoId: _sfdRv.meglevoId,
+        palyaId: _sfdRv.palyaId
+      });
 
       // Guardok be
       _sfdRv.submitting = true;
