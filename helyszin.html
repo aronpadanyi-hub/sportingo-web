@@ -338,7 +338,6 @@ async function init() {
           ${getPalyaImage(p)
             ? `<img src="${esc(getPalyaImage(p))}" alt="${esc(p.nev || '')}" loading="lazy" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">`
             : `<div class="sh-palya-thumb-placeholder">${sportIcon(p.sportag)}</div>`}
-            : `<div class="sh-palya-thumb-placeholder">${sportIcon(p.sportag)}</div>`}
         </div>
         <div class="sh-palya-body">
           <div class="sh-palya-nev">${esc(p.nev || 'Névtelen pálya')}</div>
