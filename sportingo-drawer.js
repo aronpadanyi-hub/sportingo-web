@@ -1136,6 +1136,9 @@
       const errEl = document.getElementById('sfd-review-error');
       if (errEl) errEl.style.display = 'none';
 
+      // ── isEdit flag – validáció előtt kell legyen ──
+      const isEdit = !!_sfdRv.meglevoId;
+
       // Validációk
       if (!_sfdRv.rating && !publicMode) {
         if (errEl) { errEl.textContent = 'Kérjük adj csillag értékelést!'; errEl.style.display = 'block'; }
@@ -1177,7 +1180,6 @@
 
       // ── ORIGINAL TEXT ──
       const originalText = submitBtn.textContent;
-      const isEdit = !!_sfdRv.meglevoId;
 
       console.log('[REVIEW FIX] submit state:', {
         publicMode,
