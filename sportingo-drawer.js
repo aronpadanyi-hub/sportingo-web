@@ -1360,15 +1360,12 @@
         return;
       }
 
-      // ── SMOOTH CLOSE ──
-      setTimeout(() => { sfdZarjReviewModal(); }, 250);
+      // ── SMOOTH CLOSE + RELOAD ──
+      sfdZarjReviewModal();
       showSfdToast(isUpdate ? '✏️ Értékelésed frissítve!' : '⭐ Köszönjük az értékelést!');
       if (!publicMode) {
         await loadBookings();
-        // Értékelések tab frissítése is
-        if (isUpdate) {
-          setTimeout(() => { loadErtekelesek(); }, 300);
-        }
+        await loadErtekelesek();
       } else {
         try {
           var palyaCtx = window._spPalya;
