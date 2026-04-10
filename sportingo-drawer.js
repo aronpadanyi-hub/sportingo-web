@@ -20,10 +20,16 @@
   // ── State ──
   let currentUser = null;
   let allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'kozelgo';
-  let palyaReviewMap = new Map(); // palya_id → {id, rating, szoveg, cimkek}
+  let palyaReviewMap = new Map();
   const perPage = 10;
   const sportEmoji = { Futball: '⚽', Tenisz: '🎾', Padel: '🎾', Squash: '🟡' };
   const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva', lemondva: '🚫 Lemondva' };
+
+  // ── Explicit auth state: 'unknown' | 'authenticated' | 'guest' ──
+  // 'unknown'       = init folyamatban, session még nem megerősítve
+  // 'authenticated' = session.user megerősítve
+  // 'guest'         = session null, megerősítve
+  let _authState = 'unknown';
 
   function spEsc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 
@@ -37,8 +43,9 @@
 
   function getAuthLabels() { return document.querySelectorAll('.sportingo-auth-label'); }
 
-  // ── UI frissítés ──
+  // ── UI frissítés – csak megerősített állapot alapján hívható ──
   function setLoggedInUI(user) {
+    _authState = 'authenticated';
     const meta = user.user_metadata || {};
     const name = meta.full_name || meta.name || user.email.split('@')[0];
     getAuthLabels().forEach(l => l.textContent = name);
@@ -48,46 +55,131 @@
     if (dEmail)  dEmail.textContent  = user.email;
     const ed = document.getElementById('sfd-profil-email-display');
     if (ed) ed.textContent = user.email;
-    // Profil mező frissítése
     const pn = document.getElementById('sfd-profil-nev');
     const pt = document.getElementById('sfd-profil-telefon');
     if (pn) pn.value = meta.full_name || meta.name || '';
     if (pt) pt.value = meta.telefon || meta.phone || '';
+    console.log('[SP AUTH MODE] authenticated:', name);
   }
 
   function setLoggedOutUI() {
+    _authState = 'guest';
     getAuthLabels().forEach(l => l.textContent = 'Bejelentkezés');
     document.querySelectorAll('.sportingo-auth-icon').forEach(i => i.textContent = '👤');
     if (dAvatar) dAvatar.textContent = '?';
     if (dName)   dName.textContent = '–';
     if (dEmail)  dEmail.textContent = '–';
+    console.log('[SP AUTH MODE] guest');
   }
 
-  // ── Auth init ──
-  // Pending állapot: semleges UI amíg a session check fut
-  getAuthLabels().forEach(l => l.dataset.spPending = l.textContent);
-  getAuthLabels().forEach(l => l.textContent = '…');
+  function setUnknownUI() {
+    // Semleges pending állapot – session megerősítésre vár
+    // Nem mutat sem logged-in, sem logged-out UI-t
+    _authState = 'unknown';
+    getAuthLabels().forEach(l => l.textContent = '…');
+    console.log('[SP AUTH MODE] unknown – session check folyamatban');
+  }
+
+  // ── Auth init ──────────────────────────────────────────────────
+  // Oldalbetöltéskor 'unknown' állapotból indulunk.
+  // Sem cached logged-in, sem azonnali guest UI – csak semleges '…'
+  // amíg a getSession() vissza nem tér.
+  setUnknownUI();
 
   sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) { currentUser = session.user; setLoggedInUI(session.user); }
-    else { setLoggedOutUI(); }
+    console.log('[SP SESSION CHECK RESULT] getSession:', session ? 'van' : 'nincs');
+    if (session) {
+      currentUser = session.user;
+      setLoggedInUI(session.user);
+    } else {
+      currentUser = null;
+      setLoggedOutUI();
+    }
   });
 
+  // ── Auth state változás ──────────────────────────────────────
+  // SIGNED_OUT debounce: Supabase token refresh közben SIGNED_OUT → SIGNED_IN
+  // szekvenciát küldhet. 300ms + megerősítő getSession() megakadályozza
+  // a hamis guest UI villanást.
+  let _signedOutTimer = null;
+
   sb.auth.onAuthStateChange((event, session) => {
+    console.log('[SP AUTH STATE BEFORE RENDER] event:', event, '| session:', session ? 'van' : 'nincs');
+
     if (event === 'SIGNED_IN' && session) {
+      if (_signedOutTimer) { clearTimeout(_signedOutTimer); _signedOutTimer = null; }
       currentUser = session.user;
       setLoggedInUI(session.user);
       if (document.getElementById('sp-login-modal-overlay')?.classList.contains('open')) {
         closeLoginModal();
-        // ── RACE CONDITION FIX: ha public review pending van, NEM nyitjuk a drawert ──
-        // A _checkPublicReviewPending fogja kezelni a visszatérést
         if (!window._spPublicReviewPending) {
           setTimeout(openDrawer, 350);
         }
       }
     }
-    if (event === 'SIGNED_OUT') { currentUser = null; setLoggedOutUI(); closeDrawer(); }
-    if (event === 'TOKEN_REFRESHED' && session) { currentUser = session.user; }
+
+    if (event === 'SIGNED_OUT') {
+      // Debounce: nem váltunk azonnal guest-re – lehet token refresh
+      // A 300ms alatt érkező SIGNED_IN törli ezt a timert
+      _signedOutTimer = setTimeout(function() {
+        _signedOutTimer = null;
+        sb.auth.getSession().then(function({ data: { session: checkSession } }) {
+          if (!checkSession) {
+            console.log('[SP SESSION CHECK RESULT] SIGNED_OUT megerősítve');
+            currentUser = null;
+            setLoggedOutUI();
+            closeDrawer();
+          } else {
+            console.log('[SP SESSION CHECK RESULT] SIGNED_OUT után session van – token refresh');
+            currentUser = checkSession.user;
+            setLoggedInUI(checkSession.user);
+          }
+        });
+      }, 300);
+    }
+
+    if (event === 'TOKEN_REFRESHED' && session) {
+      currentUser = session.user;
+      // Nem hívunk setLoggedInUI-t – nincs szükség UI frissítésre token refresh-nél
+    }
+  });
+
+  // ── BFCache + mobil lifecycle fix ─────────────────────────────
+  // Safari BFCache: visszatöltéskor az onAuthStateChange nem tüzel újra.
+  // pageshow(persisted=true) → session recheck, setUnknownUI közben nincs villogás
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      console.log('[SP PAGE LIFECYCLE] BFCache pageshow – session recheck');
+      setUnknownUI();
+      sb.auth.getSession().then(function({ data: { session } }) {
+        console.log('[SP SESSION CHECK RESULT] BFCache recheck:', session ? 'van' : 'nincs');
+        if (session) {
+          currentUser = session.user;
+          setLoggedInUI(session.user);
+        } else {
+          currentUser = null;
+          setLoggedOutUI();
+        }
+      });
+    }
+  });
+
+  // visibilitychange: csak unknown állapotban ellenőriz újra
+  // (pl. ha az oldal background-ban töltődött és a getSession még fut)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && _authState === 'unknown') {
+      console.log('[SP PAGE LIFECYCLE] visibilitychange – recheck (unknown állapotban)');
+      sb.auth.getSession().then(function({ data: { session } }) {
+        if (_authState !== 'unknown') return; // közben már eldőlt
+        if (session) {
+          currentUser = session.user;
+          setLoggedInUI(session.user);
+        } else {
+          currentUser = null;
+          setLoggedOutUI();
+        }
+      });
+    }
   });
 
   // ── Tab navigáció ──
