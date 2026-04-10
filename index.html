@@ -356,8 +356,8 @@
   <div class="sp-results-header">
     <div id="sp-count" class="sp-count"></div>
     <select id="sp-sort" class="sp-sort-select" aria-label="Rendezés">
-      <option value="alapertelmezett">Alapértelmezett</option>
-      <option value="ertekeles">⭐ Legjobb értékelés</option>
+      <option value="nepszeru">🔥 Népszerű</option>
+      <option value="legolcsobb">💰 Legalacsonyabb ár</option>
     </select>
   </div>
   <div id="sp-grid" class="sp-grid">
@@ -749,7 +749,7 @@
   let allHelyszinek=[], filtered=[], activeFilters={}, activeSport='', debounceTimer=null;
   const grid=document.getElementById('sp-grid'), countEl=document.getElementById('sp-count');
   const sortEl=document.getElementById('sp-sort');
-  let activeSort='alapertelmezett';
+  let activeSort='nepszeru';
   if(sortEl) sortEl.addEventListener('change',()=>{ activeSort=sortEl.value; applyFilters(); });
 
   // Létszám szűrő
@@ -902,19 +902,38 @@
       }
       return true;
     });
-    // Rendezés: legjobb értékelés szerint
-    if (activeSort === 'ertekeles') {
+    // ── RENDEZÉS ──────────────────────────────────────────────────
+    // Helper: helyszín legalacsonyabb releváns pályaára
+    function getVenueLowestPrice(h, sport) {
+      var palyas = sport ? h._palyas.filter(function(p){ return p.sportag === sport; }) : h._palyas;
+      var arak = palyas.map(function(p){ return p.ar_per_ora; }).filter(function(a){ return a != null && a > 0; });
+      if (!arak.length) return null;
+      return Math.min.apply(null, arak);
+    }
+
+    if (activeSort === 'nepszeru') {
+      // Népszerű: review count DESC → átlag DESC → pályaszám DESC → név ASC
       filtered = filtered.slice().sort(function(a, b) {
         var ra = reviewMap[a.id], rb = reviewMap[b.id];
-        // review nélküli helyszínek hátrébb
-        if (!ra && !rb) return 0;
-        if (!ra) return 1;
-        if (!rb) return -1;
-        // magasabb átlag előre
-        var diff = parseFloat(rb.atlag) - parseFloat(ra.atlag);
-        if (diff !== 0) return diff;
-        // azonos átlag esetén több review előre
-        return rb.count - ra.count;
+        var ca = ra ? ra.count : 0, cb = rb ? rb.count : 0;
+        if (cb !== ca) return cb - ca;
+        var aa = ra ? parseFloat(ra.atlag) : 0, ab = rb ? parseFloat(rb.atlag) : 0;
+        if (ab !== aa) return ab - aa;
+        var pa = a._palyas.length, pb = b._palyas.length;
+        if (pb !== pa) return pb - pa;
+        return (a.nev||'').localeCompare(b.nev||'', 'hu');
+      });
+    } else if (activeSort === 'legolcsobb') {
+      // Legalacsonyabb ár: helyszínenként a releváns minimum ár ASC
+      // hiányzó áras helyszín a lista végére kerül
+      filtered = filtered.slice().sort(function(a, b) {
+        var pa = getVenueLowestPrice(a, activeSport);
+        var pb = getVenueLowestPrice(b, activeSport);
+        if (pa === null && pb === null) return (a.nev||'').localeCompare(b.nev||'', 'hu');
+        if (pa === null) return 1;
+        if (pb === null) return -1;
+        if (pa !== pb) return pa - pb;
+        return (a.nev||'').localeCompare(b.nev||'', 'hu');
       });
     }
     renderCards();
