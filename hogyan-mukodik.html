@@ -83,6 +83,1138 @@
       .sp-step-divider { margin-left: 56px; }
       .sp-how-cta-box { padding: 28px 20px; }
     }
+    @media (max-width: 900px) {
+      #sp-nav, #sp-socials { display: none; }
+      #sp-hamburger { display: flex; }
+      #sp-mobile-menu { display: block; }
+      #sp-header-inner { padding: 0 16px; }
+    }
+    .sp-loading { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; color: #6b8a9a; font-size: .9rem; }
+    .sp-spinner { width: 36px; height: 36px; border: 3px solid #d4e8f0; border-top-color: #1a8fc1; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sp-card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+    .sp-card { background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; overflow: hidden; transition: all .25s; box-shadow: 0 2px 12px rgba(10,22,40,.06); height: 100%; display: flex; flex-direction: column; }
+    .sp-card:hover { border-color: #1a8fc1; box-shadow: 0 8px 32px rgba(26,143,193,.15); transform: translateY(-3px); }
+    .sp-card-thumb { aspect-ratio: 16/9; overflow: hidden; background: linear-gradient(135deg,rgba(26,143,193,.08),rgba(45,191,126,.08)); position: relative; }
+    .sp-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+    .sp-card:hover .sp-card-thumb img { transform: scale(1.04); }
+    .sp-card-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: rgba(26,143,193,.25); }
+    .sp-card-sport-badges { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
+    .sp-card-sport-badge { background: rgba(10,22,40,.75); backdrop-filter: blur(6px); color: white; font-size: .68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .sp-card-body { padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: .4rem; flex: 1; }
+    .sp-card-nev { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: #0a1628; line-height: 1.3; margin: 0; }
+    .sp-card-location { font-size: .8rem; color: #6b8a9a; display: flex; align-items: center; gap: 4px; }
+    .sp-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: .75rem; border-top: 1px solid #f0f7fb; }
+    .sp-card-palya-count { font-size: .78rem; color: #6b8a9a; font-weight: 500; }
+    .sp-card-cta { font-size: .78rem; font-weight: 700; color: #1a8fc1; }
+    .sp-card-arrow { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); display: flex; align-items: center; justify-content: center; color: white; font-size: 1rem; flex-shrink: 0; transition: transform .2s; }
+    .sp-card:hover .sp-card-arrow { transform: translateX(3px); }
+    .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
+    .sp-empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .sp-empty-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: #0a1628; margin-bottom: .5rem; }
+    .sp-empty-sub { font-size: .88rem; line-height: 1.6; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="sp-header">
+  <div id="sp-header-inner">
+    <a href="https://sportingo.hu" id="sp-logo" aria-label="Sportingo főoldal">
+      <img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" id="sp-logo-img">
+    </a>
+    <nav id="sp-nav">
+      <button class="sp-nav-link" id="sp-nav-palya">Pályák</button>
+      <a href="https://www.sportingo.hu/hogyan-mukodik/" class="sp-nav-link active">Hogyan működik?</a>
+      <a href="https://www.sportingo.hu/palyat-uzemeltetsz/" class="sp-nav-link">Pályát üzemeltetsz?</a>
+      <a href="https://www.sportingo.hu/kapcsolat/" class="sp-nav-link">Kapcsolat</a>
+    </nav>
+    <div id="sp-header-right">
+      <div id="sp-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
+      <button type="button" class="sportingo-auth-btn"><span class="sportingo-auth-icon">👤</span><span class="sportingo-auth-label">Bejelentkezés</span></button>
+      <button id="sp-hamburger" aria-label="Menü" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div id="sp-mobile-menu" aria-hidden="true">
+    <nav id="sp-mobile-nav">
+      <button class="sp-mobile-link" id="sp-mobile-palya">⚽ Pályák</button>
+      <a href="https://www.sportingo.hu/hogyan-mukodik/" class="sp-mobile-link" style="color:#1a8fc1;">❓ Hogyan működik?</a>
+      <a href="https://www.sportingo.hu/palyat-uzemeltetsz/" class="sp-mobile-link">🏟 Pályát üzemeltetsz?</a>
+      <a href="https://www.sportingo.hu/kapcsolat/" class="sp-mobile-link">📬 Kapcsolat</a>
+      <div id="sp-mobile-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="sp-hero">
+  <div class="sp-hero-inner">
+    <h1>Hogyan működik<br><span class="sp-hero-accent">a Sportingo?</span></h1>
+    <p style="color:rgba(255,255,255,.65);font-size:1.05rem;margin-top:20px;line-height:1.7;">Foglalj sportpályát percek alatt – regisztráció, telefonálás és előre utalás nélkül.</p>
+  </div>
+</section>
+
+<!-- HOGYAN MŰKÖDIK TARTALOM -->
+<main class="sp-how-main">
+
+  <div class="sp-steps">
+
+    <div class="sp-step">
+      <div class="sp-step-num">1</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">🔍</div>
+        <h2 class="sp-step-title">Keresd meg a pályát</h2>
+        <p class="sp-step-desc">Böngészd az elérhető futball-, tenisz-, padel- és squash-helyszíneket. Szűrj városra, borítástípusra vagy elhelyezésre – és találd meg a hozzád legközelebb eső pályát.</p>
+      </div>
+    </div>
+
+    <div class="sp-step-divider"></div>
+
+    <div class="sp-step">
+      <div class="sp-step-num">2</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">📧</div>
+        <h2 class="sp-step-title">Küldj foglalási kérést</h2>
+        <p class="sp-step-desc">Válaszd ki a kívánt pályát, add meg az időpontot és a játékosok számát, majd küldj foglalási kérést. Nem kell telefonálni, nem kell előre utalni – egy kattintás az egész.</p>
+      </div>
+    </div>
+
+    <div class="sp-step-divider"></div>
+
+    <div class="sp-step">
+      <div class="sp-step-num">3</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">✅</div>
+        <h2 class="sp-step-title">Kapj visszaigazolást</h2>
+        <p class="sp-step-desc">A pálya üzemeltetője jóváhagyja a kérésedet, te pedig emailben értesítést kapsz. A foglalás státuszát bármikor ellenőrizheted a fiókodban.</p>
+      </div>
+    </div>
+
+    <div class="sp-step-divider"></div>
+
+    <div class="sp-step">
+      <div class="sp-step-num">4</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">🏃</div>
+        <h2 class="sp-step-title">Játssz!</h2>
+        <p class="sp-step-desc">Menj el a helyszínre a megbeszélt időpontban és élvezd a sportot. Fizetés a helyszínen, az üzemeltetővel egyeztetve – nálunk nincs rejtett díj.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sp-how-cta-box">
+    <div class="sp-how-cta-title">Készen állsz?</div>
+    <p class="sp-how-cta-sub">Több tucat sporthelyszín vár rád Magyarország-szerte.</p>
+    <a href="https://www.sportingo.hu/" class="sp-how-cta-btn">Pályák böngészése →</a>
+  </div>
+
+  <div class="sp-faq">
+    <h2 class="sp-faq-title">Gyakori kérdések</h2>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Kell regisztrálnom a foglaláshoz?</div>
+      <div class="sp-faq-a">Igen, egy ingyenes játékos fiókra szükséged van, hogy nyomon tudd követni a foglalásaidat. A regisztráció egy percet vesz igénybe, és teljesen ingyenes.</div>
+    </div>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Mennyibe kerül a Sportingo használata?</div>
+      <div class="sp-faq-a">A Sportingo játékosoknak teljesen ingyenes. A pályabérlés árát közvetlenül az üzemeltetőnek fizeted a helyszínen.</div>
+    </div>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Mi történik, ha az üzemeltető elutasítja a kérést?</div>
+      <div class="sp-faq-a">Emailben értesítünk az elutasításról. Ilyenkor egyszerűen keress másik időpontot vagy helyszínt – a foglalási kérés újra ingyenesen küldhető.</div>
+    </div>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Pályát üzemeltetek – hogyan csatlakozhatok?</div>
+      <div class="sp-faq-a">Látogass el a <a href="https://portal.sportingo.hu" target="_blank" style="color:#1a8fc1;font-weight:600;">Tulajdonosi portálra</a>, ahol regisztrálhatsz és feltöltheted a pályáidat.</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="sp-footer">
+  <div class="sp-footer-logo">SPORTING<span>O</span></div>
+  <div>
+    <a href="https://www.sportingo.hu/hogyan-mukodik/">Hogyan működik?</a>
+    <a href="https://www.sportingo.hu/palyat-uzemeltetsz/">Pályát üzemeltetsz?</a>
+    <a href="https://www.sportingo.hu/kapcsolat/">Kapcsolat</a>
+    <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál</a>
+  </div>
+  <div style="margin-top:12px;">© 2026 Sportingo. Minden jog fenntartva.</div>
+</footer>
+
+<!-- AUTH MODAL -->
+<div id="sp-confirm-modal-overlay">
+  <div id="sp-confirm-modal">
+    <div class="sp-confirm-icon">⚠️</div>
+    <div class="sp-confirm-title">Biztosan lemondod ezt a foglalást?</div>
+    <div class="sp-confirm-body">A lemondás után a foglalás felszabadulhat más játékosok számára, és ezt már nem lehet egy kattintással visszavonni.</div>
+    <div class="sp-confirm-actions">
+      <button class="sp-confirm-cancel-btn" id="sp-confirm-no">Mégse</button>
+      <button class="sp-confirm-ok-btn" id="sp-confirm-yes">Foglalás lemondása</button>
+    </div>
+  </div>
+</div>
+<div id="sp-drawer-overlay"></div>
+<div id="sp-drawer">
+
+  <!-- FEJLÉC -->
+  <div class="sfd-header">
+    <div class="sfd-header-inner">
+      <div class="sfd-avatar" id="sp-drawer-avatar">?</div>
+      <div class="sfd-userinfo">
+        <div class="sfd-title">Sportingo fiók</div>
+        <div class="sfd-name" id="sp-drawer-name">–</div>
+        <div class="sfd-email" id="sp-drawer-email">–</div>
+      </div>
+      <button class="sfd-close" data-sp-close-drawer aria-label="Bezárás">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Pályák keresése CTA -->
+    <div class="sfd-header-cta">
+      <a href="https://sportingo.hu" class="sfd-search-btn" onclick="closeDrawerGlobal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Pályák keresése
+      </a>
+    </div>
+
+    <!-- Nav tabs -->
+    <nav class="sfd-nav" role="tablist">
+      <button class="sfd-nav-btn active" data-sfd-tab="attekintes" role="tab">
+        <span class="nav-icon">🏠</span> Áttekintés
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="foglalasok" role="tab">
+        <span class="nav-icon">📅</span> Foglalásaim
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="kedvencek" role="tab">
+        <span class="nav-icon">❤️</span> Kedvenceim
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="profil" role="tab">
+        <span class="nav-icon">👤</span> Profil
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="statisztika" role="tab">
+        <span class="nav-icon">📊</span> Statisztika
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="ertekelesek" role="tab">
+        <span class="nav-icon">⭐</span> Értékeléseim
+      </button>
+    </nav>
+  </div>
+
+  <!-- TARTALOM -->
+  <div class="sfd-body">
+
+    <!-- ── ÁTTEKINTÉS ── -->
+    <div class="sfd-panel active" id="sfd-panel-attekintes">
+      <!-- Következő foglalás -->
+      <div id="sfd-next-booking-wrap"></div>
+
+      <!-- Stat kártyák -->
+      <div class="sfd-overview-grid">
+        <div class="sfd-stat-card" onclick="sfdSwitchTab('foglalasok')">
+          <div class="sfd-stat-val" id="sfd-stat-foglalasok">–</div>
+          <div class="sfd-stat-lbl">Aktív foglalás</div>
+        </div>
+        <div class="sfd-stat-card" onclick="sfdSwitchTab('kedvencek')">
+          <div class="sfd-stat-val" id="sfd-stat-kedvencek">–</div>
+          <div class="sfd-stat-lbl">Kedvenc</div>
+        </div>
+
+      </div>
+
+      <!-- Gyors akciók -->
+      <div class="sfd-quick-actions">
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('foglalasok')">
+          <span class="qb-icon">📅</span>
+          Foglalásaim
+        </button>
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('kedvencek')">
+          <span class="qb-icon">❤️</span>
+          Kedvenceim
+        </button>
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('profil')">
+          <span class="qb-icon">✏️</span>
+          Profil szerkesztése
+        </button>
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('statisztika')">
+          <span class="qb-icon">📊</span>
+          Statisztika
+        </button>
+      </div>
+    </div>
+
+    <!-- ── FOGLALÁSOK ── -->
+    <div class="sfd-panel" id="sfd-panel-foglalasok">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Foglalásaim</div>
+        <a href="https://sportingo.hu" class="sfd-kedvenc-link" onclick="closeDrawerGlobal()">+ Új foglalás</a>
+      </div>
+      <div class="sfd-filter-bar">
+        <button class="sfd-filter-chip active" data-sfd-filter="kozelgo">📅 Közelgő</button>
+        <button class="sfd-filter-chip" data-sfd-filter="multbeli">🕐 Múltbeli</button>
+        <button class="sfd-filter-chip" data-sfd-filter="mind">Mind</button>
+        <button class="sfd-filter-chip" data-sfd-filter="varakozik">⏳ Várakozik</button>
+        <button class="sfd-filter-chip" data-sfd-filter="lemondva">🚫 Lemondva</button>
+      </div>
+      <div id="sfd-bookings-list"></div>
+      <div class="sfd-pagination" id="sfd-pagination" style="display:none;">
+        <button class="sfd-page-btn" id="sfd-prev-page">← Előző</button>
+        <span class="sfd-page-info" id="sfd-page-info"></span>
+        <button class="sfd-page-btn" id="sfd-next-page">Következő →</button>
+      </div>
+    </div>
+
+    <!-- ── KEDVENCEK ── -->
+    <div class="sfd-panel" id="sfd-panel-kedvencek">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Kedvenc pályáim</div>
+      </div>
+      <div id="sfd-kedvencek-list"></div>
+    </div>
+
+    <!-- ── PROFIL ── -->
+    <div class="sfd-panel" id="sfd-panel-profil">
+      <div class="sfd-two-col">
+        <div>
+          <div class="sfd-profil-section">
+            <div class="sfd-profil-section-title">Személyes adatok</div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Teljes név</div>
+              <input type="text" class="sfd-field-input" id="sfd-profil-nev" placeholder="Teljes neved" autocomplete="name">
+            </div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Email</div>
+              <div class="sfd-field-val" id="sfd-profil-email-display">–</div>
+            </div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Telefonszám</div>
+              <input type="tel" class="sfd-field-input" id="sfd-profil-telefon" placeholder="+36 xx xxx xxxx" autocomplete="tel">
+            </div>
+            <button class="sfd-save-btn" id="sfd-profil-save-btn">💾 Adatok mentése</button>
+            <div id="sfd-profil-msg" class="sfd-msg" style="display:none;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="sfd-profil-section">
+            <div class="sfd-profil-section-title">Biztonság</div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Jelszó módosítása</div>
+              <div class="sfd-field-val" style="font-size:.82rem;color:#6b8a9a;">Küldünk egy visszaállító linket az email címedre.</div>
+            </div>
+            <button class="sfd-save-btn" id="sfd-pw-reset-btn" style="background:#0a1628;">📧 Jelszóváltoztatási email</button>
+            <div id="sfd-pw-msg" class="sfd-msg" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATISZTIKA ── -->
+    <div class="sfd-panel" id="sfd-panel-statisztika">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Személyes statisztika</div>
+      </div>
+      <div id="sfd-stats-content">
+        <div class="sfd-stats-grid">
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">🏟</div>
+            <div class="sfd-insight-val" id="sfd-ins-total">–</div>
+            <div class="sfd-insight-lbl">Összes foglalás</div>
+          </div>
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">✅</div>
+            <div class="sfd-insight-val" id="sfd-ins-approved">–</div>
+            <div class="sfd-insight-lbl">Jóváhagyva</div>
+          </div>
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">🥇</div>
+            <div class="sfd-insight-val" id="sfd-ins-sport">–</div>
+            <div class="sfd-insight-lbl">Kedvenc sportág</div>
+          </div>
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">📍</div>
+            <div class="sfd-insight-val" id="sfd-ins-place">–</div>
+            <div class="sfd-insight-lbl">Legtöbbet látogatott</div>
+          </div>
+        </div>
+        <div id="sfd-stats-empty" style="display:none;" class="sfd-empty">
+          <div class="sfd-empty-icon">📊</div>
+          <div class="sfd-empty-title">Még nincs elég adat</div>
+          <div class="sfd-empty-sub">Ahogy gyűlnek a foglalásaid, itt látod majd a személyes statisztikáidat.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ÉRTÉKELÉSEIM ── -->
+    <div class="sfd-panel" id="sfd-panel-ertekelesek">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Értékeléseim</div>
+      </div>
+      <div id="sfd-ert-loading" class="sfd-empty">
+        <div class="sfd-empty-icon">⏳</div>
+        <div class="sfd-empty-sub">Betöltés...</div>
+      </div>
+      <div id="sfd-ert-content" style="display:none;">
+        <!-- A: Értékelésre vár -->
+        <div class="sfd-ert-szekció" id="sfd-ert-var-wrap">
+          <div class="sfd-ert-szekció-cím">Értékelésre vár</div>
+          <div class="sfd-ert-szekció-alcím">Ezeket a pályákat még nem értékelted, vagy újra értékelheted.</div>
+          <div id="sfd-ert-var-list"></div>
+        </div>
+        <hr class="sfd-ert-elvalaszto">
+        <!-- B: Korábbi értékelések -->
+        <div class="sfd-ert-szekció" id="sfd-ert-meglevo-wrap">
+          <div class="sfd-ert-szekció-cím">Korábbi értékeléseim</div>
+          <div class="sfd-ert-szekció-alcím">A következő 90 napban ezeket a pályákat nem értékelheted újra.</div>
+          <div id="sfd-ert-meglevo-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sfd-body -->
+
+  <!-- FOOTER -->
+  <div class="sfd-footer">
+    <div class="sfd-footer-left">Sportingo &copy; 2026</div>
+    <button class="sfd-logout-btn" id="sfd-logout-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Kijelentkezés
+    </button>
+  </div>
+
+</div><!-- /sp-drawer -->
+
+<div class="sp-fav-toast" id="sp-fav-toast"></div>
+
+<div id="sfd-review-modal-overlay">
+  <div id="sfd-review-modal">
+    <div class="sfd-review-modal-title">⭐ Pálya értékelése</div>
+    <div class="sfd-review-modal-sub" id="sfd-review-modal-sub">–</div>
+    <div class="sfd-review-stars" id="sfd-review-stars">
+      <span class="sfd-review-star" data-val="1">★</span>
+      <span class="sfd-review-star" data-val="2">★</span>
+      <span class="sfd-review-star" data-val="3">★</span>
+      <span class="sfd-review-star" data-val="4">★</span>
+      <span class="sfd-review-star" data-val="5">★</span>
+    </div>
+    <div class="sfd-review-rating-label" id="sfd-review-rating-label">Kattints egy csillagra az értékeléshez</div>
+    <textarea class="sfd-review-textarea" id="sfd-review-szoveg" placeholder="Oszd meg tapasztalatod a pályáról... (opcionális)" rows="3"></textarea>
+    <div class="sfd-review-cimkek-title">Cimkék (max 3)</div>
+    <div class="sfd-review-cimkek" id="sfd-review-cimkek">
+      <span class="sfd-review-cimke" data-cimke="Jó borítás">Jó borítás</span>
+      <span class="sfd-review-cimke" data-cimke="Könnyű megközelítés">Könnyű megközelítés</span>
+      <span class="sfd-review-cimke" data-cimke="Korrekt ár">Korrekt ár</span>
+      <span class="sfd-review-cimke" data-cimke="Jó hangulat">Jó hangulat</span>
+      <span class="sfd-review-cimke" data-cimke="Tiszta öltöző">Tiszta öltöző</span>
+    </div>
+    <div class="sfd-review-error" id="sfd-review-error"></div>
+    <div class="sfd-review-actions">
+      <button class="sfd-review-cancel-btn" id="sfd-review-cancel-btn">Mégse</button>
+      <button class="sfd-review-submit-btn" id="sfd-review-submit-btn" disabled>Értékelés küldése</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/sportingo-drawer.js"></script>
+<script>
+// ── Hamburger menü ──────────────────────────────────────────────
+(function() {
+  var hamburger = document.getElementById('sp-hamburger');
+  var mobileMenu = document.getElementById('sp-mobile-menu');
+  if (hamburger && mobileMenu) {
+    hamburger.addEventListener('click', function() {
+      var isOpen = hamburger.classList.toggle('is-open');
+      mobileMenu.classList.toggle('is-open', isOpen);
+      hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      mobileMenu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    });
+  }
+  // ── Pályák navigáció ──
+  var navPalya = document.getElementById('sp-nav-palya');
+  var mobPalya = document.getElementById('sp-mobile-palya');
+  if (navPalya) navPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
+  if (mobPalya) mobPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
+})();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sportingo – Foglalj sportpályát online</title>
+  <meta name="description" content="Sport- és élménypályák keresése és foglalása Magyarországon. Futball, tenisz, padel, squash.">
+  <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/sportingo-drawer.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: #f5f9fc; color: #0a1628; padding-top: 68px; }
+
+    /* ── HEADER ── */
+    #sp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 9000; background: white; box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+    #sp-header-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    #sp-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+    #sp-logo-img { height: 38px; width: auto; display: block; }
+    #sp-nav { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+    .sp-nav-link { padding: 8px 14px; border-radius: 8px; font-size: .88rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; white-space: nowrap; cursor: pointer; background: none; border: none; font-family: inherit; }
+    .sp-nav-link:hover, .sp-nav-link.active { background: rgba(26,143,193,.08); color: #1a8fc1; }
+    #sp-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    #sp-socials { display: flex; align-items: center; gap: 6px; }
+    .sp-social-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a2e3b; text-decoration: none; transition: all .2s; background: rgba(0,0,0,.04); }
+    .sp-social-btn:hover { background: rgba(26,143,193,.1); color: #1a8fc1; transform: translateY(-1px); }
+    .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
+    #sp-hamburger { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; transition: background .2s; }
+    #sp-hamburger span { display: block; width: 22px; height: 2px; background: #1a2e3b; border-radius: 2px; transition: all .3s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+    #sp-hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    #sp-hamburger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    #sp-hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    #sp-mobile-menu { display: none; background: white; border-top: 1px solid #f0f7fb; overflow: hidden; max-height: 0; transition: max-height .35s cubic-bezier(.4,0,.2,1); }
+    #sp-mobile-menu.is-open { max-height: 500px; }
+    #sp-mobile-nav { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 2px; }
+    .sp-mobile-link { padding: 12px 16px; border-radius: 10px; font-size: .95rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; display: flex; align-items: center; gap: 10px; cursor: pointer; background: none; border: none; font-family: inherit; width: 100%; text-align: left; }
+    .sp-mobile-link:hover { background: #f0f7fb; color: #1a8fc1; }
+    #sp-mobile-socials { display: flex; gap: 10px; padding: 12px 16px 0; margin-top: 8px; border-top: 1px solid #f0f7fb; }
+
+    /* ── HERO ── */
+    .sp-hero { position: relative; overflow: hidden; padding: 120px 20px 160px; text-align: center;
+      background: radial-gradient(1200px 500px at 15% 20%, rgba(36,107,253,.18), transparent 60%),
+                  radial-gradient(900px 420px at 85% 25%, rgba(34,197,94,.14), transparent 55%),
+                  linear-gradient(180deg, #0b1220 0%, #0f172a 55%, #111827 100%); }
+    .sp-hero::before, .sp-hero::after { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 999px; filter: blur(60px); opacity: .35; pointer-events: none; }
+    .sp-hero::before { top: -220px; left: -180px; background: rgba(36,107,253,.9); }
+    .sp-hero::after { bottom: -260px; right: -220px; background: rgba(34,197,94,.75); }
+    .sp-hero-inner { position: relative; max-width: 900px; margin: 0 auto; }
+    .sp-hero h1 { margin: 0; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; color: #f8fafc; font-size: clamp(32px,5vw,62px); text-shadow: 0 10px 30px rgba(0,0,0,.35); animation: fadeUp 700ms ease-out both; }
+    .sp-hero-accent { display: inline-block; background: linear-gradient(90deg, #60a5fa 0%, #22c55e 55%, #a7f3d0 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sp-hero h1::after { content: ""; display: block; width: min(560px,80%); height: 1px; margin: 24px auto 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── HOGYAN MŰKÖDIK TARTALOM ── */
+    .sp-how-main { max-width: 780px; margin: 0 auto; padding: 60px 20px 80px; }
+
+    .sp-steps { display: flex; flex-direction: column; gap: 0; }
+    .sp-step { display: flex; align-items: flex-start; gap: 24px; padding: 32px 0; }
+    .sp-step-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-top: 4px; box-shadow: 0 4px 14px rgba(26,143,193,.3); }
+    .sp-step-body { flex: 1; }
+    .sp-step-icon { font-size: 2rem; margin-bottom: 10px; }
+    .sp-step-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem; color: #0a1628; margin-bottom: 10px; }
+    .sp-step-desc { font-size: .95rem; color: #4a6070; line-height: 1.7; }
+    .sp-step-divider { height: 1px; background: linear-gradient(90deg, transparent, #d4e8f0, transparent); margin: 0 0 0 64px; }
+
+    .sp-how-cta-box { background: linear-gradient(135deg,#0b1220,#0f2040); border-radius: 20px; padding: 40px 36px; text-align: center; margin: 48px 0; }
+    .sp-how-cta-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; color: white; margin-bottom: 10px; }
+    .sp-how-cta-sub { color: rgba(255,255,255,.6); font-size: .95rem; margin-bottom: 24px; }
+    .sp-how-cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; border-radius: 30px; font-weight: 700; font-size: .95rem; text-decoration: none; transition: all .2s; box-shadow: 0 4px 20px rgba(26,143,193,.35); }
+    .sp-how-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(26,143,193,.45); }
+
+    .sp-faq { margin-top: 20px; }
+    .sp-faq-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: #0a1628; margin-bottom: 24px; }
+    .sp-faq-item { background: white; border: 1.5px solid #d4e8f0; border-radius: 14px; padding: 20px 22px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(10,22,40,.04); }
+    .sp-faq-q { font-weight: 700; font-size: .95rem; color: #0a1628; margin-bottom: 8px; }
+    .sp-faq-a { font-size: .88rem; color: #4a6070; line-height: 1.6; }
+
+    @media (max-width: 640px) {
+      .sp-step { gap: 16px; }
+      .sp-step-divider { margin-left: 56px; }
+      .sp-how-cta-box { padding: 28px 20px; }
+    }
+    @media (max-width: 900px) {
+      #sp-nav, #sp-socials { display: none; }
+      #sp-hamburger { display: flex; }
+      #sp-mobile-menu { display: block; }
+      #sp-header-inner { padding: 0 16px; }
+    }
+    .sp-loading { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; color: #6b8a9a; font-size: .9rem; }
+    .sp-spinner { width: 36px; height: 36px; border: 3px solid #d4e8f0; border-top-color: #1a8fc1; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sp-card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+    .sp-card { background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; overflow: hidden; transition: all .25s; box-shadow: 0 2px 12px rgba(10,22,40,.06); height: 100%; display: flex; flex-direction: column; }
+    .sp-card:hover { border-color: #1a8fc1; box-shadow: 0 8px 32px rgba(26,143,193,.15); transform: translateY(-3px); }
+    .sp-card-thumb { aspect-ratio: 16/9; overflow: hidden; background: linear-gradient(135deg,rgba(26,143,193,.08),rgba(45,191,126,.08)); position: relative; }
+    .sp-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+    .sp-card:hover .sp-card-thumb img { transform: scale(1.04); }
+    .sp-card-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: rgba(26,143,193,.25); }
+    .sp-card-sport-badges { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
+    .sp-card-sport-badge { background: rgba(10,22,40,.75); backdrop-filter: blur(6px); color: white; font-size: .68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .sp-card-body { padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: .4rem; flex: 1; }
+    .sp-card-nev { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: #0a1628; line-height: 1.3; margin: 0; }
+    .sp-card-location { font-size: .8rem; color: #6b8a9a; display: flex; align-items: center; gap: 4px; }
+    .sp-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: .75rem; border-top: 1px solid #f0f7fb; }
+    .sp-card-palya-count { font-size: .78rem; color: #6b8a9a; font-weight: 500; }
+    .sp-card-cta { font-size: .78rem; font-weight: 700; color: #1a8fc1; }
+    .sp-card-arrow { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); display: flex; align-items: center; justify-content: center; color: white; font-size: 1rem; flex-shrink: 0; transition: transform .2s; }
+    .sp-card:hover .sp-card-arrow { transform: translateX(3px); }
+    .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
+    .sp-empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .sp-empty-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: #0a1628; margin-bottom: .5rem; }
+    .sp-empty-sub { font-size: .88rem; line-height: 1.6; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="sp-header">
+  <div id="sp-header-inner">
+    <a href="https://sportingo.hu" id="sp-logo" aria-label="Sportingo főoldal">
+      <img src="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg" alt="Sportingo" id="sp-logo-img">
+    </a>
+    <nav id="sp-nav">
+      <button class="sp-nav-link" id="sp-nav-palya">Pályák</button>
+      <a href="https://www.sportingo.hu/hogyan-mukodik/" class="sp-nav-link active">Hogyan működik?</a>
+      <a href="https://www.sportingo.hu/palyat-uzemeltetsz/" class="sp-nav-link">Pályát üzemeltetsz?</a>
+      <a href="https://www.sportingo.hu/kapcsolat/" class="sp-nav-link">Kapcsolat</a>
+    </nav>
+    <div id="sp-header-right">
+      <div id="sp-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
+      <button type="button" class="sportingo-auth-btn"><span class="sportingo-auth-icon">👤</span><span class="sportingo-auth-label">Bejelentkezés</span></button>
+      <button id="sp-hamburger" aria-label="Menü" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div id="sp-mobile-menu" aria-hidden="true">
+    <nav id="sp-mobile-nav">
+      <button class="sp-mobile-link" id="sp-mobile-palya">⚽ Pályák</button>
+      <a href="https://www.sportingo.hu/hogyan-mukodik/" class="sp-mobile-link" style="color:#1a8fc1;">❓ Hogyan működik?</a>
+      <a href="https://www.sportingo.hu/palyat-uzemeltetsz/" class="sp-mobile-link">🏟 Pályát üzemeltetsz?</a>
+      <a href="https://www.sportingo.hu/kapcsolat/" class="sp-mobile-link">📬 Kapcsolat</a>
+      <div id="sp-mobile-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="sp-hero">
+  <div class="sp-hero-inner">
+    <h1>Hogyan működik<br><span class="sp-hero-accent">a Sportingo?</span></h1>
+    <p style="color:rgba(255,255,255,.65);font-size:1.05rem;margin-top:20px;line-height:1.7;">Foglalj sportpályát percek alatt – regisztráció, telefonálás és előre utalás nélkül.</p>
+  </div>
+</section>
+
+<!-- HOGYAN MŰKÖDIK TARTALOM -->
+<main class="sp-how-main">
+
+  <div class="sp-steps">
+
+    <div class="sp-step">
+      <div class="sp-step-num">1</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">🔍</div>
+        <h2 class="sp-step-title">Keresd meg a pályát</h2>
+        <p class="sp-step-desc">Böngészd az elérhető futball-, tenisz-, padel- és squash-helyszíneket. Szűrj városra, borítástípusra vagy elhelyezésre – és találd meg a hozzád legközelebb eső pályát.</p>
+      </div>
+    </div>
+
+    <div class="sp-step-divider"></div>
+
+    <div class="sp-step">
+      <div class="sp-step-num">2</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">📧</div>
+        <h2 class="sp-step-title">Küldj foglalási kérést</h2>
+        <p class="sp-step-desc">Válaszd ki a kívánt pályát, add meg az időpontot és a játékosok számát, majd küldj foglalási kérést. Nem kell telefonálni, nem kell előre utalni – egy kattintás az egész.</p>
+      </div>
+    </div>
+
+    <div class="sp-step-divider"></div>
+
+    <div class="sp-step">
+      <div class="sp-step-num">3</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">✅</div>
+        <h2 class="sp-step-title">Kapj visszaigazolást</h2>
+        <p class="sp-step-desc">A pálya üzemeltetője jóváhagyja a kérésedet, te pedig emailben értesítést kapsz. A foglalás státuszát bármikor ellenőrizheted a fiókodban.</p>
+      </div>
+    </div>
+
+    <div class="sp-step-divider"></div>
+
+    <div class="sp-step">
+      <div class="sp-step-num">4</div>
+      <div class="sp-step-body">
+        <div class="sp-step-icon">🏃</div>
+        <h2 class="sp-step-title">Játssz!</h2>
+        <p class="sp-step-desc">Menj el a helyszínre a megbeszélt időpontban és élvezd a sportot. Fizetés a helyszínen, az üzemeltetővel egyeztetve – nálunk nincs rejtett díj.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sp-how-cta-box">
+    <div class="sp-how-cta-title">Készen állsz?</div>
+    <p class="sp-how-cta-sub">Több tucat sporthelyszín vár rád Magyarország-szerte.</p>
+    <a href="https://www.sportingo.hu/" class="sp-how-cta-btn">Pályák böngészése →</a>
+  </div>
+
+  <div class="sp-faq">
+    <h2 class="sp-faq-title">Gyakori kérdések</h2>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Kell regisztrálnom a foglaláshoz?</div>
+      <div class="sp-faq-a">Igen, egy ingyenes játékos fiókra szükséged van, hogy nyomon tudd követni a foglalásaidat. A regisztráció egy percet vesz igénybe, és teljesen ingyenes.</div>
+    </div>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Mennyibe kerül a Sportingo használata?</div>
+      <div class="sp-faq-a">A Sportingo játékosoknak teljesen ingyenes. A pályabérlés árát közvetlenül az üzemeltetőnek fizeted a helyszínen.</div>
+    </div>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Mi történik, ha az üzemeltető elutasítja a kérést?</div>
+      <div class="sp-faq-a">Emailben értesítünk az elutasításról. Ilyenkor egyszerűen keress másik időpontot vagy helyszínt – a foglalási kérés újra ingyenesen küldhető.</div>
+    </div>
+
+    <div class="sp-faq-item">
+      <div class="sp-faq-q">Pályát üzemeltetek – hogyan csatlakozhatok?</div>
+      <div class="sp-faq-a">Látogass el a <a href="https://portal.sportingo.hu" target="_blank" style="color:#1a8fc1;font-weight:600;">Tulajdonosi portálra</a>, ahol regisztrálhatsz és feltöltheted a pályáidat.</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="sp-footer">
+  <div class="sp-footer-logo">SPORTING<span>O</span></div>
+  <div>
+    <a href="https://www.sportingo.hu/hogyan-mukodik/">Hogyan működik?</a>
+    <a href="https://www.sportingo.hu/palyat-uzemeltetsz/">Pályát üzemeltetsz?</a>
+    <a href="https://www.sportingo.hu/kapcsolat/">Kapcsolat</a>
+    <a href="https://portal.sportingo.hu" target="_blank">Tulajdonosi portál</a>
+  </div>
+  <div style="margin-top:12px;">© 2026 Sportingo. Minden jog fenntartva.</div>
+</footer>
+
+<!-- AUTH MODAL -->
+<div id="sp-confirm-modal-overlay">
+  <div id="sp-confirm-modal">
+    <div class="sp-confirm-icon">⚠️</div>
+    <div class="sp-confirm-title">Biztosan lemondod ezt a foglalást?</div>
+    <div class="sp-confirm-body">A lemondás után a foglalás felszabadulhat más játékosok számára, és ezt már nem lehet egy kattintással visszavonni.</div>
+    <div class="sp-confirm-actions">
+      <button class="sp-confirm-cancel-btn" id="sp-confirm-no">Mégse</button>
+      <button class="sp-confirm-ok-btn" id="sp-confirm-yes">Foglalás lemondása</button>
+    </div>
+  </div>
+</div>
+<div id="sp-drawer-overlay"></div>
+<div id="sp-drawer">
+
+  <!-- FEJLÉC -->
+  <div class="sfd-header">
+    <div class="sfd-header-inner">
+      <div class="sfd-avatar" id="sp-drawer-avatar">?</div>
+      <div class="sfd-userinfo">
+        <div class="sfd-title">Sportingo fiók</div>
+        <div class="sfd-name" id="sp-drawer-name">–</div>
+        <div class="sfd-email" id="sp-drawer-email">–</div>
+      </div>
+      <button class="sfd-close" data-sp-close-drawer aria-label="Bezárás">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Pályák keresése CTA -->
+    <div class="sfd-header-cta">
+      <a href="https://sportingo.hu" class="sfd-search-btn" onclick="closeDrawerGlobal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Pályák keresése
+      </a>
+    </div>
+
+    <!-- Nav tabs -->
+    <nav class="sfd-nav" role="tablist">
+      <button class="sfd-nav-btn active" data-sfd-tab="attekintes" role="tab">
+        <span class="nav-icon">🏠</span> Áttekintés
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="foglalasok" role="tab">
+        <span class="nav-icon">📅</span> Foglalásaim
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="kedvencek" role="tab">
+        <span class="nav-icon">❤️</span> Kedvenceim
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="profil" role="tab">
+        <span class="nav-icon">👤</span> Profil
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="statisztika" role="tab">
+        <span class="nav-icon">📊</span> Statisztika
+      </button>
+      <button class="sfd-nav-btn" data-sfd-tab="ertekelesek" role="tab">
+        <span class="nav-icon">⭐</span> Értékeléseim
+      </button>
+    </nav>
+  </div>
+
+  <!-- TARTALOM -->
+  <div class="sfd-body">
+
+    <!-- ── ÁTTEKINTÉS ── -->
+    <div class="sfd-panel active" id="sfd-panel-attekintes">
+      <!-- Következő foglalás -->
+      <div id="sfd-next-booking-wrap"></div>
+
+      <!-- Stat kártyák -->
+      <div class="sfd-overview-grid">
+        <div class="sfd-stat-card" onclick="sfdSwitchTab('foglalasok')">
+          <div class="sfd-stat-val" id="sfd-stat-foglalasok">–</div>
+          <div class="sfd-stat-lbl">Aktív foglalás</div>
+        </div>
+        <div class="sfd-stat-card" onclick="sfdSwitchTab('kedvencek')">
+          <div class="sfd-stat-val" id="sfd-stat-kedvencek">–</div>
+          <div class="sfd-stat-lbl">Kedvenc</div>
+        </div>
+
+      </div>
+
+      <!-- Gyors akciók -->
+      <div class="sfd-quick-actions">
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('foglalasok')">
+          <span class="qb-icon">📅</span>
+          Foglalásaim
+        </button>
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('kedvencek')">
+          <span class="qb-icon">❤️</span>
+          Kedvenceim
+        </button>
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('profil')">
+          <span class="qb-icon">✏️</span>
+          Profil szerkesztése
+        </button>
+        <button class="sfd-quick-btn" onclick="sfdSwitchTab('statisztika')">
+          <span class="qb-icon">📊</span>
+          Statisztika
+        </button>
+      </div>
+    </div>
+
+    <!-- ── FOGLALÁSOK ── -->
+    <div class="sfd-panel" id="sfd-panel-foglalasok">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Foglalásaim</div>
+        <a href="https://sportingo.hu" class="sfd-kedvenc-link" onclick="closeDrawerGlobal()">+ Új foglalás</a>
+      </div>
+      <div class="sfd-filter-bar">
+        <button class="sfd-filter-chip active" data-sfd-filter="kozelgo">📅 Közelgő</button>
+        <button class="sfd-filter-chip" data-sfd-filter="multbeli">🕐 Múltbeli</button>
+        <button class="sfd-filter-chip" data-sfd-filter="mind">Mind</button>
+        <button class="sfd-filter-chip" data-sfd-filter="varakozik">⏳ Várakozik</button>
+        <button class="sfd-filter-chip" data-sfd-filter="lemondva">🚫 Lemondva</button>
+      </div>
+      <div id="sfd-bookings-list"></div>
+      <div class="sfd-pagination" id="sfd-pagination" style="display:none;">
+        <button class="sfd-page-btn" id="sfd-prev-page">← Előző</button>
+        <span class="sfd-page-info" id="sfd-page-info"></span>
+        <button class="sfd-page-btn" id="sfd-next-page">Következő →</button>
+      </div>
+    </div>
+
+    <!-- ── KEDVENCEK ── -->
+    <div class="sfd-panel" id="sfd-panel-kedvencek">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Kedvenc pályáim</div>
+      </div>
+      <div id="sfd-kedvencek-list"></div>
+    </div>
+
+    <!-- ── PROFIL ── -->
+    <div class="sfd-panel" id="sfd-panel-profil">
+      <div class="sfd-two-col">
+        <div>
+          <div class="sfd-profil-section">
+            <div class="sfd-profil-section-title">Személyes adatok</div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Teljes név</div>
+              <input type="text" class="sfd-field-input" id="sfd-profil-nev" placeholder="Teljes neved" autocomplete="name">
+            </div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Email</div>
+              <div class="sfd-field-val" id="sfd-profil-email-display">–</div>
+            </div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Telefonszám</div>
+              <input type="tel" class="sfd-field-input" id="sfd-profil-telefon" placeholder="+36 xx xxx xxxx" autocomplete="tel">
+            </div>
+            <button class="sfd-save-btn" id="sfd-profil-save-btn">💾 Adatok mentése</button>
+            <div id="sfd-profil-msg" class="sfd-msg" style="display:none;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="sfd-profil-section">
+            <div class="sfd-profil-section-title">Biztonság</div>
+            <div class="sfd-field">
+              <div class="sfd-field-label">Jelszó módosítása</div>
+              <div class="sfd-field-val" style="font-size:.82rem;color:#6b8a9a;">Küldünk egy visszaállító linket az email címedre.</div>
+            </div>
+            <button class="sfd-save-btn" id="sfd-pw-reset-btn" style="background:#0a1628;">📧 Jelszóváltoztatási email</button>
+            <div id="sfd-pw-msg" class="sfd-msg" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATISZTIKA ── -->
+    <div class="sfd-panel" id="sfd-panel-statisztika">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Személyes statisztika</div>
+      </div>
+      <div id="sfd-stats-content">
+        <div class="sfd-stats-grid">
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">🏟</div>
+            <div class="sfd-insight-val" id="sfd-ins-total">–</div>
+            <div class="sfd-insight-lbl">Összes foglalás</div>
+          </div>
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">✅</div>
+            <div class="sfd-insight-val" id="sfd-ins-approved">–</div>
+            <div class="sfd-insight-lbl">Jóváhagyva</div>
+          </div>
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">🥇</div>
+            <div class="sfd-insight-val" id="sfd-ins-sport">–</div>
+            <div class="sfd-insight-lbl">Kedvenc sportág</div>
+          </div>
+          <div class="sfd-insight-card">
+            <div class="sfd-insight-icon">📍</div>
+            <div class="sfd-insight-val" id="sfd-ins-place">–</div>
+            <div class="sfd-insight-lbl">Legtöbbet látogatott</div>
+          </div>
+        </div>
+        <div id="sfd-stats-empty" style="display:none;" class="sfd-empty">
+          <div class="sfd-empty-icon">📊</div>
+          <div class="sfd-empty-title">Még nincs elég adat</div>
+          <div class="sfd-empty-sub">Ahogy gyűlnek a foglalásaid, itt látod majd a személyes statisztikáidat.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ÉRTÉKELÉSEIM ── -->
+    <div class="sfd-panel" id="sfd-panel-ertekelesek">
+      <div class="sfd-section-head">
+        <div class="sfd-section-title">Értékeléseim</div>
+      </div>
+      <div id="sfd-ert-loading" class="sfd-empty">
+        <div class="sfd-empty-icon">⏳</div>
+        <div class="sfd-empty-sub">Betöltés...</div>
+      </div>
+      <div id="sfd-ert-content" style="display:none;">
+        <!-- A: Értékelésre vár -->
+        <div class="sfd-ert-szekció" id="sfd-ert-var-wrap">
+          <div class="sfd-ert-szekció-cím">Értékelésre vár</div>
+          <div class="sfd-ert-szekció-alcím">Ezeket a pályákat még nem értékelted, vagy újra értékelheted.</div>
+          <div id="sfd-ert-var-list"></div>
+        </div>
+        <hr class="sfd-ert-elvalaszto">
+        <!-- B: Korábbi értékelések -->
+        <div class="sfd-ert-szekció" id="sfd-ert-meglevo-wrap">
+          <div class="sfd-ert-szekció-cím">Korábbi értékeléseim</div>
+          <div class="sfd-ert-szekció-alcím">A következő 90 napban ezeket a pályákat nem értékelheted újra.</div>
+          <div id="sfd-ert-meglevo-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sfd-body -->
+
+  <!-- FOOTER -->
+  <div class="sfd-footer">
+    <div class="sfd-footer-left">Sportingo &copy; 2026</div>
+    <button class="sfd-logout-btn" id="sfd-logout-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Kijelentkezés
+    </button>
+  </div>
+
+</div><!-- /sp-drawer -->
+
+<div class="sp-fav-toast" id="sp-fav-toast"></div>
+
+<div id="sfd-review-modal-overlay">
+  <div id="sfd-review-modal">
+    <div class="sfd-review-modal-title">⭐ Pálya értékelése</div>
+    <div class="sfd-review-modal-sub" id="sfd-review-modal-sub">–</div>
+    <div class="sfd-review-stars" id="sfd-review-stars">
+      <span class="sfd-review-star" data-val="1">★</span>
+      <span class="sfd-review-star" data-val="2">★</span>
+      <span class="sfd-review-star" data-val="3">★</span>
+      <span class="sfd-review-star" data-val="4">★</span>
+      <span class="sfd-review-star" data-val="5">★</span>
+    </div>
+    <div class="sfd-review-rating-label" id="sfd-review-rating-label">Kattints egy csillagra az értékeléshez</div>
+    <textarea class="sfd-review-textarea" id="sfd-review-szoveg" placeholder="Oszd meg tapasztalatod a pályáról... (opcionális)" rows="3"></textarea>
+    <div class="sfd-review-cimkek-title">Cimkék (max 3)</div>
+    <div class="sfd-review-cimkek" id="sfd-review-cimkek">
+      <span class="sfd-review-cimke" data-cimke="Jó borítás">Jó borítás</span>
+      <span class="sfd-review-cimke" data-cimke="Könnyű megközelítés">Könnyű megközelítés</span>
+      <span class="sfd-review-cimke" data-cimke="Korrekt ár">Korrekt ár</span>
+      <span class="sfd-review-cimke" data-cimke="Jó hangulat">Jó hangulat</span>
+      <span class="sfd-review-cimke" data-cimke="Tiszta öltöző">Tiszta öltöző</span>
+    </div>
+    <div class="sfd-review-error" id="sfd-review-error"></div>
+    <div class="sfd-review-actions">
+      <button class="sfd-review-cancel-btn" id="sfd-review-cancel-btn">Mégse</button>
+      <button class="sfd-review-submit-btn" id="sfd-review-submit-btn" disabled>Értékelés küldése</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/sportingo-drawer.js"></script>
+<script>
+// ── Hamburger menü ──────────────────────────────────────────────
+(function() {
+  var hamburger = document.getElementById('sp-hamburger');
+  var mobileMenu = document.getElementById('sp-mobile-menu');
+  if (hamburger && mobileMenu) {
+    hamburger.addEventListener('click', function() {
+      var isOpen = hamburger.classList.toggle('is-open');
+      mobileMenu.classList.toggle('is-open', isOpen);
+      hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      mobileMenu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    });
+  }
+  // ── Pályák navigáció ──
+  var navPalya = document.getElementById('sp-nav-palya');
+  var mobPalya = document.getElementById('sp-mobile-palya');
+  if (navPalya) navPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
+  if (mobPalya) mobPalya.addEventListener('click', function(e) { e.preventDefault(); window.location.href = 'https://sportingo.hu'; });
+})();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sportingo – Foglalj sportpályát online</title>
+  <meta name="description" content="Sport- és élménypályák keresése és foglalása Magyarországon. Futball, tenisz, padel, squash.">
+  <link rel="icon" href="https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/brand/Sportingo%20BRAND.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/sportingo-drawer.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: #f5f9fc; color: #0a1628; padding-top: 68px; }
+
+    /* ── HEADER ── */
+    #sp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 9000; background: white; box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+    #sp-header-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    #sp-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+    #sp-logo-img { height: 38px; width: auto; display: block; }
+    #sp-nav { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+    .sp-nav-link { padding: 8px 14px; border-radius: 8px; font-size: .88rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; white-space: nowrap; cursor: pointer; background: none; border: none; font-family: inherit; }
+    .sp-nav-link:hover, .sp-nav-link.active { background: rgba(26,143,193,.08); color: #1a8fc1; }
+    #sp-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    #sp-socials { display: flex; align-items: center; gap: 6px; }
+    .sp-social-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a2e3b; text-decoration: none; transition: all .2s; background: rgba(0,0,0,.04); }
+    .sp-social-btn:hover { background: rgba(26,143,193,.1); color: #1a8fc1; transform: translateY(-1px); }
+    .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
+    #sp-hamburger { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; transition: background .2s; }
+    #sp-hamburger span { display: block; width: 22px; height: 2px; background: #1a2e3b; border-radius: 2px; transition: all .3s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+    #sp-hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    #sp-hamburger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    #sp-hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    #sp-mobile-menu { display: none; background: white; border-top: 1px solid #f0f7fb; overflow: hidden; max-height: 0; transition: max-height .35s cubic-bezier(.4,0,.2,1); }
+    #sp-mobile-menu.is-open { max-height: 500px; }
+    #sp-mobile-nav { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 2px; }
+    .sp-mobile-link { padding: 12px 16px; border-radius: 10px; font-size: .95rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; display: flex; align-items: center; gap: 10px; cursor: pointer; background: none; border: none; font-family: inherit; width: 100%; text-align: left; }
+    .sp-mobile-link:hover { background: #f0f7fb; color: #1a8fc1; }
+    #sp-mobile-socials { display: flex; gap: 10px; padding: 12px 16px 0; margin-top: 8px; border-top: 1px solid #f0f7fb; }
+
+    /* ── HERO ── */
+    .sp-hero { position: relative; overflow: hidden; padding: 120px 20px 160px; text-align: center;
+      background: radial-gradient(1200px 500px at 15% 20%, rgba(36,107,253,.18), transparent 60%),
+                  radial-gradient(900px 420px at 85% 25%, rgba(34,197,94,.14), transparent 55%),
+                  linear-gradient(180deg, #0b1220 0%, #0f172a 55%, #111827 100%); }
+    .sp-hero::before, .sp-hero::after { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 999px; filter: blur(60px); opacity: .35; pointer-events: none; }
+    .sp-hero::before { top: -220px; left: -180px; background: rgba(36,107,253,.9); }
+    .sp-hero::after { bottom: -260px; right: -220px; background: rgba(34,197,94,.75); }
+    .sp-hero-inner { position: relative; max-width: 900px; margin: 0 auto; }
+    .sp-hero h1 { margin: 0; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; color: #f8fafc; font-size: clamp(32px,5vw,62px); text-shadow: 0 10px 30px rgba(0,0,0,.35); animation: fadeUp 700ms ease-out both; }
+    .sp-hero-accent { display: inline-block; background: linear-gradient(90deg, #60a5fa 0%, #22c55e 55%, #a7f3d0 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sp-hero h1::after { content: ""; display: block; width: min(560px,80%); height: 1px; margin: 24px auto 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── HOGYAN MŰKÖDIK TARTALOM ── */
+    .sp-how-main { max-width: 780px; margin: 0 auto; padding: 60px 20px 80px; }
+
+    .sp-steps { display: flex; flex-direction: column; gap: 0; }
+    .sp-step { display: flex; align-items: flex-start; gap: 24px; padding: 32px 0; }
+    .sp-step-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-top: 4px; box-shadow: 0 4px 14px rgba(26,143,193,.3); }
+    .sp-step-body { flex: 1; }
+    .sp-step-icon { font-size: 2rem; margin-bottom: 10px; }
+    .sp-step-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem; color: #0a1628; margin-bottom: 10px; }
+    .sp-step-desc { font-size: .95rem; color: #4a6070; line-height: 1.7; }
+    .sp-step-divider { height: 1px; background: linear-gradient(90deg, transparent, #d4e8f0, transparent); margin: 0 0 0 64px; }
+
+    .sp-how-cta-box { background: linear-gradient(135deg,#0b1220,#0f2040); border-radius: 20px; padding: 40px 36px; text-align: center; margin: 48px 0; }
+    .sp-how-cta-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; color: white; margin-bottom: 10px; }
+    .sp-how-cta-sub { color: rgba(255,255,255,.6); font-size: .95rem; margin-bottom: 24px; }
+    .sp-how-cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); color: white; border-radius: 30px; font-weight: 700; font-size: .95rem; text-decoration: none; transition: all .2s; box-shadow: 0 4px 20px rgba(26,143,193,.35); }
+    .sp-how-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(26,143,193,.45); }
+
+    .sp-faq { margin-top: 20px; }
+    .sp-faq-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: #0a1628; margin-bottom: 24px; }
+    .sp-faq-item { background: white; border: 1.5px solid #d4e8f0; border-radius: 14px; padding: 20px 22px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(10,22,40,.04); }
+    .sp-faq-q { font-weight: 700; font-size: .95rem; color: #0a1628; margin-bottom: 8px; }
+    .sp-faq-a { font-size: .88rem; color: #4a6070; line-height: 1.6; }
+
+    @media (max-width: 640px) {
+      .sp-step { gap: 16px; }
+      .sp-step-divider { margin-left: 56px; }
+      .sp-how-cta-box { padding: 28px 20px; }
+    }
+    @media (max-width: 900px) {
+      #sp-nav, #sp-socials { display: none; }
+      #sp-hamburger { display: flex; }
+      #sp-mobile-menu { display: block; }
+      #sp-header-inner { padding: 0 16px; }
+    }
     .sp-loading { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; color: #6b8a9a; font-size: .9rem; }
     .sp-spinner { width: 36px; height: 36px; border: 3px solid #d4e8f0; border-top-color: #1a8fc1; border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
