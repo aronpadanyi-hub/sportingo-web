@@ -97,6 +97,52 @@
       #sp-mobile-menu { display: block; }
       #sp-header-inner { padding: 0 16px; }
     }
+
+    /* ── KAPCSOLAT OLDAL – MOBIL FIX ── */
+    @media (max-width: 768px) {
+      /* Layout: 2 oszlopból 1 */
+      .sp-contact-section {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding: 48px 16px 60px;
+      }
+      /* Form card: kisebb padding, ne lógjon ki */
+      .sp-form-card {
+        padding: 22px 18px;
+        border-radius: 16px;
+      }
+      /* Form sor: 2 oszlopból 1 */
+      .sp-form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      /* Minden input full width, ne lógjon ki */
+      .sp-form-input,
+      .sp-form-select,
+      .sp-form-textarea {
+        width: 100%;
+        font-size: 1rem;       /* iOS zoom prevent */
+        box-sizing: border-box;
+      }
+      /* Gomb: teljes szélesség, nagyobb tap area */
+      .sp-form-submit {
+        width: 100%;
+        padding: 15px;
+        font-size: 1rem;
+      }
+      /* Hero padding mobilon */
+      .sp-hero { padding: 64px 16px 80px; }
+      /* FAQ padding mobilon */
+      .sp-faq-section { padding: 40px 16px; }
+      .sp-faq-inner { max-width: 100%; }
+      /* Social pills: flex wrap */
+      .sp-social-row { flex-wrap: wrap; }
+    }
+    @media (max-width: 480px) {
+      .sp-contact-section { padding: 36px 14px 48px; }
+      .sp-form-card { padding: 18px 14px; }
+      .sp-contact-info-title { font-size: 1.1rem; }
+    }
 </style>
 </head>
 <body>
