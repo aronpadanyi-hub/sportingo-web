@@ -37,7 +37,9 @@
   function doRedirect(url) {
     msgEl.textContent = 'Sikeres bejelentkezés! Visszairányítás...';
     try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
-    setTimeout(function() { window.location.replace(url); }, 700);
+    // [Safari fix] 700ms → 1500ms: Safari localStorage flush lassabb lehet,
+    // a főoldal getSession() csak akkor talál session-t ha a write már kész.
+    setTimeout(function() { window.location.replace(url); }, 1500);
   }
 
   function doError() {
@@ -58,11 +60,24 @@
         var result = await sb.auth.exchangeCodeForSession(code);
         if (result.error) throw result.error;
         if (result.data && result.data.session) {
+          console.log('[SP AUTH CALLBACK] PKCE exchange sikeres, session megvan');
           doRedirect(returnUrl);
           return;
         }
+        // exchange nem dobott hibát, de session sem jött vissza
+        console.warn('[SP AUTH CALLBACK] exchangeCodeForSession: nincs hiba, de session hiányzik');
       } catch(err) {
-        console.error('exchangeCodeForSession hiba:', err);
+        // [Safari debug] PKCE exchange hiba – leggyakoribb ok Safariban:
+        // a code_verifier elveszett a sessionStorage-ból a redirect során.
+        console.error('[SP AUTH CALLBACK] exchangeCodeForSession HIBA:', err && err.message ? err.message : err);
+        console.error('[SP AUTH CALLBACK] code_verifier:', (() => {
+          try {
+            // Supabase v2 a code_verifier-t 'supabase.auth.pkce' kulcson tárolja
+            var pkce = sessionStorage.getItem('supabase.auth.pkce');
+            return pkce ? 'MEGVAN' : 'HIÁNYZIK – ez okozza a hibát Safariban';
+          } catch(se) { return 'sessionStorage nem olvasható'; }
+        })());
+        msgEl.textContent = 'Hitelesítés folyamatban (fallback)...';
         // Továbblépünk a fallback-re
       }
     }
