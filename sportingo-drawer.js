@@ -1048,17 +1048,7 @@
 
   window.spGoogleLogin = async function() {
     try { sessionStorage.setItem('sp_return_to', window.location.href); } catch(e) {}
-    try { localStorage.setItem('sp_return_to', window.location.href); } catch(e) {}
-    // Implicit flow: nem használ PKCE code_verifier-t (sessionStorage),
-    // ezért Safari ITP-vel is megbízhatóan működik.
-    // Az access_token a redirect URL hash-ében érkezik vissza.
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'https://sportingo.hu/auth-callback',
-        queryParams: { response_type: 'token' }
-      }
-    });
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://sportingo.hu/auth-callback' } });
     if (error) showLoginAlert('Google belépés sikertelen!', true);
   };
 
