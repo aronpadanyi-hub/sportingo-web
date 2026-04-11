@@ -222,7 +222,110 @@
     .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
     .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
 
+
+    /* ══════════════════════════════════════════════════════════════
+       ÉRTÉKELÉSEK – prémium thread design (helyszín oldal)
+       ══════════════════════════════════════════════════════════════ */
+
+    /* Összesítő badge sor */
+    .sh-review-summary-row {
+      display: flex; align-items: center; gap: 14px;
+      padding-bottom: 18px; margin-bottom: 4px;
+      border-bottom: 1px solid #edf2f7;
+    }
+    .sh-review-score-big {
+      font-size: 2.8rem; font-weight: 900; color: #0a1628;
+      line-height: 1; letter-spacing: -.05em; flex-shrink: 0;
+    }
+    .sh-review-score-meta { display: flex; flex-direction: column; gap: 4px; }
+    .sh-review-stars-row { display: flex; gap: 3px; }
+    .sh-review-star-lg { font-size: 1.05rem; color: #f59e0b; }
+    .sh-review-star-lg.empty { color: #dde8f0; }
+    .sh-review-count-label { font-size: .75rem; color: #94a3b8; font-weight: 600; letter-spacing: .01em; }
+
+    /* Review card – fehér, árnyékos, elkülönített */
+    .sh-review-card {
+      background: white;
+      border: 1.5px solid #edf2f7;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-top: 14px;
+      box-shadow: 0 2px 10px rgba(10,22,40,.045);
+      transition: box-shadow .2s;
+    }
+    .sh-review-card:hover { box-shadow: 0 4px 18px rgba(10,22,40,.08); }
+
+    /* Card fejléc: bal=user+dátum, jobb=csillagok */
+    .sh-review-card-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px;
+      margin-bottom: 10px;
+    }
+    .sh-review-card-meta { display: flex; flex-direction: column; gap: 2px; }
+    .sh-review-user-name {
+      font-size: .88rem; font-weight: 800;
+      color: #0a1628; letter-spacing: -.01em;
+    }
+    .sh-review-card-date { font-size: .72rem; color: #b0bec5; font-weight: 500; }
+
+    /* Csillagok jobbra */
+    .sh-review-stars-sm { display: flex; gap: 3px; flex-shrink: 0; padding-top: 2px; }
+    .sh-review-star-sm { font-size: .88rem; color: #f59e0b; line-height: 1; }
+    .sh-review-star-sm.empty { color: #dde8f0; }
+
+    /* Pálya neve (ha releváns) */
+    .sh-review-palya-tag {
+      display: inline-block;
+      font-size: .68rem; font-weight: 700; color: #1a8fc1;
+      background: #f0f7fb; border: 1px solid #d4e8f0;
+      padding: 2px 9px; border-radius: 20px;
+      margin-bottom: 8px; letter-spacing: .02em;
+    }
+
+    /* Review szöveg */
+    .sh-review-szoveg {
+      font-size: .875rem; color: #3a5060; line-height: 1.7;
+      margin: 0;
+    }
+
+    /* ── PÁLYA VÁLASZ BLOKK – thread indent ── */
+    .sh-review-valasz {
+      margin-top: 12px;
+      margin-left: 0;
+      padding: 12px 16px;
+      background: #f7fbfe;
+      border-left: 2.5px solid #93c5d6;
+      border-radius: 0 10px 10px 0;
+    }
+    .sh-review-valasz-label {
+      display: flex; align-items: center; gap: 5px;
+      font-size: .68rem; font-weight: 800;
+      color: #1a8fc1; text-transform: uppercase;
+      letter-spacing: .07em; margin-bottom: 5px;
+    }
+    .sh-review-valasz-label::before {
+      content: '🏟';
+      font-size: .75rem;
+      font-style: normal;
+    }
+    .sh-review-valasz-text {
+      font-size: .82rem; color: #3a5060; line-height: 1.65;
+    }
+
+    /* Üres állapot */
+    .sh-review-empty {
+      text-align: center; padding: 2rem 0;
+      font-size: .88rem; color: #94a3b8; font-weight: 500;
+    }
+
+    /* Mobil */
+    @media(max-width: 600px) {
+      .sh-review-card { padding: 14px 16px; margin-top: 10px; }
+      .sh-review-score-big { font-size: 2.2rem; }
+      .sh-review-valasz { padding: 10px 12px; }
+    }
   </style>
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/sportingo-drawer.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -797,15 +900,22 @@ function renderReviewItem(r) {
     : '';
   var updatedStr = spFmtUpdated(r.letrehozas_datum, r.updated_at);
   var displayDatum = datumStr; // letrehozas_datum – megbízható fallback
-  return '<div class="sh-review-preview">' +
-    '<div class="sh-review-preview-header">' +
+  return '<div class="sh-review-card">' +
+    '<div class="sh-review-card-header">' +
+      '<div class="sh-review-card-meta">' +
+        '<span class="sh-review-user-name">' + esc(nev) + '</span>' +
+        '<span class="sh-review-card-date">' + displayDatum + '</span>' +
+      '</div>' +
       '<div class="sh-review-stars-sm">' + shStars(r.rating) + '</div>' +
-      '<span class="sh-review-date">' + displayDatum + '</span>' +
     '</div>' +
-    '<span class="sh-review-user-sm">' + esc(nev) + '</span>' +
-    (r.palyas && r.palyas.nev ? '<div class="sh-review-palya-nev">' + esc(r.palyas.nev) + '</div>' : '') +
-    (r.szoveg ? '<div class="sh-review-szoveg">' + esc(r.szoveg) + '</div>' : '') +
-    (r.tulaj_valasz ? '<div class="sh-review-valasz"><span class="sh-review-valasz-label">Pálya válasza</span><span class="sh-review-valasz-text">' + esc(r.tulaj_valasz) + '</span></div>' : '') +
+    (r.palyas && r.palyas.nev ? '<div class="sh-review-palya-tag">⚽ ' + esc(r.palyas.nev) + '</div>' : '') +
+    (r.szoveg ? '<p class="sh-review-szoveg">' + esc(r.szoveg) + '</p>' : '') +
+    (r.tulaj_valasz ?
+      '<div class="sh-review-valasz">' +
+        '<div class="sh-review-valasz-label">Pálya válasza</div>' +
+        '<div class="sh-review-valasz-text">' + esc(r.tulaj_valasz) + '</div>' +
+      '</div>'
+    : '') +
   '</div>';
 }
 
@@ -867,10 +977,23 @@ async function loadHelyszinReviews(helyszinId, palyaIds) {
     return renderReviewItem(r);
   }).join('');
 
-  el.innerHTML = '<div class="sh-card"><div class="sh-card-title">⭐ Értékelések</div>' +
-    '<div class="sh-review-badge">★ ' + atlag + ' átlag</div>' +
-    '<div class="sh-review-summary-text">A helyszín pályái összesen ' + countText + '.</div>' +
-    previewHTML + '</div>';
+  // ── Összesítő csillagsor renderelése ──
+  var starsHTML = '';
+  var atlagNum = parseFloat(atlag);
+  for (var si = 1; si <= 5; si++) {
+    starsHTML += '<span class="sh-review-star-lg' + (si <= Math.round(atlagNum) ? '' : ' empty') + '">★</span>';
+  }
+  el.innerHTML = '<div class="sh-card">' +
+    '<div class="sh-card-title">⭐ Értékelések</div>' +
+    '<div class="sh-review-summary-row">' +
+      '<div class="sh-review-score-big">' + atlag + '</div>' +
+      '<div class="sh-review-score-meta">' +
+        '<div class="sh-review-stars-row">' + starsHTML + '</div>' +
+        '<div class="sh-review-count-label">' + countText + '</div>' +
+      '</div>' +
+    '</div>' +
+    previewHTML +
+  '</div>';
 }
 
 </script>
