@@ -86,16 +86,46 @@
   // amíg a getSession() vissza nem tér.
   setUnknownUI();
 
-  sb.auth.getSession().then(({ data: { session } }) => {
-    console.log('[SP SESSION CHECK RESULT] getSession:', session ? 'van' : 'nincs');
-    if (session) {
-      currentUser = session.user;
-      setLoggedInUI(session.user);
-    } else {
-      currentUser = null;
-      setLoggedOutUI();
+  // [Safari fix] getSession retry: Safari esetén a localStorage-ba írt session
+  // nem mindig olvasható azonnal az első getSession() híváskor (flush delay).
+  // Ha az első hívás null-t ad, 3 kísérlet × 600ms várakozással próbálkozunk.
+  // Ha bármelyik sikerül → UI frissül. Ha mind sikertelen → guest UI.
+  // Chrome-on és Firefoxon az első kísérlet mindig sikeres → nincs mellékhatás.
+  (function spInitSessionWithRetry() {
+    var _retryCount = 0;
+    var _maxRetries = 3;
+    var _retryDelay = 600; // ms
+
+    function _tryGetSession() {
+      sb.auth.getSession().then(function(res) {
+        var session = res && res.data && res.data.session ? res.data.session : null;
+        console.log('[SP SESSION CHECK RESULT] getSession attempt', _retryCount, ':', session ? 'van' : 'nincs');
+        if (session) {
+          currentUser = session.user;
+          setLoggedInUI(session.user);
+        } else if (_retryCount < _maxRetries) {
+          _retryCount++;
+          console.log('[SP SESSION CHECK RESULT] retry', _retryCount, '/', _maxRetries, '– ' + _retryDelay + 'ms múlva');
+          setTimeout(_tryGetSession, _retryDelay);
+        } else {
+          console.log('[SP SESSION CHECK RESULT] session nem érhető el ' + _maxRetries + ' kísérlet után → guest');
+          currentUser = null;
+          setLoggedOutUI();
+        }
+      }).catch(function(err) {
+        console.warn('[SP SESSION CHECK RESULT] getSession hiba:', err);
+        if (_retryCount < _maxRetries) {
+          _retryCount++;
+          setTimeout(_tryGetSession, _retryDelay);
+        } else {
+          currentUser = null;
+          setLoggedOutUI();
+        }
+      });
     }
-  });
+
+    _tryGetSession();
+  })();
 
   // ── Auth state változás ──────────────────────────────────────
   // SIGNED_OUT debounce: Supabase token refresh közben SIGNED_OUT → SIGNED_IN
