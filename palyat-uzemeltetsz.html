@@ -129,6 +129,59 @@
       #sp-logo-img { height:32px; }
     }
 
+
+    /* ── MIÉRT ÉRDEMES – feature grid ── */
+    .sp-why-section {
+      max-width: 1100px; margin: 0 auto; padding: 80px 20px 60px;
+    }
+    .sp-why-label {
+      font-size: .75rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .12em; color: #1a8fc1; margin-bottom: 10px;
+    }
+    .sp-why-title {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.4rem, 3vw, 2rem); color: #0a1628;
+      line-height: 1.2; margin-bottom: 12px;
+    }
+    .sp-why-sub {
+      font-size: .95rem; color: #4a6070; line-height: 1.7;
+      margin-bottom: 40px; max-width: 620px;
+    }
+    .sp-feature-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .sp-feature-card {
+      background: white; border: 1.5px solid #d4e8f0;
+      border-radius: 16px; padding: 22px 20px;
+      box-shadow: 0 2px 12px rgba(10,22,40,.05);
+      transition: box-shadow .2s, transform .2s;
+    }
+    .sp-feature-card:hover {
+      box-shadow: 0 6px 24px rgba(26,143,193,.12); transform: translateY(-2px);
+    }
+    .sp-feature-icon { font-size: 1.5rem; margin-bottom: 12px; line-height: 1; }
+    .sp-feature-name { font-weight: 800; font-size: .92rem; color: #0a1628; margin-bottom: 6px; line-height: 1.3; }
+    .sp-feature-desc { font-size: .82rem; color: #4a6070; line-height: 1.6; }
+    .sp-why-stat-row {
+      display: flex; gap: 32px; flex-wrap: wrap;
+      margin-top: 36px; padding-top: 32px; border-top: 1.5px solid #f0f7fb;
+    }
+    .sp-why-stat { display: flex; flex-direction: column; gap: 2px; }
+    .sp-why-stat-val {
+      font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+      background: linear-gradient(135deg,#1a8fc1,#2dbf7e);
+      -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1;
+    }
+    .sp-why-stat-lbl { font-size: .75rem; color: #6b8a9a; font-weight: 600; }
+    @media (max-width: 860px) {
+      .sp-feature-grid { grid-template-columns: repeat(2, 1fr); }
+      .sp-why-section { padding: 60px 16px 40px; }
+    }
+    @media (max-width: 480px) {
+      .sp-feature-grid { grid-template-columns: 1fr; gap: 12px; }
+      .sp-why-section { padding: 48px 14px 32px; }
+      .sp-why-stat-row { gap: 20px; }
+    }
 </style>
 </head>
 <body>
@@ -174,83 +227,66 @@
   </div>
 </section>
 
-<!-- SPLIT: BENEFITS -->
-<section class="sp-split-section">
-  <div>
-    <div class="sp-split-label">Miért érdemes?</div>
-    <div class="sp-split-title">Növeld a foglalásaid számát</div>
-    <p class="sp-split-sub">A Sportingo összehozza a sportolókat és a pályatulajdonosokat. Légy jelen ott, ahol a döntés születik.</p>
-    <div class="sp-benefit-list">
-      <div class="sp-benefit">
-        <div class="sp-benefit-icon">📈</div>
-        <div>
-          <div class="sp-benefit-title">Több érdeklődő és foglalás</div>
-          <p class="sp-benefit-text">Ezrek keresnek pályát a Sportingon. A te helyszíned is megjelenik a releváns keresési eredményekben.</p>
-        </div>
-      </div>
-      <div class="sp-benefit">
-        <div class="sp-benefit-icon">🌐</div>
-        <div>
-          <div class="sp-benefit-title">Modern online jelenlét</div>
-          <p class="sp-benefit-text">Professzionális adatlap képekkel, leírással, árral, nyitvatartással – minden infó egy helyen.</p>
-        </div>
-      </div>
-      <div class="sp-benefit">
-        <div class="sp-benefit-icon">⚙️</div>
-        <div>
-          <div class="sp-benefit-title">Egyszerű kezelhetőség</div>
-          <p class="sp-benefit-text">A tulajdonosi portálon kezeled a pályáidat, foglalásaidat és az adatlapot – bármikor, bárhonnan.</p>
-        </div>
-      </div>
-      <div class="sp-benefit">
-        <div class="sp-benefit-icon">🤝</div>
-        <div>
-          <div class="sp-benefit-title">Partneri együttműködés</div>
-          <p class="sp-benefit-text">Nem csak egy platform – folyamatos támogatás és fejlesztés a partnereink igényei alapján.</p>
-        </div>
-      </div>
+<!-- MIÉRT ÉRDEMES – feature grid -->
+<section class="sp-why-section">
+  <div class="sp-why-label">Miért érdemes?</div>
+  <div class="sp-why-title">Minden fontos eszköz egy helyen</div>
+  <p class="sp-why-sub">A Sportingo nem csak megjelenést ad a helyszínednek, hanem olyan tulajdonosi eszközöket is, amelyekkel egyszerűbben kezelheted a napi működést, a foglalásokat és a bevételedet.</p>
+
+  <div class="sp-feature-grid">
+    <div class="sp-feature-card">
+      <div class="sp-feature-icon">📋</div>
+      <div class="sp-feature-name">Foglalások kezelése</div>
+      <p class="sp-feature-desc">Kövesd és kezeld a beérkező foglalási kéréseket egy helyen, jóváhagyás vagy elutasítás egyszerűen.</p>
+    </div>
+    <div class="sp-feature-card">
+      <div class="sp-feature-icon">📅</div>
+      <div class="sp-feature-name">Naptár és szabad időpontok</div>
+      <p class="sp-feature-desc">Átlátható naptár a szabad és foglalt időpontokról – mindig naprakész, valós idejű.</p>
+    </div>
+    <div class="sp-feature-card">
+      <div class="sp-feature-icon">⚽</div>
+      <div class="sp-feature-name">Pályák és helyszínek kezelése</div>
+      <p class="sp-feature-desc">Szerkeszd a pályák adatait, képeit, árait és nyitvatartását bármikor, bárhonnan.</p>
+    </div>
+    <div class="sp-feature-card">
+      <div class="sp-feature-icon">📊</div>
+      <div class="sp-feature-name">Statisztikák és átláthatóság</div>
+      <p class="sp-feature-desc">Lásd a foglalási trendeket, értékeléseket és a helyszíned teljesítményét egy helyen.</p>
+    </div>
+    <div class="sp-feature-card">
+      <div class="sp-feature-icon">🏷</div>
+      <div class="sp-feature-name">Akciók és kiemelt ajánlatok</div>
+      <p class="sp-feature-desc">Hirdesd az aktuális akcióidat és emeld ki a legjobb ajánlataidat a játékosoknak.</p>
+    </div>
+    <div class="sp-feature-card">
+      <div class="sp-feature-icon">🤝</div>
+      <div class="sp-feature-name">Folyamatos fejlődés partnerként</div>
+      <p class="sp-feature-desc">Nem csak egy platform – folyamatos támogatás és fejlesztés a partnereink visszajelzései alapján.</p>
     </div>
   </div>
 
-  <div class="sp-stat-card-wrap">
-    <div class="sp-stat-row">
-      <div class="sp-stat-item">
-        <div class="sp-stat-val">59+</div>
-        <div class="sp-stat-lbl">Aktív helyszín</div>
-      </div>
-      <div class="sp-stat-item">
-        <div class="sp-stat-val">4</div>
-        <div class="sp-stat-lbl">Sportág</div>
-      </div>
-      <div class="sp-stat-item">
-        <div class="sp-stat-val">100%</div>
-        <div class="sp-stat-lbl">Online</div>
-      </div>
-      <div class="sp-stat-item">
-        <div class="sp-stat-val">0 Ft</div>
-        <div class="sp-stat-lbl">Belépési díj</div>
-      </div>
+  <!-- Dinamikus stat sor -->
+  <div class="sp-why-stat-row">
+    <div class="sp-why-stat">
+      <div class="sp-why-stat-val" id="sp-why-helyszin-count">–</div>
+      <div class="sp-why-stat-lbl">Aktív helyszín</div>
     </div>
-    <div class="sp-portal-preview">
-      <div class="sp-portal-preview-title">Tulajdonosi portál</div>
-      <div class="sp-portal-preview-item">
-        <div class="sp-portal-preview-dot" style="background:#22c55e;"></div>
-        <div class="sp-portal-preview-text">Új foglalási kérés</div>
-        <div class="sp-portal-preview-badge" style="background:rgba(34,197,94,.15);color:#22c55e;">Új</div>
-      </div>
-      <div class="sp-portal-preview-item">
-        <div class="sp-portal-preview-dot" style="background:#60a5fa;"></div>
-        <div class="sp-portal-preview-text">Pálya adatlap szerkesztése</div>
-        <div class="sp-portal-preview-badge" style="background:rgba(96,165,250,.15);color:#60a5fa;">Aktív</div>
-      </div>
-      <div class="sp-portal-preview-item">
-        <div class="sp-portal-preview-dot" style="background:#f59e0b;"></div>
-        <div class="sp-portal-preview-text">Statisztikák</div>
-        <div class="sp-portal-preview-badge" style="background:rgba(245,158,11,.15);color:#f59e0b;">Hamarosan</div>
-      </div>
+    <div class="sp-why-stat">
+      <div class="sp-why-stat-val" id="sp-why-sportag-count">–</div>
+      <div class="sp-why-stat-lbl">Sportág</div>
+    </div>
+    <div class="sp-why-stat">
+      <div class="sp-why-stat-val">100%</div>
+      <div class="sp-why-stat-lbl">Online elérhető</div>
+    </div>
+    <div class="sp-why-stat">
+      <div class="sp-why-stat-val">0 Ft</div>
+      <div class="sp-why-stat-lbl">Belépési díj</div>
     </div>
   </div>
 </section>
+
 
 <!-- HOW TO JOIN -->
 <section class="sp-join-section">
@@ -578,5 +614,30 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/sportingo-drawer.js"></script>
+<script>
+// ── Dinamikus stat számok: helyszín + sportág count ──────────────
+(async function() {
+  try {
+    var sb = window._spSb;
+    if (!sb) return;
+    // Helyszínek száma
+    var hRes = await sb.from('helyszinek')
+      .select('id', { count: 'exact', head: true })
+      .eq('statusz', 'jovahagyva');
+    var hCount = hRes.count != null ? hRes.count : 0;
+    var hEl = document.getElementById('sp-why-helyszin-count');
+    if (hEl) hEl.textContent = hCount + '+';
+    // Sportágak száma (distinct)
+    var sRes = await sb.from('palyas')
+      .select('sportag')
+      .eq('statusz', 'jovahagyva');
+    var sportok = new Set((sRes.data || []).map(function(p){ return p.sportag; }).filter(Boolean));
+    var sEl = document.getElementById('sp-why-sportag-count');
+    if (sEl) sEl.textContent = sportok.size || 0;
+  } catch(e) {
+    console.log('[SP STAT] Dinamikus számok betöltése sikertelen:', e);
+  }
+})();
+</script>
 </body>
 </html>
