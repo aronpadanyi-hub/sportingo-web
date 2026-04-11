@@ -23,37 +23,20 @@
 </div>
 <script>
 (function() {
-  const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
+  'use strict';
+
+  var SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var msgEl = document.getElementById('msg');
 
-  function getReturnUrl() {
-    try { return sessionStorage.getItem('sp_return_to') || 'https://sportingo.hu'; }
-    catch(e) { return 'https://sportingo.hu'; }
-  }
-
-  function doRedirect(url) {
-    msgEl.textContent = 'Sikeres bejelentkezés! Visszairányítás...';
-    try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
-    // [Safari fix] 700ms → 1500ms: Safari localStorage flush lassabb lehet,
-    // a főoldal getSession() csak akkor talál session-t ha a write már kész.
-    setTimeout(function() { window.location.replace(url); }, 1500);
-  }
-
-  function doError() {
-    msgEl.textContent = 'Hiba történt. Visszairányítás a főoldalra...';
-    setTimeout(function() { window.location.replace('https://sportingo.hu'); }, 2500);
-  }
-
-  // ── DIAGNOSZTIKAI SEGÉDFÜGGVÉNY ─────────────────────────────────────────
+  // ── DIAGNOSZTIKA ──────────────────────────────────────────────────────────
   function spDiag(label, value) {
     console.log('%c[SP DIAG] ' + label, 'color:#2dbf7e;font-weight:bold;', value);
   }
 
   function spDumpStorage() {
-    // 1. sessionStorage – ÖSSZES kulcs
     try {
       var ssKeys = Object.keys(sessionStorage);
       spDiag('sessionStorage kulcsok (' + ssKeys.length + ' db)', ssKeys);
@@ -62,8 +45,6 @@
         spDiag('  sessionStorage["' + k + '"]', val && val.length > 120 ? val.substring(0, 120) + '…' : val);
       });
     } catch(e) { spDiag('sessionStorage OLVASÁSI HIBA', e.message); }
-
-    // 2. localStorage – ÖSSZES kulcs (különös figyelemmel a sb-* és supabase kulcsokra)
     try {
       var lsKeys = Object.keys(localStorage);
       spDiag('localStorage kulcsok (' + lsKeys.length + ' db)', lsKeys);
@@ -74,148 +55,178 @@
     } catch(e) { spDiag('localStorage OLVASÁSI HIBA', e.message); }
   }
 
+  // ── RETURN URL: sessionStorage + localStorage fallback (Safari fix) ────────
+  function getReturnUrl() {
+    try {
+      var url = sessionStorage.getItem('sp_return_to') || localStorage.getItem('sp_return_to') || 'https://sportingo.hu';
+      return url;
+    } catch(e) { return 'https://sportingo.hu'; }
+  }
+
+  function clearReturnUrl() {
+    try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
+    try { localStorage.removeItem('sp_return_to'); } catch(e) {}
+  }
+
+  // ── REDIRECT: csak megerősített session után ──────────────────────────────
+  function doRedirect(session, url) {
+    // [SP AUTH FINAL STATE] – kötelező log redirect előtt
+    console.log('[SP AUTH FINAL STATE]',
+      'session:', session ? 'VAN' : 'NINCS',
+      '| email:', session && session.user ? session.user.email : '–',
+      '| access_token:', session && session.access_token ? session.access_token.substring(0, 30) + '…' : '–'
+    );
+    msgEl.textContent = 'Sikeres bejelentkezés! Visszairányítás...';
+    clearReturnUrl();
+    // Explicit session-confirm loop: max 10 × 200ms = 2s várakozás
+    // Biztosítja, hogy a storage tényleg flush-ölve van redirect előtt
+    var confirmAttempts = 0;
+    function confirmAndRedirect() {
+      sb.auth.getSession().then(function(res) {
+        if (res.data && res.data.session) {
+          spDiag('REDIRECT CONFIRM: session OK, redirect most', url);
+          window.location.replace(url);
+        } else if (confirmAttempts < 10) {
+          confirmAttempts++;
+          spDiag('REDIRECT CONFIRM: várás... (' + confirmAttempts + '/10)', '');
+          setTimeout(confirmAndRedirect, 200);
+        } else {
+          spDiag('REDIRECT CONFIRM: session elveszett a confirm során – redirect mindenképp', url);
+          window.location.replace(url);
+        }
+      }).catch(function() {
+        window.location.replace(url);
+      });
+    }
+    confirmAndRedirect();
+  }
+
+  function doError() {
+    msgEl.textContent = 'Hiba történt. Visszairányítás a főoldalra...';
+    spDiag('--- STORAGE ÁLLAPOT (doError előtt) ---', '');
+    spDumpStorage();
+    setTimeout(function() { window.location.replace('https://sportingo.hu'); }, 2500);
+  }
+
+  // ── FŐ CALLBACK LOGIKA ────────────────────────────────────────────────────
   async function handleCallback() {
+
+    // ── Dupla exchange tiltása ─────────────────────────────────────────────
+    if (window.__sp_exchange_done) {
+      spDiag('DUPLA EXCHANGE TILTVA – már futott', '');
+      return;
+    }
+    window.__sp_exchange_done = true;
+
     var returnUrl = getReturnUrl();
 
-    // ════════════════════════════════════════════════════════
     // DIAGNOSZTIKA 1: URL állapot
-    // ════════════════════════════════════════════════════════
     spDiag('--- AUTH CALLBACK START ---', new Date().toISOString());
     spDiag('URL pathname', window.location.pathname);
     spDiag('URL search', window.location.search);
     spDiag('URL hash', window.location.hash ? window.location.hash.substring(0, 80) + '…' : '(üres)');
     spDiag('returnUrl', returnUrl);
 
-    var search = window.location.search;
-    var code = new URLSearchParams(search).get('code');
-    spDiag('?code param', code ? ('MEGVAN (' + code.length + ' karakter): ' + code.substring(0, 20) + '…') : 'HIÁNYZIK');
+    var code = new URLSearchParams(window.location.search).get('code');
+    spDiag('?code param', code ? ('MEGVAN (' + code.length + ' kar): ' + code.substring(0, 20) + '…') : 'HIÁNYZIK');
 
-    // ════════════════════════════════════════════════════════
-    // DIAGNOSZTIKA 2: Storage állapot EXCHANGE ELŐTT
-    // ════════════════════════════════════════════════════════
-    spDiag('--- STORAGE ÁLLAPOT (exchange ELŐTT) ---', '');
+    // DIAGNOSZTIKA 2: Storage EXCHANGE ELŐTT
+    spDiag('--- STORAGE (exchange ELŐTT) ---', '');
     spDumpStorage();
 
-    // ════════════════════════════════════════════════════════
-    // DIAGNOSZTIKA 3: Supabase client állapot EXCHANGE ELŐTT
-    // ════════════════════════════════════════════════════════
+    // DIAGNOSZTIKA 3: session EXCHANGE ELŐTT
     try {
       var preCheck = await sb.auth.getSession();
-      spDiag('getSession() EXCHANGE ELŐTT', preCheck.data && preCheck.data.session ? 'VAN SESSION (már belépve?)' : 'nincs session');
-      if (preCheck.error) spDiag('getSession() pre-check HIBA', preCheck.error);
-    } catch(e) { spDiag('getSession() pre-check EXCEPTION', e.message); }
+      spDiag('getSession() ELŐTT', preCheck.data && preCheck.data.session ? 'VAN SESSION' : 'nincs session');
+      // Ha már van session (pl. korábbi redirect), azonnal redirect
+      if (preCheck.data && preCheck.data.session) {
+        spDiag('MÁR VAN SESSION – közvetlen redirect', returnUrl);
+        doRedirect(preCheck.data.session, returnUrl);
+        return;
+      }
+    } catch(e) { spDiag('pre-check EXCEPTION', e.message); }
 
-    // ════════════════════════════════════════════════════════
-    // 1. PKCE exchange kísérlet
-    // ════════════════════════════════════════════════════════
+    // ── 1. PKCE EXCHANGE ──────────────────────────────────────────────────
     if (code) {
       spDiag('--- PKCE EXCHANGE KÍSÉRLET ---', '');
       try {
         var result = await sb.auth.exchangeCodeForSession(code);
 
-        // Teljes result objektum kiírása
-        spDiag('exchange result.error', result.error ? JSON.stringify(result.error) : 'null (nincs hiba)');
+        spDiag('exchange result.error', result.error ? JSON.stringify(result.error) : 'null');
         spDiag('exchange result.data kulcsok', result.data ? Object.keys(result.data) : 'null');
-        spDiag('exchange result.data.session', result.data && result.data.session ? 'MEGVAN' : 'null/undefined');
-        if (result.data && result.data.session) {
-          spDiag('session.user.email', result.data.session.user && result.data.session.user.email);
-          spDiag('session.access_token', result.data.session.access_token ? result.data.session.access_token.substring(0, 30) + '…' : 'HIÁNYZIK');
-        }
+        spDiag('exchange result.data.session', result.data && result.data.session ? 'MEGVAN' : 'null');
 
         if (result.error) {
-          // Hiba: részletes bontás
           spDiag('EXCHANGE HIBA – message', result.error.message);
           spDiag('EXCHANGE HIBA – status', result.error.status);
-          spDiag('EXCHANGE HIBA – code', result.error.code || result.error.__isAuthError);
-          spDiag('EXCHANGE HIBA – teljes objekt', JSON.stringify(result.error));
+          spDiag('EXCHANGE HIBA – teljes', JSON.stringify(result.error));
+          // PKCE verifier keresés
+          try {
+            var pkceKeys = Object.keys(sessionStorage).filter(function(k) {
+              return k.toLowerCase().indexOf('pkce') !== -1 ||
+                     k.toLowerCase().indexOf('verifier') !== -1 ||
+                     k.toLowerCase().indexOf('supabase') !== -1 ||
+                     k.toLowerCase().indexOf('code') !== -1;
+            });
+            spDiag('PKCE kulcsok sessionStorage-ban', pkceKeys.length ? pkceKeys : 'NINCS');
+          } catch(se) {}
           throw result.error;
         }
 
         if (result.data && result.data.session) {
-          // Storage állapot EXCHANGE UTÁN – ellenőrzés
-          spDiag('--- STORAGE ÁLLAPOT (exchange UTÁN, redirect ELŐTT) ---', '');
+          spDiag('--- STORAGE (exchange UTÁN) ---', '');
           spDumpStorage();
           spDiag('EXCHANGE SIKERES → redirect', returnUrl);
-          doRedirect(returnUrl);
+          doRedirect(result.data.session, returnUrl);
           return;
         }
 
-        // Nincs hiba de nincs session sem – ritka edge case
-        spDiag('EXCHANGE: nincs hiba, nincs session – tovább a fallback-re', '');
+        spDiag('EXCHANGE: nincs hiba, de nincs session – fallback-re', '');
 
       } catch(err) {
-        spDiag('EXCHANGE EXCEPTION – message', err && err.message ? err.message : String(err));
-        spDiag('EXCHANGE EXCEPTION – name', err && err.name);
-        spDiag('EXCHANGE EXCEPTION – status', err && err.status);
-        spDiag('EXCHANGE EXCEPTION – teljes', JSON.stringify(err));
-
-        // PKCE verifier állapot részletes vizsgálat
-        spDiag('--- PKCE VERIFIER KERESÉS ---', '');
-        try {
-          var ssKeys2 = Object.keys(sessionStorage);
-          var pkceKeys = ssKeys2.filter(function(k) {
-            return k.toLowerCase().indexOf('pkce') !== -1 ||
-                   k.toLowerCase().indexOf('verifier') !== -1 ||
-                   k.toLowerCase().indexOf('supabase') !== -1 ||
-                   k.toLowerCase().indexOf('code') !== -1;
-          });
-          spDiag('PKCE-kapcsolódó sessionStorage kulcsok', pkceKeys.length ? pkceKeys : 'NINCS ILYEN KULCS');
-          pkceKeys.forEach(function(k) {
-            spDiag('  pkce["' + k + '"]', sessionStorage.getItem(k));
-          });
-        } catch(se) { spDiag('sessionStorage PKCE keresés HIBA', se.message); }
-
+        spDiag('EXCHANGE EXCEPTION', err && err.message ? err.message : String(err));
         msgEl.textContent = 'Hitelesítés folyamatban (fallback)...';
-        // Továbblépünk a fallback-re – NEM módosítva
       }
     } else {
-      spDiag('NINCS ?code PARAM – implicit flow vagy hibás redirect', '');
+      spDiag('NINCS ?code – implicit flow vagy hibás redirect', '');
     }
 
-    // ════════════════════════════════════════════════════════
-    // 2. Implicit flow fallback (változatlan)
-    // ════════════════════════════════════════════════════════
+    // ── 2. Implicit flow hash kezelés ──────────────────────────────────────
     if (window.location.hash && window.location.hash.indexOf('access_token') !== -1) {
-      spDiag('Implicit flow: access_token MEGVAN a hash-ben', '');
-      await new Promise(function(r) { setTimeout(r, 300); });
+      spDiag('Implicit flow: access_token a hash-ben', '');
+      await new Promise(function(r) { setTimeout(r, 400); });
     }
 
-    // ════════════════════════════════════════════════════════
-    // 3. Fallback getSession() retry loop (VÁLTOZATLAN)
-    // ════════════════════════════════════════════════════════
-    spDiag('--- FALLBACK getSession() LOOP INDUL ---', '');
-    var retries = 0;
-    var maxRetries = 25;
-
-    function checkSession() {
-      sb.auth.getSession().then(function(res) {
+    // ── 3. Fallback getSession loop: max 10 × 200ms = 2s ──────────────────
+    // (setTimeout helyett explicit async loop)
+    spDiag('--- FALLBACK getSession LOOP INDUL ---', '');
+    var session = null;
+    for (var i = 0; i < 10; i++) {
+      try {
+        var res = await sb.auth.getSession();
         if (res.data && res.data.session) {
-          spDiag('FALLBACK LOOP: session MEGVAN a ' + retries + '. próbánál', '');
-          doRedirect(returnUrl);
-        } else if (retries < maxRetries) {
-          retries++;
-          setTimeout(checkSession, 200);
-        } else {
-          spDiag('FALLBACK LOOP: ' + maxRetries + ' próba után sem volt session → doError()', '');
-          spDiag('--- STORAGE ÁLLAPOT (doError előtt) ---', '');
-          spDumpStorage();
-          doError();
+          session = res.data.session;
+          spDiag('FALLBACK LOOP: session MEGVAN a ' + i + '. próbánál', '');
+          break;
         }
-      }).catch(function(e) {
-        spDiag('FALLBACK LOOP CATCH hiba', e && e.message ? e.message : String(e));
-        if (retries < maxRetries) {
-          retries++;
-          setTimeout(checkSession, 200);
-        } else {
-          doError();
-        }
-      });
+        spDiag('FALLBACK LOOP: ' + i + '/10 – nincs session, várás 200ms', '');
+      } catch(e) {
+        spDiag('FALLBACK LOOP EXCEPTION', e.message);
+      }
+      await new Promise(function(r) { setTimeout(r, 200); });
     }
 
-    checkSession();
+    if (session) {
+      spDiag('--- STORAGE (fallback siker után) ---', '');
+      spDumpStorage();
+      doRedirect(session, returnUrl);
+    } else {
+      spDiag('FALLBACK LOOP: 10 próba után sem volt session → doError()', '');
+      doError();
+    }
   }
 
-  // Várjuk meg a Supabase SDK betöltését
+  // Betöltés utáni indítás
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', handleCallback);
   } else {
