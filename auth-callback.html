@@ -29,22 +29,31 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var msgEl = document.getElementById('msg');
 
+  // ── Return URL: URL param > sessionStorage > localStorage > főoldal ──
+  // A ?return_to= param storage nélkül is működik (privát mód, ITP).
+  // Storage fallback: régi bejelentkezések kompatibilitásához.
   function getReturnUrl() {
     try {
-      return sessionStorage.getItem('sp_return_to')
-          || localStorage.getItem('sp_return_to_fb')
-          || 'https://sportingo.hu';
-    } catch(e) { return 'https://sportingo.hu'; }
-  }
-
-  function clearReturnUrl() {
-    try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
-    try { localStorage.removeItem('sp_return_to_fb'); } catch(e) {}
+      // 1. URL param (legmegbízhatóbb – cross-origin redirecten is átmegy)
+      var urlParam = new URLSearchParams(window.location.search).get('return_to');
+      if (urlParam) return urlParam;
+      // 2. Hash utáni URL params (implicit flow: #access_token=...&return_to=...)
+      // A Supabase hash-t rak elé, de a ?return_to a hash ELŐTT van az URL-ben
+      // tehát a fenti URLSearchParams már kiolvasná – ez csak extra biztonság
+      var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      var hashReturn = hashParams.get('return_to');
+      if (hashReturn) return hashReturn;
+    } catch(e) {}
+    // 3. Storage fallback (normál módban)
+    try { var ss = sessionStorage.getItem('sp_return_to'); if (ss) return ss; } catch(e) {}
+    try { var ls = localStorage.getItem('sp_return_to_fb'); if (ls) return ls; } catch(e) {}
+    return 'https://sportingo.hu';
   }
 
   function doRedirect(url) {
     msgEl.textContent = 'Sikeres bejelentkezés! Visszairányítás...';
-    clearReturnUrl();
+    try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
+    try { localStorage.removeItem('sp_return_to_fb'); } catch(e) {}
     setTimeout(function() { window.location.replace(url); }, 700);
   }
 
@@ -57,14 +66,9 @@
     var retries = 0, maxRetries = 25;
     function check() {
       sb.auth.getSession().then(function(res) {
-        if (res.data && res.data.session) {
-          doRedirect(returnUrl);
-        } else if (retries < maxRetries) {
-          retries++;
-          setTimeout(check, 200);
-        } else {
-          doError();
-        }
+        if (res.data && res.data.session) { doRedirect(returnUrl); }
+        else if (retries < maxRetries) { retries++; setTimeout(check, 200); }
+        else { doError(); }
       }).catch(function() {
         if (retries < maxRetries) { retries++; setTimeout(check, 200); }
         else { doError(); }
@@ -76,16 +80,12 @@
   async function handleCallback() {
     var returnUrl = getReturnUrl();
 
-    // ── 1. Implicit flow: #access_token (Safari implicit mode) ──
-    // Safariban a spGoogleLogin flowType:'implicit'-et használ,
-    // ezért hash-t kap vissza. Az SDK automatikusan feldolgozza,
-    // de kell egy kis delay mielőtt getSession() érvényes lesz.
+    // ── 1. Implicit flow: #access_token (Safari) ──
     var hash = window.location.hash;
     if (hash && hash.indexOf('access_token') !== -1) {
       await new Promise(function(r) { setTimeout(r, 600); });
       var res = await sb.auth.getSession();
       if (res.data && res.data.session) { doRedirect(returnUrl); return; }
-      // Ha még nincs (ritka edge case): poll
       startSessionPoll(returnUrl);
       return;
     }
