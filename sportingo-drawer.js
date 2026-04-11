@@ -1047,32 +1047,29 @@
   };
 
   window.spGoogleLogin = async function() {
-    // ── Return URL mentése: sessionStorage + localStorage fallback ──
-    // Safari ITP törölheti a sessionStorage-ot cross-origin redirect után
+    // ── Return URL beágyazása a redirectTo-ba ──
+    // Storage (sessionStorage/localStorage) privát módban nem megbízható.
+    // A visszatérési URL-t a callback URL query string-jébe kódoljuk:
+    //   https://sportingo.hu/auth-callback?return_to=<encoded>
+    // Ez átmegy Google-n is (a ?return_to param megmarad a redirect után),
+    // és a callback oldal az URL-ből olvassa ki – storage nélkül.
     var returnTo = window.location.href;
-    try { sessionStorage.setItem('sp_return_to', returnTo); } catch(e) {}
-    try { localStorage.setItem('sp_return_to_fb', returnTo); } catch(e) {}
+    var callbackBase = 'https://sportingo.hu/auth-callback';
+    var redirectTo = callbackBase + '?return_to=' + encodeURIComponent(returnTo);
 
-    // ── Safari detektálás ──
-    // Safari PKCE flow-nál elveszti a code verifier-t (localStorage origin isolation).
-    // Megoldás: implicit flow kényszerítése Safariban (hash-alapú token, nincs PKCE state).
+    // ── Safari: implicit flow (nincs PKCE state probléma) ──
     var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-    var clientOptions = isSafari
-      ? { auth: { flowType: 'implicit' } }
-      : {};
-
-    var safariSb = isSafari
+    var clientToUse = isSafari
       ? window.supabase.createClient(
           'https://amowwfjxeursokkznmxl.supabase.co',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0',
-          clientOptions
+          { auth: { flowType: 'implicit' } }
         )
       : sb;
 
-    var { error } = await safariSb.auth.signInWithOAuth({
+    var { error } = await clientToUse.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://sportingo.hu/auth-callback' }
+      options: { redirectTo: redirectTo }
     });
     if (error) showLoginAlert('Google belépés sikertelen!', true);
   };
