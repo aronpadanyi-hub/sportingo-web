@@ -935,46 +935,170 @@
     });
   }
 
+  // ── Sport → létszám bucket mapping ───────────────────────────────
+  // Kulcs: sportág neve (pontosan, ahogy a DB-ben szerepel)
+  // Érték: azon bucket key-ek tömbje amelyekbe a sport beleesik
+  // Bucket key-ek: '2-4' | '4-8' | '8-14' | '14+'
+  var SPORT_LETSZAM_MAPPING = {
+    'Futball':     ['4-8', '8-14', '14+'],
+    'Tenisz':      ['2-4'],
+    'Padel':       ['2-4'],
+    'Squash':      ['2-4'],
+    'Röplabda':    ['4-8', '8-14', '14+'],
+    'Kézilabda':   ['8-14', '14+'],
+    'Kosárlabda':  ['2-4', '4-8', '8-14'],
+    'Tollaslabda': ['2-4'],
+    'Biliárd':     ['2-4', '4-8'],
+    'Bowling':     ['4-8', '8-14'],
+    'Gokart':      ['4-8', '8-14'],
+    'Lőtér':       ['2-4'],
+    'Teqball':     ['2-4'],
+  };
+
+  // ── Aktív bucket key kiszámítása az activeLetszam-ból ────────────
+  function aktivBucketKey() {
+    var min = activeLetszam.min;
+    var max = activeLetszam.max;
+    if (min === null && max === null) return null;
+    if (min === 2  && max === 4)    return '2-4';
+    if (min === 4  && max === 8)    return '4-8';
+    if (min === 8  && max === 14)   return '8-14';
+    if (min === 14 && max === null) return '14+';
+    return null; // ismeretlen kombináció → fallback
+  }
+
+  // ── Mapping alapú bucket check ────────────────────────────────────
+  // Visszatér: 'igen' | 'nem' | 'ismeretlen' (nincs mapping az adott sportra)
+  function sportMappingAllapot(sportag, bucketKey) {
+    if (!sportag || !bucketKey) return 'ismeretlen';
+    var buckets = SPORT_LETSZAM_MAPPING[sportag];
+    if (!buckets) return 'ismeretlen';
+    return buckets.indexOf(bucketKey) !== -1 ? 'igen' : 'nem';
+  }
+
+  // ── Adatalapú létszám ellenőrzés (eredeti logika, változatlan) ───
+  function palyaAdatAlapuLetszam(p) {
+    var letszamMin = activeLetszam.min;
+    var letszamMax = activeLetszam.max;
+    var pMin = p.min_letszam != null ? p.min_letszam : null;
+    var pMax = p.max_letszam != null ? p.max_letszam : null;
+    if (pMin === null || pMax === null) return false;
+    if (letszamMax === null) return pMax >= letszamMin;
+    return pMin <= letszamMax && pMax >= letszamMin;
+  }
+
+  // ── Kombinált létszám-megfelelőség – mapping ÉS adatalapú ────────
+  // Döntési logika:
+  //   1. Nincs aktív szűrő → true
+  //   2. Ismeretlen sport / bucket → fallback: csak adatalapú (régi logika)
+  //   3. Mapping szerint NEM → kizárás (adat nélkül is)
+  //   4. Mapping szerint IGEN + van DB adat → adatalapú is kell (ÉS)
+  //   5. Mapping szerint IGEN + nincs DB adat → best effort: átengedjük
+  function palyaMegfelelLetszamnak(p) {
+    var letszamMin = activeLetszam.min;
+    var letszamMax = activeLetszam.max;
+
+    // 1. Nincs aktív szűrő
+    if (letszamMin === null && letszamMax === null) return true;
+
+    var bucketKey  = aktivBucketKey();
+    var sportag    = p.sportag || null;
+    var mappingAll = sportMappingAllapot(sportag, bucketKey);
+    var pMin       = p.min_letszam != null ? p.min_letszam : null;
+    var pMax       = p.max_letszam != null ? p.max_letszam : null;
+    var vanAdat    = pMin !== null && pMax !== null;
+    var adatAlap   = vanAdat ? palyaAdatAlapuLetszam(p) : false;
+
+    console.log('[SP LETSZAM]',
+      'bucket:', bucketKey,
+      '| sport:', sportag,
+      '| mapping:', mappingAll,
+      '| vanAdat:', vanAdat,
+      '| adatalapú:', adatAlap,
+      '| pálya id:', p.id);
+
+    // 2. Ismeretlen sport vagy bucket → fallback (régi logika)
+    if (mappingAll === 'ismeretlen') {
+      var eredmeny = vanAdat ? adatAlap : false;
+      console.log('[SP LETSZAM] → fallback (ismeretlen sport/bucket):', eredmeny ? 'IGEN' : 'NEM');
+      return eredmeny;
+    }
+
+    // 3. Mapping szerint NEM → kizárás
+    if (mappingAll === 'nem') {
+      console.log('[SP LETSZAM] → kizárva (mapping: nem)');
+      return false;
+    }
+
+    // 4+5. Mapping szerint IGEN
+    if (!vanAdat) {
+      // Nincs DB adat → best effort, mapping alapján átengedjük
+      console.log('[SP LETSZAM] → átengedve (mapping: igen, nincs DB adat)');
+      return true;
+    }
+    // Van DB adat → mindkettőnek meg kell felelni
+    console.log('[SP LETSZAM] → végső:', adatAlap ? 'IGEN' : 'NEM (mapping: igen, adat: nem)');
+    return adatAlap;
+  }
+
   function applyFilters(){
     const search=searchEl.value.trim().toLowerCase();
     clearBtn.style.display=search?'flex':'none';
     const hasAnyFilter=search||activeSport||Object.values(activeFilters).some(v=>v)||(activeLetszam.min!==null||activeLetszam.max!==null);
     resetBtn.style.display=hasAnyFilter?'flex':'none';
+
+    // ── PIPELINE: szűrés PÁLYA szinten, GROUPING előtt ────────────
+    // 1. Nyers pályák → pálya szintű létszám szűrés
+    // 2. Csak a szűrt pályák kerülnek a groupingba (h._filteredPalyas)
+    // 3. Render már a szűrt+grouped adaton fut
+    const letszamAktiv = activeLetszam.min !== null || activeLetszam.max !== null;
+    console.log('[SP FILTER] applyFilters fut | letszamAktiv:', letszamAktiv,
+      '| min:', activeLetszam.min, '| max:', activeLetszam.max);
+
     filtered=allHelyszinek.filter(h=>{
+      // ── 0. Szöveges keresés (helyszín szinten marad) ─────────────
       if(search){ const t=[(h.nev||''),(h.varos||'')].join(' ').toLowerCase(); if(!t.includes(search)) return false; }
-      if(activeSport){ if(!h._palyas.some(p=>p.sportag===activeSport)) return false; }
-      const rel=activeSport?h._palyas.filter(p=>p.sportag===activeSport):h._palyas;
+
+      // ── TELJES PÁLYA SZINTŰ PIPELINE ─────────────────────────────
+      // Egyetlen igazság: h._filteredPalyas = az összes szűrőn átment pályák.
+      // renderCards() ebből dolgozik, nem szűr újra semmit.
+
+      // 1. LÉTSZÁM – pálya szintű ellenőrzés minden pályán
+      var p1 = letszamAktiv
+        ? h._palyas.filter(palyaMegfelelLetszamnak)
+        : h._palyas;
+      if (letszamAktiv) {
+        console.log('[SP PIPELINE] helyszín:', h.nev,
+          '| nyers:', h._palyas.length,
+          '| létszám után:', p1.length);
+      }
+      if (p1.length === 0) return false;
+
+      // 2. SPORTÁG – szűrés az 1. lépés eredményén
+      var p2 = activeSport ? p1.filter(function(p){ return p.sportag === activeSport; }) : p1;
+      if (activeSport && p2.length === 0) return false;
+
+      // 3. DINAMIKUS SZŰRŐK (jatekforma, fedett, stb.) – szűrés a 2. lépés eredményén
+      var p3 = p2;
       for(const [id,val] of Object.entries(activeFilters)){
         if(!val) continue;
-        if(!rel.some(p=>(p[id]||'').toLowerCase().includes(val.toLowerCase()))) return false;
+        p3 = p3.filter(function(p){ return (p[id]||'').toLowerCase().includes(val.toLowerCase()); });
       }
-      // Létszám szűrő: tartomány-metszet alapú
-      // Helyszín bent marad, ha van legalább 1 releváns pálya amelynek tartománya metszi a kiválasztottat
-      if (activeLetszam.min !== null || activeLetszam.max !== null) {
-        var letszamMin = activeLetszam.min; // kiválasztott tartomány alja
-        var letszamMax = activeLetszam.max; // kiválasztott tartomány teteje (null = végtelen = 14+)
-        var vanMegfelelo = rel.some(function(p) {
-          var pMin = p.min_letszam != null ? p.min_letszam : null;
-          var pMax = p.max_letszam != null ? p.max_letszam : null;
-          // Ha a pályán nincs létszám adat: kihagyjuk (nem tudjuk ellenőrizni)
-          if (pMin === null || pMax === null) return false;
-          // Tartomány metszet: pálya[min,max] metszi a kiválasztott [letszamMin, letszamMax]-ot
-          // 14+ esetén letszamMax === null → csak a pMax >= 14 feltétel kell
-          if (letszamMax === null) {
-            // 14+ fő: pálya max >= 14
-            return pMax >= letszamMin;
-          }
-          // Normál tartomány: pMin <= letszamMax AND pMax >= letszamMin
-          return pMin <= letszamMax && pMax >= letszamMin;
-        });
-        if (!vanMegfelelo) return false;
-      }
+      if (p3.length === 0) return false;
+
+      // 4. MENTÉS – renderCards kizárólag ezt használja
+      h._filteredPalyas = p3;
+      console.log('[SP PIPELINE] helyszín:', h.nev, '| végső pályák:', p3.length,
+        p3.map(function(p){ return p.nev||p.id; }));
+
       return true;
     });
     // ── RENDEZÉS ──────────────────────────────────────────────────
     // Helper: helyszín legalacsonyabb releváns pályaára
+    // _filteredPalyas-t használja, hogy a rendezés is a szűrt pályákon alapuljon
     function getVenueLowestPrice(h, sport) {
-      var palyas = sport ? h._palyas.filter(function(p){ return p.sportag === sport; }) : h._palyas;
+      var palyaAlap = h._filteredPalyas || h._palyas;
+      var palyas = sport ? palyaAlap.filter(function(p){ return p.sportag === sport; }) : palyaAlap;
       var arak = palyas.map(function(p){ return p.ar_per_ora; }).filter(function(a){ return a != null && a > 0; });
       if (!arak.length) return null;
       return Math.min.apply(null, arak);
@@ -1014,8 +1138,15 @@
       grid.innerHTML='<div class="sp-empty"><div class="sp-empty-icon">🔍</div><div class="sp-empty-title">Nincs találat</div><div class="sp-empty-sub">Próbálj más szűrési feltételeket.</div></div>';
       return;
     }
+    console.log('[SP RENDER] renderCards | helyszínek:', filtered.length);
     grid.innerHTML=filtered.map(h=>{
-      const rel=activeSport?h._palyas.filter(p=>p.sportag===activeSport):h._palyas;
+      // ── Egyetlen igazság: applyFilters() által teljesen leszűrt lista ──
+      // Tartalmaz: létszám + sportág + dinamikus szűrők eredménye.
+      // renderCards NEM szűr újra semmit – csak renderel.
+      // Fallback (nincs aktív szűrő): h._palyas (eredeti teljes lista)
+      const rel = h._filteredPalyas || h._palyas;
+      console.log('[SP RENDER]', h.nev, '| rel pályák:', rel.length,
+        rel.map(function(p){ return p.nev||p.id; }));
       let url;
       if(rel.length===1&&rel[0].slug) url='https://sportingo.hu/palya/'+rel[0].slug;
       else if(h.slug) url='https://sportingo.hu/helyszin/'+h.slug;
