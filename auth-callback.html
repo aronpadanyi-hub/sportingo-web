@@ -31,18 +31,15 @@
 
   function getReturnUrl() {
     try {
-      // sessionStorage-t Safari ITP törölheti cross-origin redirect után –
-      // localStorage fallback biztosítja a visszatérési URL-t
-      var url = sessionStorage.getItem('sp_return_to')
-             || localStorage.getItem('sp_return_to_fallback')
-             || 'https://sportingo.hu';
-      return url;
+      return sessionStorage.getItem('sp_return_to')
+          || localStorage.getItem('sp_return_to_fb')
+          || 'https://sportingo.hu';
     } catch(e) { return 'https://sportingo.hu'; }
   }
 
   function clearReturnUrl() {
     try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
-    try { localStorage.removeItem('sp_return_to_fallback'); } catch(e) {}
+    try { localStorage.removeItem('sp_return_to_fb'); } catch(e) {}
   }
 
   function doRedirect(url) {
@@ -56,64 +53,59 @@
     setTimeout(function() { window.location.replace('https://sportingo.hu'); }, 2500);
   }
 
-  async function handleCallback() {
-    var returnUrl = getReturnUrl();
-
-    // ── 1. PKCE flow (mobilon ez az alapértelmezett Supabase v2-ben) ──
-    // URL: /auth-callback?code=XXXX
-    var search = window.location.search;
-    var code = new URLSearchParams(search).get('code');
-
-    if (code) {
-      try {
-        var result = await sb.auth.exchangeCodeForSession(code);
-        if (result.error) throw result.error;
-        if (result.data && result.data.session) {
-          doRedirect(returnUrl);
-          return;
-        }
-      } catch(err) {
-        console.error('exchangeCodeForSession hiba:', err);
-        // Továbblépünk a fallback-re
-      }
-    }
-
-    // ── 2. Implicit flow (desktop, régebbi viselkedés) ──
-    // URL: /auth-callback#access_token=XXXX
-    if (window.location.hash && window.location.hash.indexOf('access_token') !== -1) {
-      // Az SDK automatikusan kezeli a hash-t – kis delay kell
-      await new Promise(function(r) { setTimeout(r, 300); });
-    }
-
-    // ── 3. Ellenőrizzük van-e már session (pl. frissen beállított) ──
-    var retries = 0;
-    var maxRetries = 25; // 5 másodperc összesen
-
-    function checkSession() {
+  function startSessionPoll(returnUrl) {
+    var retries = 0, maxRetries = 25;
+    function check() {
       sb.auth.getSession().then(function(res) {
         if (res.data && res.data.session) {
           doRedirect(returnUrl);
         } else if (retries < maxRetries) {
           retries++;
-          setTimeout(checkSession, 200);
+          setTimeout(check, 200);
         } else {
-          // Nincs session 5 másodperc után sem – hiba
           doError();
         }
       }).catch(function() {
-        if (retries < maxRetries) {
-          retries++;
-          setTimeout(checkSession, 200);
-        } else {
-          doError();
-        }
+        if (retries < maxRetries) { retries++; setTimeout(check, 200); }
+        else { doError(); }
       });
     }
-
-    checkSession();
+    check();
   }
 
-  // Várjuk meg a Supabase SDK betöltését
+  async function handleCallback() {
+    var returnUrl = getReturnUrl();
+
+    // ── 1. Implicit flow: #access_token (Safari implicit mode) ──
+    // Safariban a spGoogleLogin flowType:'implicit'-et használ,
+    // ezért hash-t kap vissza. Az SDK automatikusan feldolgozza,
+    // de kell egy kis delay mielőtt getSession() érvényes lesz.
+    var hash = window.location.hash;
+    if (hash && hash.indexOf('access_token') !== -1) {
+      await new Promise(function(r) { setTimeout(r, 600); });
+      var res = await sb.auth.getSession();
+      if (res.data && res.data.session) { doRedirect(returnUrl); return; }
+      // Ha még nincs (ritka edge case): poll
+      startSessionPoll(returnUrl);
+      return;
+    }
+
+    // ── 2. PKCE flow: ?code=XXXX (Chrome, Firefox, Android) ──
+    var code = new URLSearchParams(window.location.search).get('code');
+    if (code) {
+      try {
+        var result = await sb.auth.exchangeCodeForSession(code);
+        if (result.error) throw result.error;
+        if (result.data && result.data.session) { doRedirect(returnUrl); return; }
+      } catch(err) {
+        console.error('exchangeCodeForSession hiba:', err);
+      }
+    }
+
+    // ── 3. Fallback poll ──
+    startSessionPoll(returnUrl);
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', handleCallback);
   } else {
