@@ -12,13 +12,158 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f9fc; color: #0a1628; }
     .sh-wrap { max-width: 1040px; margin: 0 auto; padding: 32px 20px 60px; }
-    .sh-hero { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 32px; min-height: 300px; background: linear-gradient(135deg,#1a8fc1,#2dbf7e); }
-    .sh-hero img { width: 100%; height: 380px; object-fit: cover; display: block; }
-    .sh-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,22,40,.75) 0%, transparent 55%); }
-    .sh-hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 32px; }
-    .sh-hero-content h1 { color: white; font-size: clamp(1.5rem,3vw,2.2rem); font-weight: 900; margin: 0 0 8px; line-height: 1.2; }
-    .sh-hero-meta { display: flex; gap: 16px; flex-wrap: wrap; }
-    .sh-hero-meta span { color: rgba(255,255,255,.8); font-size: .88rem; display: flex; align-items: center; gap: 5px; }
+    /* ── HELYSZÍN BRAND HERO – Sportingo prémium (polish v2) ── */
+    .sh-hero {
+      position: relative; border-radius: 24px; overflow: hidden;
+      margin-bottom: 36px;
+      /* Finomított gradient: balról sötét navy → jobbra mélykék, nagyon finom átmenet */
+      background: linear-gradient(135deg, #0b1a2e 0%, #0e2244 60%, #0d2a52 100%);
+      padding: 44px 40px 40px;
+      box-shadow:
+        0 2px 0 rgba(255,255,255,.04) inset,   /* teteje: finom fény-csík */
+        0 12px 48px rgba(10,22,40,.28),
+        0 1px 0 rgba(26,143,193,.15);           /* alja: nagyon finom kék szegély */
+      isolation: isolate;
+    }
+
+    /* Háttér dekor réteg 1 – enyhe diagonális fénysáv (nem grid, elegánsabb) */
+    .sh-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(105deg,
+          rgba(26,143,193,.06) 0%,
+          transparent 38%,
+          transparent 62%,
+          rgba(45,191,126,.04) 100%
+        );
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Glow réteg – zöld jobbra fent, finomabb mint előző kör */
+    .sh-hero::after {
+      content: '';
+      position: absolute; top: -100px; right: -60px;
+      width: 360px; height: 360px;
+      background: radial-gradient(ellipse at 70% 30%,
+        rgba(45,191,126,.14) 0%,
+        rgba(26,143,193,.06) 45%,
+        transparent 70%
+      );
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Kék glow – bal alsó, visszafogottabb */
+    .sh-hero-glow {
+      position: absolute; bottom: -80px; left: -40px;
+      width: 300px; height: 300px;
+      background: radial-gradient(ellipse at 30% 70%,
+        rgba(26,143,193,.12) 0%,
+        transparent 65%
+      );
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Dekoratív SVG-alapú absztrakt kör-arc elem – jobb oldali háttér réteg */
+    /* (emoji helyett inline SVG a markupban – nem tömör, elegáns) */
+    .sh-hero-deco {
+      position: absolute; right: -20px; top: 50%; transform: translateY(-50%);
+      width: 220px; height: 220px;
+      pointer-events: none; z-index: 0;
+      opacity: .055;
+    }
+    .sh-hero-deco svg {
+      width: 100%; height: 100%;
+    }
+
+    /* Minden tartalom a z:1 rétegen */
+    .sh-hero-inner { position: relative; z-index: 1; }
+
+    /* Badge – finomabb, kevésbé box-szerű */
+    .sh-hero-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(45,191,126,.1);
+      border: 1px solid rgba(45,191,126,.22);
+      color: rgba(45,191,126,.9);
+      font-size: .68rem; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      padding: 3px 11px; border-radius: 20px;
+      margin-bottom: 16px;
+    }
+
+    /* Cím – kissé könnyebb súly, de erős */
+    .sh-hero-title {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      font-size: clamp(1.45rem, 3.2vw, 2.15rem);
+      font-weight: 800; color: rgba(255,255,255,.97);
+      line-height: 1.18; margin: 0 0 14px;
+      letter-spacing: -.025em;
+    }
+
+    /* Meta sor – lokáció / pályaszám */
+    .sh-hero-meta {
+      display: flex; flex-wrap: wrap; gap: 4px 20px;
+      margin-bottom: 0;
+    }
+    .sh-hero-meta-item {
+      display: flex; align-items: center; gap: 5px;
+      color: rgba(255,255,255,.55);
+      font-size: .83rem; font-weight: 500;
+      letter-spacing: .01em;
+    }
+
+    /* Elválasztó – finomabb, rövidebb */
+    .sh-hero-divider {
+      height: 1px;
+      background: linear-gradient(90deg,
+        rgba(255,255,255,.08) 0%,
+        rgba(255,255,255,.04) 50%,
+        transparent 90%
+      );
+      margin: 18px 0 14px;
+    }
+
+    /* Sportág chips – kevésbé button-like, inkább meta-tag */
+    .sh-hero-sports {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    }
+    .sh-hero-sport-chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(255,255,255,.09);
+      color: rgba(255,255,255,.65);
+      font-size: .72rem; font-weight: 600;
+      padding: 3px 10px; border-radius: 6px;
+      letter-spacing: .015em;
+      white-space: nowrap;
+    }
+
+    /* Gradient accent csík – alul, lágyabb fading széleken */
+    .sh-hero-accent {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        #1a8fc1 20%,
+        #2dbf7e 80%,
+        transparent 100%
+      );
+      z-index: 1; opacity: .85;
+    }
+
+    /* Desktop: max-width-korlátozott belső tartalom – levegősebb */
+    @media(min-width: 760px) {
+      .sh-hero-inner { max-width: 680px; }
+    }
+
+    /* Mobil polish */
+    @media(max-width: 600px) {
+      .sh-hero { padding: 28px 22px 30px; border-radius: 18px; margin-bottom: 24px; }
+      .sh-hero-title { font-size: clamp(1.3rem, 6vw, 1.7rem); margin-bottom: 10px; }
+      .sh-hero-badge { margin-bottom: 12px; }
+      .sh-hero-meta-item { font-size: .8rem; }
+      .sh-hero-sport-chip { font-size: .7rem; padding: 3px 8px; }
+      .sh-hero-deco { width: 160px; height: 160px; right: -16px; opacity: .04; }
+    }
     .sh-breadcrumb { font-size: .8rem; color: #6b8a9a; margin-bottom: 20px; }
     .sh-breadcrumb a { color: #1a8fc1; text-decoration: none; }
     .sh-breadcrumb a:hover { text-decoration: underline; }
@@ -76,33 +221,7 @@
     .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
     .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
     .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
-    /* ── KEDVENC GOMB (helyszín oldal) ── */
-    .sp-fav-btn {
-      position: absolute; top: 18px; right: 18px;
-      display: flex; align-items: center; gap: 7px;
-      height: 44px; padding: 0 18px 0 13px;
-      background: rgba(10,22,40,.45);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1.5px solid rgba(255,255,255,.22); border-radius: 100px;
-      color: white; font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: .82rem; font-weight: 700; cursor: pointer;
-      transition: all .22s cubic-bezier(.4,0,.2,1);
-      box-shadow: 0 4px 20px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.12);
-      letter-spacing: .01em; z-index: 5;
-      user-select: none; -webkit-tap-highlight-color: transparent;
-    }
-    .sp-fav-btn:hover { background: rgba(10,22,40,.62); border-color: rgba(255,255,255,.38); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.15); }
-    .sp-fav-btn:active { transform: translateY(0); }
-    .sp-fav-btn.saved { background: rgba(45,191,126,.28); border-color: rgba(45,191,126,.55); box-shadow: 0 4px 20px rgba(45,191,126,.2), inset 0 1px 0 rgba(255,255,255,.1); }
-    .sp-fav-btn.saved:hover { background: rgba(45,191,126,.4); border-color: rgba(45,191,126,.7); }
-    .sp-fav-btn.loading { opacity: .7; cursor: not-allowed; pointer-events: none; }
-    .sp-fav-icon { font-size: 1rem; line-height: 1; display: flex; align-items: center; }
-    .sp-fav-btn.pop .sp-fav-icon { animation: sp-fav-pop .35s cubic-bezier(.34,1.56,.64,1); }
-    @keyframes sp-fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.45); } 70% { transform: scale(.88); } 100% { transform: scale(1); } }
-    .sp-fav-label { white-space: nowrap; }
-    .sp-fav-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: #0a1628; color: white; padding: 10px 20px; border-radius: 100px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .82rem; font-weight: 700; box-shadow: 0 8px 32px rgba(0,0,0,.22); opacity: 0; transition: opacity .22s, transform .22s cubic-bezier(.4,0,.2,1); z-index: 99999; pointer-events: none; white-space: nowrap; }
-    .sp-fav-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    @media (max-width: 600px) { .sp-fav-btn { top: 14px; right: 14px; height: 48px; padding: 0 16px 0 12px; font-size: .8rem; gap: 6px; } }
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/sportingo-drawer.css">
@@ -560,18 +679,47 @@ async function init() {
     </div>
 
     <div class="sh-hero">
-      ${kepUrl ? `<img src="${esc(kepUrl)}" alt="${esc(nev)}" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">` : ''}
-      <div class="sh-hero-overlay"></div>
-      <button class="sp-fav-btn" id="sp-fav-btn" aria-label="Kedvencekhez adás">
-        <span class="sp-fav-icon" id="sp-fav-icon">♡</span>
-        <span class="sp-fav-label" id="sp-fav-label">Kedvencekhez</span>
-      </button>
-      <div class="sh-hero-content">
-        <h1>${esc(nev)}</h1>
+      <div class="sh-hero-glow"></div>
+      <div class="sh-hero-deco" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Külső kör ív -->
+          <circle cx="100" cy="100" r="90" stroke="white" stroke-width="1.5" stroke-dasharray="8 6" stroke-linecap="round" opacity=".5"/>
+          <!-- Középső kör -->
+          <circle cx="100" cy="100" r="60" stroke="white" stroke-width="1" opacity=".35"/>
+          <!-- Belső teli kör -->
+          <circle cx="100" cy="100" r="28" stroke="white" stroke-width="1.2" opacity=".25"/>
+          <!-- Kereszt-tengelyek, mint egy sportpálya középköre -->
+          <line x1="100" y1="10" x2="100" y2="190" stroke="white" stroke-width=".8" opacity=".2"/>
+          <line x1="10" y1="100" x2="190" y2="100" stroke="white" stroke-width=".8" opacity=".2"/>
+          <!-- Diagonális finomságok -->
+          <line x1="36" y1="36" x2="164" y2="164" stroke="white" stroke-width=".5" opacity=".1"/>
+          <line x1="164" y1="36" x2="36" y2="164" stroke="white" stroke-width=".5" opacity=".1"/>
+        </svg>
+      </div>
+      <div class="sh-hero-accent"></div>
+      <div class="sh-hero-inner">
+        <div class="sh-hero-badge">Sportközpont</div>
+        <h1 class="sh-hero-title">${esc(nev)}</h1>
         <div class="sh-hero-meta">
-          ${varos ? `<span>📍 ${esc(varos + (cim ? ', ' + cim : ''))}</span>` : ''}
-          ${palyas.length ? `<span>⚽ ${palyas.length} pálya</span>` : ''}
+          ${varos ? `<span class="sh-hero-meta-item">📍 ${esc(varos + (cim ? ', ' + cim : ''))}</span>` : ''}
+          ${palyas.length ? `<span class="sh-hero-meta-item">⚽ ${palyas.length} pálya</span>` : ''}
         </div>
+        ${(function(){
+          var sportokDedup = palyas
+            .map(function(p){ return p.sportag; })
+            .filter(function(s, i, arr){ return s && arr.indexOf(s) === i; });
+          if (!sportokDedup.length) return '';
+          var SPORT_EMOJI = {
+            'Futball':'⚽','Tenisz':'🎾','Padel':'🎾','Squash':'🟡',
+            'Röplabda':'🏐','Kézilabda':'🤾','Kosárlabda':'🏀',
+            'Tollaslabda':'🏸','Biliárd':'🎱','Bowling':'🎳',
+            'Gokart':'🏎','Lőtér':'🎯','Teqball':'🏓'
+          };
+          var chips = sportokDedup.map(function(s){
+            return '<span class="sh-hero-sport-chip">' + (SPORT_EMOJI[s] || '🏅') + ' ' + esc(s) + '</span>';
+          }).join('');
+          return '<div class="sh-hero-divider"></div><div class="sh-hero-sports">' + chips + '</div>';
+        })()}
       </div>
     </div>
 
@@ -589,19 +737,9 @@ async function init() {
   // Review blokk – render UTÁN
   loadHelyszinReviews(helyszin.id, palyas.map(function(p){ return p.id; }));
 
-  // ── Kedvenc gomb – render UTÁN ──────────────────────────────
-  // palyaId: a helyszín első (leginkább releváns) pályájának id-je,
-  // hogy a kedvencek táblában palya_id-vel lehessen menteni.
-  // Ha nincs pálya, a helyszín maga nem menthető kedvencnek – a gomb ilyenkor nem indul.
-  window._spHelyszin = {
-    helyszinId: helyszin.id,
-    nev: nev,
-    // Az első pálya id-je kerül palya_id-ként a kedvencek táblába
-    palyaId: palyas && palyas[0] ? palyas[0].id : null
-  };
-  // _spPalya-t is beállítjuk, mert az initFavButton() ezt olvassa
-  window._spPalya = { palyaId: palyas && palyas[0] ? palyas[0].id : null, nev: nev };
-  initFavButton();
+  // ── Kedvenc gomb: helyszín oldalon szándékosan nincs ──────────
+  // A helyszín oldal nem támogat kedvencekhez adást.
+  // (initFavButton / _spPalya / _spHelyszin szándékosan kihagyva)
 
   // ── Csoport kattintás kezelő – render UTÁN kötjük fel ──────────
   // Kattintáskor: state frissítés + navigáció a legjobb pálya pályaoldalára.
