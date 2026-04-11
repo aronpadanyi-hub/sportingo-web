@@ -1047,8 +1047,22 @@
   };
 
   window.spGoogleLogin = async function() {
-    try { sessionStorage.setItem('sp_return_to', window.location.href); } catch(e) {}
-    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://sportingo.hu/auth-callback' } });
+    // ── Safari ITP fix: sessionStorage elveszhet cross-origin redirect után.
+    // localStorage is mentjük fallback-ként (ITP nem törli top-level navigációnál).
+    var returnTo = window.location.href;
+    try { sessionStorage.setItem('sp_return_to', returnTo); } catch(e) {}
+    try { localStorage.setItem('sp_return_to_fallback', returnTo); } catch(e) {}
+
+    // ── PKCE flow explicit megadása: Supabase v2 mobilon automatikusan
+    // ezt használja, de explicit megadás biztosítja az egységes viselkedést
+    // minden böngészőben (Safari, Chrome, Firefox).
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://sportingo.hu/auth-callback',
+        queryParams: { access_type: 'offline', prompt: 'select_account' }
+      }
+    });
     if (error) showLoginAlert('Google belépés sikertelen!', true);
   };
 
