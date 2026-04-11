@@ -28,7 +28,11 @@
   var SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
 
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // detectSessionInUrl: false → az SDK NEM dolgozza fel automatikusan a callback URL-t.
+  // Kizárólag a kézi exchangeCodeForSession(code) fut – megszűnik a dupla feldolgozás.
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { detectSessionInUrl: false }
+  });
   var msgEl = document.getElementById('msg');
 
   // ── DIAGNOSZTIKA ──────────────────────────────────────────────────────────
@@ -134,17 +138,20 @@
     spDiag('--- STORAGE (exchange ELŐTT) ---', '');
     spDumpStorage();
 
-    // DIAGNOSZTIKA 3: session EXCHANGE ELŐTT
-    try {
-      var preCheck = await sb.auth.getSession();
-      spDiag('getSession() ELŐTT', preCheck.data && preCheck.data.session ? 'VAN SESSION' : 'nincs session');
-      // Ha már van session (pl. korábbi redirect), azonnal redirect
-      if (preCheck.data && preCheck.data.session) {
-        spDiag('MÁR VAN SESSION – közvetlen redirect', returnUrl);
-        doRedirect(preCheck.data.session, returnUrl);
-        return;
-      }
-    } catch(e) { spDiag('pre-check EXCEPTION', e.message); }
+    // DIAGNOSZTIKA 3: session pre-check CSAK ha nincs ?code
+    // Ha van code → azonnal exchange; pre-check csak fallback útvonalon fut.
+    // Cél: elkerülni a getSession() vs exchangeCodeForSession() versenyhelyzetet.
+    if (!code) {
+      try {
+        var preCheck = await sb.auth.getSession();
+        spDiag('getSession() ELŐTT (nincs code)', preCheck.data && preCheck.data.session ? 'VAN SESSION' : 'nincs session');
+        if (preCheck.data && preCheck.data.session) {
+          spDiag('MÁR VAN SESSION (nincs code) – közvetlen redirect', returnUrl);
+          doRedirect(preCheck.data.session, returnUrl);
+          return;
+        }
+      } catch(e) { spDiag('pre-check EXCEPTION', e.message); }
+    }
 
     // ── 1. PKCE EXCHANGE ──────────────────────────────────────────────────
     if (code) {
