@@ -30,13 +30,24 @@
   var msgEl = document.getElementById('msg');
 
   function getReturnUrl() {
-    try { return sessionStorage.getItem('sp_return_to') || 'https://sportingo.hu'; }
-    catch(e) { return 'https://sportingo.hu'; }
+    try {
+      // sessionStorage-t Safari ITP törölheti cross-origin redirect után –
+      // localStorage fallback biztosítja a visszatérési URL-t
+      var url = sessionStorage.getItem('sp_return_to')
+             || localStorage.getItem('sp_return_to_fallback')
+             || 'https://sportingo.hu';
+      return url;
+    } catch(e) { return 'https://sportingo.hu'; }
+  }
+
+  function clearReturnUrl() {
+    try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
+    try { localStorage.removeItem('sp_return_to_fallback'); } catch(e) {}
   }
 
   function doRedirect(url) {
     msgEl.textContent = 'Sikeres bejelentkezés! Visszairányítás...';
-    try { sessionStorage.removeItem('sp_return_to'); } catch(e) {}
+    clearReturnUrl();
     setTimeout(function() { window.location.replace(url); }, 700);
   }
 
