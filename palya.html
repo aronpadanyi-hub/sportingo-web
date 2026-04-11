@@ -1397,6 +1397,7 @@ async function init() {
         <div class="sp-main">
           <div id="spf-promo-sav-global"></div>
           ${metaItems.length ? `<div class="sp-card"><h2>📊 Alapadatok</h2><div class="sp-meta-grid">${metaHTML}</div></div>` : ''}
+          ${nyitHTML}
           ${leirasHTML}
           ${terképHTML}
           <div id="sp-review-blokk"></div>
@@ -1404,7 +1405,6 @@ async function init() {
         <div class="sp-sidebar">
           ${hasNaptar ? '' : ctaHTML}
           ${helyszinLinkHTML}
-          ${nyitHTML}
         </div>
       </div>
 
