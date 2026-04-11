@@ -76,6 +76,33 @@
     .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
     .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
     .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
+    /* ── KEDVENC GOMB (helyszín oldal) ── */
+    .sp-fav-btn {
+      position: absolute; top: 18px; right: 18px;
+      display: flex; align-items: center; gap: 7px;
+      height: 44px; padding: 0 18px 0 13px;
+      background: rgba(10,22,40,.45);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(255,255,255,.22); border-radius: 100px;
+      color: white; font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .82rem; font-weight: 700; cursor: pointer;
+      transition: all .22s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 4px 20px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.12);
+      letter-spacing: .01em; z-index: 5;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .sp-fav-btn:hover { background: rgba(10,22,40,.62); border-color: rgba(255,255,255,.38); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.15); }
+    .sp-fav-btn:active { transform: translateY(0); }
+    .sp-fav-btn.saved { background: rgba(45,191,126,.28); border-color: rgba(45,191,126,.55); box-shadow: 0 4px 20px rgba(45,191,126,.2), inset 0 1px 0 rgba(255,255,255,.1); }
+    .sp-fav-btn.saved:hover { background: rgba(45,191,126,.4); border-color: rgba(45,191,126,.7); }
+    .sp-fav-btn.loading { opacity: .7; cursor: not-allowed; pointer-events: none; }
+    .sp-fav-icon { font-size: 1rem; line-height: 1; display: flex; align-items: center; }
+    .sp-fav-btn.pop .sp-fav-icon { animation: sp-fav-pop .35s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes sp-fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.45); } 70% { transform: scale(.88); } 100% { transform: scale(1); } }
+    .sp-fav-label { white-space: nowrap; }
+    .sp-fav-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: #0a1628; color: white; padding: 10px 20px; border-radius: 100px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .82rem; font-weight: 700; box-shadow: 0 8px 32px rgba(0,0,0,.22); opacity: 0; transition: opacity .22s, transform .22s cubic-bezier(.4,0,.2,1); z-index: 99999; pointer-events: none; white-space: nowrap; }
+    .sp-fav-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (max-width: 600px) { .sp-fav-btn { top: 14px; right: 14px; height: 48px; padding: 0 16px 0 12px; font-size: .8rem; gap: 6px; } }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/sportingo-drawer.css">
@@ -535,6 +562,10 @@ async function init() {
     <div class="sh-hero">
       ${kepUrl ? `<img src="${esc(kepUrl)}" alt="${esc(nev)}" onerror="if(!this._fb){this._fb=true;this.src='${PALYA_DEFAULT_IMAGES.fallback}'}">` : ''}
       <div class="sh-hero-overlay"></div>
+      <button class="sp-fav-btn" id="sp-fav-btn" aria-label="Kedvencekhez adás">
+        <span class="sp-fav-icon" id="sp-fav-icon">♡</span>
+        <span class="sp-fav-label" id="sp-fav-label">Kedvencekhez</span>
+      </button>
       <div class="sh-hero-content">
         <h1>${esc(nev)}</h1>
         <div class="sh-hero-meta">
@@ -557,6 +588,20 @@ async function init() {
     </div>`;
   // Review blokk – render UTÁN
   loadHelyszinReviews(helyszin.id, palyas.map(function(p){ return p.id; }));
+
+  // ── Kedvenc gomb – render UTÁN ──────────────────────────────
+  // palyaId: a helyszín első (leginkább releváns) pályájának id-je,
+  // hogy a kedvencek táblában palya_id-vel lehessen menteni.
+  // Ha nincs pálya, a helyszín maga nem menthető kedvencnek – a gomb ilyenkor nem indul.
+  window._spHelyszin = {
+    helyszinId: helyszin.id,
+    nev: nev,
+    // Az első pálya id-je kerül palya_id-ként a kedvencek táblába
+    palyaId: palyas && palyas[0] ? palyas[0].id : null
+  };
+  // _spPalya-t is beállítjuk, mert az initFavButton() ezt olvassa
+  window._spPalya = { palyaId: palyas && palyas[0] ? palyas[0].id : null, nev: nev };
+  initFavButton();
 
   // ── Csoport kattintás kezelő – render UTÁN kötjük fel ──────────
   // Kattintáskor: state frissítés + navigáció a legjobb pálya pályaoldalára.
