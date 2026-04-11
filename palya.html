@@ -62,6 +62,19 @@
       .sp-cta:has(a[target="_blank"]) .sp-cta-btn { display: flex; }
     }
 
+    /* ── Zöld „Foglalás" gyorsugró blokk: csak desktopon ──────────────
+       Mobilon a felhasználó a természetes görgetéssel elér a valódi
+       foglalási űrlaphoz (formHTML, #foglalas-form) – a sidebar .sp-cta
+       blokk felesleges és megtöri a flow-t.
+       ⚠ NEM a #foglalas-form vagy a .sp-card#foglalas-form érinti ezt,
+         csak a sidebar-ban lévő .sp-cta gyorsugró elemet.
+       Kivétel: külső linkes változat (target="_blank") mobilon is hasznos,
+                az egy tényleges navigációs akció, nem duplikáció. */
+    @media (max-width: 768px) {
+      .sp-sidebar .sp-cta { display: none; }
+      .sp-sidebar .sp-cta:has(a[target="_blank"]) { display: block; }
+    }
+
     /* ── CARDS ── */
     .sp-card { background: white; border-radius: 20px; border: 1.5px solid #e4eef5; padding: 24px 26px; margin-bottom: 20px; box-shadow: 0 2px 16px rgba(10,22,40,.06); }
     .sp-card h2 { font-size: 1rem; font-weight: 800; color: #0a1628; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
