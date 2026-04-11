@@ -14,10 +14,10 @@
   const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
 
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  window._spSb = sb;
-
-  // ── State ──
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { flowType: 'pkce' }
+  });
+  window._spSb = sb;  // ── State ──
   let currentUser = null;
   let allBookings = [], filteredBookings = [], currentPage = 1, activeFilter = 'kozelgo';
   let palyaReviewMap = new Map();
@@ -1047,21 +1047,32 @@
   };
 
   window.spGoogleLogin = async function() {
-    // ── Safari ITP fix: sessionStorage elveszhet cross-origin redirect után.
-    // localStorage is mentjük fallback-ként (ITP nem törli top-level navigációnál).
+    // ── Return URL mentése: sessionStorage + localStorage fallback ──
+    // Safari ITP törölheti a sessionStorage-ot cross-origin redirect után
     var returnTo = window.location.href;
     try { sessionStorage.setItem('sp_return_to', returnTo); } catch(e) {}
-    try { localStorage.setItem('sp_return_to_fallback', returnTo); } catch(e) {}
+    try { localStorage.setItem('sp_return_to_fb', returnTo); } catch(e) {}
 
-    // ── PKCE flow explicit megadása: Supabase v2 mobilon automatikusan
-    // ezt használja, de explicit megadás biztosítja az egységes viselkedést
-    // minden böngészőben (Safari, Chrome, Firefox).
-    const { error } = await sb.auth.signInWithOAuth({
+    // ── Safari detektálás ──
+    // Safari PKCE flow-nál elveszti a code verifier-t (localStorage origin isolation).
+    // Megoldás: implicit flow kényszerítése Safariban (hash-alapú token, nincs PKCE state).
+    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    var clientOptions = isSafari
+      ? { auth: { flowType: 'implicit' } }
+      : {};
+
+    var safariSb = isSafari
+      ? window.supabase.createClient(
+          'https://amowwfjxeursokkznmxl.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0',
+          clientOptions
+        )
+      : sb;
+
+    var { error } = await safariSb.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: 'https://sportingo.hu/auth-callback',
-        queryParams: { access_type: 'offline', prompt: 'select_account' }
-      }
+      options: { redirectTo: 'https://sportingo.hu/auth-callback' }
     });
     if (error) showLoginAlert('Google belépés sikertelen!', true);
   };
