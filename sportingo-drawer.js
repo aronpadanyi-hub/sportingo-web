@@ -15,7 +15,7 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { flowType: 'pkce' }
+    auth: { flowType: 'implicit' }
   });
   window._spSb = sb;  // ── State ──
   let currentUser = null;
@@ -1047,29 +1047,13 @@
   };
 
   window.spGoogleLogin = async function() {
-    // ── Return URL beágyazása a redirectTo-ba ──
-    // Storage (sessionStorage/localStorage) privát módban nem megbízható.
-    // A visszatérési URL-t a callback URL query string-jébe kódoljuk:
-    //   https://sportingo.hu/auth-callback?return_to=<encoded>
-    // Ez átmegy Google-n is (a ?return_to param megmarad a redirect után),
-    // és a callback oldal az URL-ből olvassa ki – storage nélkül.
-    var returnTo = window.location.href;
-    var callbackBase = 'https://sportingo.hu/auth-callback';
-    var redirectTo = callbackBase + '?return_to=' + encodeURIComponent(returnTo);
-
-    // ── Safari: implicit flow (nincs PKCE state probléma) ──
-    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    var clientToUse = isSafari
-      ? window.supabase.createClient(
-          'https://amowwfjxeursokkznmxl.supabase.co',
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0',
-          { auth: { flowType: 'implicit' } }
-        )
-      : sb;
-
-    var { error } = await clientToUse.auth.signInWithOAuth({
+    // Az sb client flowType:'implicit'-tel van inicializálva (fent),
+    // így nincs szükség Safari detektálásra vagy dupla client-re.
+    // Implicit flow = hash-alapú token, nincs PKCE localStorage dependency,
+    // privát módban és minden böngészőben működik.
+    var { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: redirectTo }
+      options: { redirectTo: 'https://sportingo.hu/auth-callback' }
     });
     if (error) showLoginAlert('Google belépés sikertelen!', true);
   };
