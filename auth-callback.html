@@ -26,25 +26,15 @@
   const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
 
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // FONTOS: flowType:'implicit' – ugyanaz mint a drawer sb client-je.
+  // A callback oldal client-jének is implicit kell, különben a hash token
+  // feldolgozása nem történik meg automatikusan.
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { flowType: 'implicit' }
+  });
   var msgEl = document.getElementById('msg');
 
-  // ── Return URL: URL param > sessionStorage > localStorage > főoldal ──
-  // A ?return_to= param storage nélkül is működik (privát mód, ITP).
-  // Storage fallback: régi bejelentkezések kompatibilitásához.
   function getReturnUrl() {
-    try {
-      // 1. URL param (legmegbízhatóbb – cross-origin redirecten is átmegy)
-      var urlParam = new URLSearchParams(window.location.search).get('return_to');
-      if (urlParam) return urlParam;
-      // 2. Hash utáni URL params (implicit flow: #access_token=...&return_to=...)
-      // A Supabase hash-t rak elé, de a ?return_to a hash ELŐTT van az URL-ben
-      // tehát a fenti URLSearchParams már kiolvasná – ez csak extra biztonság
-      var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-      var hashReturn = hashParams.get('return_to');
-      if (hashReturn) return hashReturn;
-    } catch(e) {}
-    // 3. Storage fallback (normál módban)
     try { var ss = sessionStorage.getItem('sp_return_to'); if (ss) return ss; } catch(e) {}
     try { var ls = localStorage.getItem('sp_return_to_fb'); if (ls) return ls; } catch(e) {}
     return 'https://sportingo.hu';
@@ -63,7 +53,7 @@
   }
 
   function startSessionPoll(returnUrl) {
-    var retries = 0, maxRetries = 25;
+    var retries = 0, maxRetries = 30; // 6 másodperc – implicit flow kicsit lassabb
     function check() {
       sb.auth.getSession().then(function(res) {
         if (res.data && res.data.session) { doRedirect(returnUrl); }
@@ -80,29 +70,30 @@
   async function handleCallback() {
     var returnUrl = getReturnUrl();
 
-    // ── 1. Implicit flow: #access_token (Safari) ──
+    // Implicit flow: a Supabase SDK automatikusan feldolgozza a #access_token hash-t
+    // az createClient() pillanatában. Csak várni kell rá (~600ms), majd getSession().
     var hash = window.location.hash;
     if (hash && hash.indexOf('access_token') !== -1) {
       await new Promise(function(r) { setTimeout(r, 600); });
       var res = await sb.auth.getSession();
       if (res.data && res.data.session) { doRedirect(returnUrl); return; }
+      // Extra poll ha az SDK még nem végzett
       startSessionPoll(returnUrl);
       return;
     }
 
-    // ── 2. PKCE flow: ?code=XXXX (Chrome, Firefox, Android) ──
+    // Fallback: PKCE ?code= (ha valami miatt mégis PKCE jönne)
     var code = new URLSearchParams(window.location.search).get('code');
     if (code) {
       try {
         var result = await sb.auth.exchangeCodeForSession(code);
-        if (result.error) throw result.error;
-        if (result.data && result.data.session) { doRedirect(returnUrl); return; }
-      } catch(err) {
-        console.error('exchangeCodeForSession hiba:', err);
-      }
+        if (!result.error && result.data && result.data.session) {
+          doRedirect(returnUrl); return;
+        }
+      } catch(err) { console.error('exchangeCodeForSession:', err); }
     }
 
-    // ── 3. Fallback poll ──
+    // Végső fallback poll
     startSessionPoll(returnUrl);
   }
 
