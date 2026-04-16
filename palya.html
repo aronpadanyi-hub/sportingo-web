@@ -1435,7 +1435,7 @@ async function init() {
   if (ar) metaItems.push(['Ár', fmt(ar) + ' Ft / óra']);
   if (boritas) metaItems.push(['Borítás', boritas]);
   if (palya.fedett_tipus && palya.fedett_tipus !== 'kültéri') {
-    const fedettTipusLabel = { 'fedett': 'Fedett', 'szezonális': 'Szezonálisan fedett' };
+    const fedettTipusLabel = { 'fedett': 'Fedett', 'kültéri': 'Kültéri', 'szezonális': 'Szezonálisan fedett' };
     metaItems.push(['Elhelyezés', fedettTipusLabel[palya.fedett_tipus] || palya.fedett_tipus]);
   }
   if (sportag) metaItems.push(['Sportág', sportag]);
