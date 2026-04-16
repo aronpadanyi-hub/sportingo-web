@@ -255,15 +255,28 @@
         .eq('id', id)
         .single();
 
-      // 2. Státusz: lemondva (saját email + varakozik guard a RLS policy-hoz)
+      // 2. Státusz: lemondva
       const { data: { session } } = await sb.auth.getSession();
       const userEmail = session?.user?.email || currentUser?.email;
-      const { error } = await sb.from('foglalasok')
+      console.log('[CANCEL START]', { id, userEmail });
+
+      const { data: updated, error } = await sb.from('foglalasok')
         .update({ statusz: 'lemondva' })
         .eq('id', id)
-        .eq('statusz', 'varakozik')
-        .eq('ugyfel_email', userEmail);
-      if (error) throw error;
+        .in('statusz', ['varakozik', 'jovahagyva'])
+        .eq('ugyfel_email', userEmail)
+        .select();
+
+      console.log('[CANCEL RESULT]', updated);
+
+      if (error) {
+        console.error('[CANCEL ERROR]', error);
+        throw error;
+      }
+      if (!updated || updated.length === 0) {
+        console.warn('[RLS OR EMAIL MISMATCH]', { id, userEmail });
+        throw new Error('CANCEL_FAILED_NO_ROWS_UPDATED');
+      }
 
       // 3. Slot felszabadítás – kizárólag az eltárolt időablak alapján (biztonságos)
       const datum = fogl?.idopontok?.datum;
@@ -284,8 +297,9 @@
       await loadBookings();
       if (typeof loadAttekintes === 'function') await loadAttekintes();
     } catch(e) {
+      console.error('[CANCEL ERROR]', e);
       if (okBtn) { okBtn.disabled = false; okBtn.textContent = 'Foglalás lemondása'; }
-      showSfdToast('❌ Hiba történt a lemondásnál');
+      showSfdToast('❌ Nem sikerült lemondani. Próbáld újra vagy lépj kapcsolatba a pályával.');
     }
   }
 
