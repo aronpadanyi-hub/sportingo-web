@@ -540,6 +540,13 @@ const PALYA_DEFAULT_IMAGES = {
   tenisz_szonyeg:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-szonyeg.PNG',
   teqball:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/teqball.PNG',
   tollaslabda:         'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tollas.PNG',
+  // ── Új sportok default képei ──
+  pingpong:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/ping-pong.PNG',
+  falmaszas:           'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/falmaszas.PNG',
+  airsoft:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/airsoft.PNG',
+  paintball:           'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/paintball.PNG',
+  golf:                'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/golf.PNG',
+  minigolf:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/minigolf.PNG',
   fallback:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya.PNG'
 };
 function _normVal(v) { return String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
@@ -554,6 +561,12 @@ function getDefaultPalyaImage(p) {
   if(sg==='squash') return PALYA_DEFAULT_IMAGES.squash;
   if(sg==='teqball') return PALYA_DEFAULT_IMAGES.teqball;
   if(sg==='tollaslabda'||sg==='tollas'||sg==='badminton') return PALYA_DEFAULT_IMAGES.tollaslabda;
+  if(sg==='pingpong'||sg==='asztalitenisz') return PALYA_DEFAULT_IMAGES.pingpong;
+  if(sg==='falmaszas'||sg.includes('falm')) return PALYA_DEFAULT_IMAGES.falmaszas;
+  if(sg==='airsoft') return PALYA_DEFAULT_IMAGES.airsoft;
+  if(sg==='paintball') return PALYA_DEFAULT_IMAGES.paintball;
+  if(sg==='golf') return PALYA_DEFAULT_IMAGES.golf;
+  if(sg==='minigolf') return PALYA_DEFAULT_IMAGES.minigolf;
   if(sg==='tenisz') {
     if(bor.includes('salak')) return PALYA_DEFAULT_IMAGES.tenisz_salak;
     if(bor.includes('mufu')) return PALYA_DEFAULT_IMAGES.tenisz_mufu;
@@ -621,7 +634,13 @@ function render404() {
 }
 
 function sportIcon(sportag) {
-  const icons = { 'Futball': '⚽', 'Tenisz': '🎾', 'Padel': '🏸', 'Squash': '🟡' };
+  const icons = {
+    'Futball':'⚽','Tenisz':'🎾','Padel':'🟦','Squash':'🟨',
+    'Kosárlabda':'🏀','Röplabda':'🏐','Kézilabda':'🤾','Tollaslabda':'🏸',
+    'Pingpong':'🏓','Bowling':'🎳','Biliárd':'🎱','Teqball':'🟢',
+    'Gokart':'🏎️','Lőtér':'🔫','Falmászás':'🧗','Airsoft':'🔫',
+    'Paintball':'🎯','Golf':'⛳','Minigolf':'🏌️'
+  };
   return icons[sportag] || '🏃';
 }
 
@@ -682,7 +701,7 @@ async function init() {
     'Padel':            { meret: false, boritas: false, fedett: true  },
     'Squash':           { meret: false, boritas: false, fedett: false },
     'Tollaslabda':      { meret: false, boritas: false, fedett: true  },
-    'Röplabda':         { meret: false, boritas: true,  fedett: false },
+    'Röplabda':         { meret: false, boritas: true,  fedett: true  },
     'Strandröplabda':   { meret: false, boritas: true,  fedett: false },
     'Bowling':          { meret: false, boritas: false, fedett: false },
     'Biliárd':          { meret: false, boritas: false, fedett: false },
@@ -691,7 +710,13 @@ async function init() {
     'Teqball':          { meret: false, boritas: false, fedett: true  },
     'Gokart':           { meret: false, boritas: false, fedett: true  },
     'Lőtér':            { meret: false, boritas: false, fedett: true  },
-    'Kézilabda':        { meret: false, boritas: true,  fedett: true  },
+    'Kézilabda':        { meret: false, boritas: false, fedett: true  },
+    // ── Új sportok ──
+    'Falmászás':        { meret: false, boritas: false, fedett: true  },
+    'Airsoft':          { meret: false, boritas: false, fedett: true  },
+    'Paintball':        { meret: false, boritas: false, fedett: true  },
+    'Golf':             { meret: false, boritas: false, fedett: false },
+    'Minigolf':         { meret: false, boritas: false, fedett: true  },
     'Egyéb':            { meret: false, boritas: true,  fedett: true  },
   };
   const GROUPING_DEFAULT = { meret: false, boritas: false, fedett: true };
@@ -962,10 +987,11 @@ async function init() {
             .filter(function(s, i, arr){ return s && arr.indexOf(s) === i; });
           if (!sportokDedup.length) return '';
           var SPORT_EMOJI = {
-            'Futball':'⚽','Tenisz':'🎾','Padel':'🎾','Squash':'🟡',
+            'Futball':'⚽','Tenisz':'🎾','Padel':'🟦','Squash':'🟨',
             'Röplabda':'🏐','Kézilabda':'🤾','Kosárlabda':'🏀',
-            'Tollaslabda':'🏸','Biliárd':'🎱','Bowling':'🎳',
-            'Gokart':'🏎','Lőtér':'🎯','Teqball':'🏓'
+            'Tollaslabda':'🏸','Pingpong':'🏓','Biliárd':'🎱','Bowling':'🎳',
+            'Gokart':'🏎️','Lőtér':'🔫','Teqball':'🟢',
+            'Falmászás':'🧗','Airsoft':'🔫','Paintball':'🎯','Golf':'⛳','Minigolf':'🏌️'
           };
           var chips = sportokDedup.map(function(s){
             return '<span class="sh-hero-sport-chip">' + (SPORT_EMOJI[s] || '🏅') + ' ' + esc(s) + '</span>';
