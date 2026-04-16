@@ -516,7 +516,7 @@
       }
     } catch(e) {}
     const { data, error } = await sb.from('foglalasok')
-      .select('*,palyas(nev,helyszin_nev,sportag,slug,helyszin_id),idopontok(datum)')
+      .select('*,palyas(nev,helyszin_nev,sportag,slug,helyszin_id),idopontok(datum,kezdes,veg)')
       .eq('ugyfel_email', currentUser.email)
       .order('created_at', { ascending: false });
     if (error || !data) {
@@ -546,16 +546,74 @@
     applyBookingFilter();
   }
 
+  // ── KÖZPONTI IDŐ-HELPER (robusztus, fail-safe, egyetlen truth source) ──
+  // Visszaadja a foglalás VÉGIDŐpontját ms-ban, vagy null-t, ha nem megállapítható.
+  // Prioritás: (1) idopontok.datum + idopontok.veg  (a join a valódi igazság)
+  //            (2) idopontok.datum + foglalasok.idopont_veg
+  //            (3) idopontok.datum 23:59:59 (dátum-szintű fallback)
+  //            (4) foglalasok.idopont_veg önmagában, ha ISO-szerű timestamp
+  //            (5) foglalasok.idopont_kezdes + 1h (durva fallback ISO timestamp esetén)
+  //            → különben null (fail-safe: a hívó döntse el)
+  function sfdGetBookingEndTs(f) {
+    try {
+      if (!f) return null;
+      const datum = f.idopontok && f.idopontok.datum ? String(f.idopontok.datum) : null; // 'YYYY-MM-DD'
+      const ipVeg = f.idopontok && f.idopontok.veg ? String(f.idopontok.veg) : null;     // 'HH:MM' vagy 'HH:MM:SS'
+      const foVeg = f.idopont_veg ? String(f.idopont_veg) : null;                         // HH:MM vagy ISO timestamp
+      const foKez = f.idopont_kezdes ? String(f.idopont_kezdes) : null;
+
+      // HH:MM vagy HH:MM:SS regex (0-23:00-59)
+      const reTime = /^([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/;
+      // ISO-ish timestamp — tartalmaz 'T'-t vagy dátum+space+idő
+      const looksIso = s => /\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s);
+
+      function combineDateTime(dateStr, timeStr) {
+        const m = timeStr.match(reTime);
+        if (!m) return null;
+        const hh = m[1].padStart(2,'0'), mm = m[2], ss = m[3] || '00';
+        const iso = dateStr + 'T' + hh + ':' + mm + ':' + ss;
+        const t = new Date(iso).getTime();
+        return isFinite(t) ? t : null;
+      }
+      function parseLoose(s) {
+        if (!s) return null;
+        const t = new Date(s).getTime();
+        return isFinite(t) ? t : null;
+      }
+
+      // (1) idopontok.datum + idopontok.veg
+      if (datum && ipVeg) {
+        const t = combineDateTime(datum, ipVeg);
+        if (t !== null) return t;
+      }
+      // (2) idopontok.datum + foglalasok.idopont_veg (ha HH:MM alak)
+      if (datum && foVeg && reTime.test(foVeg)) {
+        const t = combineDateTime(datum, foVeg);
+        if (t !== null) return t;
+      }
+      // (3) idopontok.datum 23:59:59
+      if (datum) {
+        const t = new Date(datum + 'T23:59:59').getTime();
+        if (isFinite(t)) return t;
+      }
+      // (4) foglalasok.idopont_veg önmagában, ha ISO timestamp
+      if (foVeg && looksIso(foVeg)) {
+        const t = parseLoose(foVeg);
+        if (t !== null) return t;
+      }
+      // (5) foglalasok.idopont_kezdes + 1h (durva fallback, csak ISO timestamp esetén)
+      if (foKez && looksIso(foKez)) {
+        const t = parseLoose(foKez);
+        if (t !== null) return t + 60*60*1000;
+      }
+      return null;
+    } catch(e) { return null; }
+  }
+
   function isFoglalasFuture(f) {
-    if (f.idopontok?.datum && f.idopont_veg) {
-      return new Date(f.idopontok.datum + 'T' + f.idopont_veg + ':00') > new Date();
-    } else if (f.idopontok?.datum) {
-      return new Date(f.idopontok.datum + 'T23:59:00') > new Date();
-    } else if (f.idopont_kezdes) {
-      // Fallback: idopont_id nélküli foglalásoknál (emailes, teszt)
-      return new Date(f.idopont_kezdes) > new Date();
-    }
-    return false; // ha nincs időpontadat, múltbelinek tekintjük
+    const end = sfdGetBookingEndTs(f);
+    if (end === null) return false; // ha nincs időadat → múltbelinek tekintjük (meglévő viselkedés)
+    return end > Date.now();
   }
 
   function applyBookingFilter() {
@@ -611,34 +669,31 @@
       const slug  = f.palyas?.slug || '';
       // Tényleges foglalt dátum és időintervallum megjelenítése (nem a created_at)
       const foglDatum = f.idopontok?.datum || null;
+      // NEW: kezdés/vég fallback lánca — elsőként foglalas saját oszlopa, aztán join (idopontok.kezdes/veg)
+      const kezdesMeg = f.idopont_kezdes || (f.idopontok && f.idopontok.kezdes) || null;
+      const vegMeg = f.idopont_veg || (f.idopontok && f.idopontok.veg) || null;
+      const fmtTime = t => t ? String(t).substring(0,5) : ''; // 'HH:MM' a 'HH:MM:SS'-ből is
       let dateStr = '';
-      if (foglDatum && f.idopont_kezdes && f.idopont_veg) {
+      if (foglDatum && kezdesMeg && vegMeg) {
         const d = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
-        dateStr = `${d} ${f.idopont_kezdes}–${f.idopont_veg}`;
+        dateStr = `${d} ${fmtTime(kezdesMeg)}–${fmtTime(vegMeg)}`;
       } else if (foglDatum) {
         dateStr = new Date(foglDatum).toLocaleDateString('hu-HU', { year:'numeric', month:'2-digit', day:'2-digit' });
       } else if (f.created_at) {
         dateStr = new Date(f.created_at).toLocaleDateString('hu-HU', { year:'numeric', month:'short', day:'numeric' });
       }
-      // Lemondás gomb: csak jövőbeli foglalásra, státusz + tényleges dátum+idő alapján
-      let isFuture = false;
-      if (f.idopontok?.datum && f.idopont_veg) {
-        isFuture = new Date(f.idopontok.datum + 'T' + f.idopont_veg + ':00') > new Date();
-      } else if (f.idopontok?.datum) {
-        isFuture = new Date(f.idopontok.datum + 'T23:59:00') > new Date();
-      } else if (f.idopont_kezdes) {
-        // Fallback: idopont_id nélküli foglalásoknál (emailes, teszt)
-        isFuture = new Date(f.idopont_kezdes) > new Date();
-      }
+      // NEW: Lemondás gomb + review CTA — mindkettő a központi sfdGetBookingEndTs alapú helperből
+      const endTs = sfdGetBookingEndTs(f);
+      const isFuture = endTs !== null && endTs > Date.now();
       const canCancel = (f.statusz === 'varakozik' || f.statusz === 'jovahagyva') && isFuture;
       const cancelBtn = canCancel
         ? `<button class="sfd-cancel-btn" onclick="sfdConfirmCancel('${f.id}')">🚫 Foglalás lemondása</button>`
         : '';
       const palyaUrl = slug ? `https://sportingo.hu/palya/${spEsc(slug)}` : '';
 
-      // Review CTA: csak múltbeli, jóváhagyott foglalásoknál
+      // Review CTA: csak múltbeli (endTs van és elmúlt), jóváhagyott foglalásoknál
       let reviewBtn = '';
-      const idopntElmult = !isFuture && (f.idopontok?.datum || f.idopont_veg);
+      const idopntElmult = endTs !== null && !isFuture;
       if (f.statusz === 'jovahagyva' && idopntElmult) {
         const meglevoReview = palyaReviewMap.get(f.palya_id) || null;
         const palyaNev = (f.palyas?.helyszin_nev || f.palyas?.nev || '').replace(/"/g, '&quot;');
