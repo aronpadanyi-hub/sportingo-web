@@ -23,7 +23,15 @@
   let palyaReviewMap = new Map();
   const perPage = 10;
   const sportEmoji = { Futball: '⚽', Tenisz: '🎾', Padel: '🎾', Squash: '🟡' };
-  const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva', lemondva: '🚫 Lemondva' };
+  const statuszLabel = { varakozik: '⏳ Várakozik', jovahagyva: '✅ Jóváhagyva', elutasitva: '❌ Elutasítva', lemondva: '↩️ Lemondva', lejart: '⚫ Lejárt' };
+
+  // Varakozik UI állapot: fokozatos jelzés created_at alapján
+  function sfdVarakozikState(f) {
+    const perc = (Date.now() - new Date(f.created_at).getTime()) / 60000;
+    if (perc < 30)  return { css: 'varakozik',       label: '⏳ Vár visszaigazolásra' };
+    if (perc < 60)  return { css: 'varakozik-keso',  label: '🟠 Még nem válaszolt' };
+    return               { css: 'varakozik-lejar', label: '🔴 Hamarosan lejár' };
+  }
 
   // ── Explicit auth state: 'unknown' | 'authenticated' | 'guest' ──
   // 'unknown'       = init folyamatban, session még nem megerősítve
@@ -505,7 +513,16 @@
       const nev   = f.palyas?.helyszin_nev || f.palyas?.nev || '–';
       const sport = f.palyas?.sportag || '';
       const emoji = sportEmoji[sport] || '🏟';
-      const safe  = ['varakozik','jovahagyva','elutasitva','lemondva'].includes(f.statusz) ? f.statusz : '';
+      // Varakozik fokozatos UI állapot
+      let safe  = ['varakozik','jovahagyva','elutasitva','lemondva','lejart'].includes(f.statusz) ? f.statusz : '';
+      let varakozikInfo = '';
+      if (f.statusz === 'varakozik') {
+        const vs = sfdVarakozikState(f);
+        safe = vs.css;
+        statuszLabel['varakozik'] = vs.label;
+        statuszLabel[vs.css] = vs.label;
+        varakozikInfo = `<div class="sfd-varakozik-info">ℹ️ A pálya általában 1 órán belül visszaigazolja a foglalást.</div>`;
+      }
       const slug  = f.palyas?.slug || '';
       // Tényleges foglalt dátum és időintervallum megjelenítése (nem a created_at)
       const foglDatum = f.idopontok?.datum || null;
@@ -551,9 +568,10 @@
       return `<div class="sfd-booking-card ${safe}">
         <div class="sfd-booking-top">
           <div class="sfd-booking-name">${emoji} ${palyaUrl ? `<a href="${palyaUrl}" class="sfd-booking-name-link">${spEsc(nev)}</a>` : spEsc(nev)}</div>
-          <span class="sfd-status-pill ${safe}">${statuszLabel[f.statusz] || f.statusz}</span>
+          <span class="sfd-status-pill ${safe}">${statuszLabel[safe] || statuszLabel[f.statusz] || f.statusz}</span>
         </div>
         <div class="sfd-booking-meta">${dateStr ? '📅 ' + dateStr : ''} ${sport ? '· ' + sport : ''}</div>
+        ${varakozikInfo}
         ${palyaUrl ? `<a href="${palyaUrl}" class="sfd-booking-link">Pálya megtekintése ↗</a>` : ''}
         ${reviewBtn}
         ${cancelBtn}
