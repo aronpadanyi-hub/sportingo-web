@@ -540,8 +540,10 @@
       if (f.idopontok?.datum && f.idopont_veg) {
         isFuture = new Date(f.idopontok.datum + 'T' + f.idopont_veg + ':00') > new Date();
       } else if (f.idopontok?.datum) {
-        // Ha nincs veg időpont, a nap végéig (23:59) tekintjük jövőbelinek
         isFuture = new Date(f.idopontok.datum + 'T23:59:00') > new Date();
+      } else if (f.idopont_kezdes) {
+        // Fallback: idopont_id nélküli foglalásoknál (emailes, teszt)
+        isFuture = new Date(f.idopont_kezdes) > new Date();
       }
       const canCancel = (f.statusz === 'varakozik' || f.statusz === 'jovahagyva') && isFuture;
       const cancelBtn = canCancel
