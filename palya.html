@@ -49,8 +49,10 @@
       .sp-hero        { order: 1; }
 
       /* Naptáras és form-os foglalás: közvetlenül a hero után */
-      #spf-card       { order: 2; margin-top: 16px; }
-      #foglalas-form  { order: 2; margin-top: 0; }
+      #spf-card           { order: 2; margin-top: 16px; }
+      #foglalas-form      { order: 2; margin-top: 0; }
+      /* Fallback form: szintén közvetlenül a hero után, soha ne előzze meg */
+      #spf-fallback-form  { order: 2; margin-top: 16px; }
 
       /* sp-body (alapadatok, sidebar stb.): utána */
       .sp-body        { order: 3; width: 100%; }
@@ -2298,9 +2300,14 @@ async function spfMount(origPalya) {
           <div id="spf-fb-error" style="display:none;color:#ef4444;font-size:.82rem;margin-top:8px;"></div>
           <button onclick="spfFbSend()" class="sp-submit-btn" style="margin-top:12px;">📨 Küldés</button>
         </div>`;
-      // Beillesztés az spf-card után
+      // Beillesztés: mindig a pálya hero (sp-hero) UTÁN – soha ne kerüljön elé mobilon
+      const _spHero = document.querySelector('.sp-hero');
       const _spfCard = document.getElementById('spf-card');
-      if (_spfCard && _spfCard.parentNode) {
+      if (_spHero && _spHero.parentNode) {
+        // Elsődleges: sp-hero után (garantálja a vizuális sorrendet mobilon is)
+        _spHero.parentNode.insertBefore(_fbDiv, _spHero.nextSibling);
+      } else if (_spfCard && _spfCard.parentNode) {
+        // Fallback: ha nincs hero, spf-card után
         _spfCard.parentNode.insertBefore(_fbDiv, _spfCard.nextSibling);
       }
     }
