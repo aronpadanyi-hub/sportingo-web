@@ -963,7 +963,7 @@
         </button>
         <div class="sp-auth-hint" id="sp-auth-hint-login" aria-live="polite" role="note">
           <span class="sp-auth-hint-icon">ℹ️</span>
-          <span class="sp-auth-hint-text">Privát módban a Google-bejelentkezés nem mindig működik.<br>Próbáld meg emailes belépéssel, vagy kapcsold ki a privát böngészést.</span>
+          <span class="sp-auth-hint-text">Privát módban a Google-bejelentkezés nem mindig működik. Próbáld az emailes belépést, vagy kapcsold ki a privát böngészést.</span>
         </div>
       </div>
       <div class="sp-lv-section" id="sp-lv-register">
@@ -978,7 +978,7 @@
         </button>
         <div class="sp-auth-hint" id="sp-auth-hint-register" aria-live="polite" role="note">
           <span class="sp-auth-hint-icon">ℹ️</span>
-          <span class="sp-auth-hint-text">Privát módban a Google-bejelentkezés nem mindig működik.<br>Próbáld meg emailes belépéssel, vagy kapcsold ki a privát böngészést.</span>
+          <span class="sp-auth-hint-text">Privát módban a Google-bejelentkezés nem mindig működik. Próbáld az emailes belépést, vagy kapcsold ki a privát böngészést.</span>
         </div>
       </div>
       <div class="sp-lv-section" id="sp-lv-forgot">
