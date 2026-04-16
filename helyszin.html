@@ -217,9 +217,35 @@
     #sp-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
     .sp-social-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a2e3b; text-decoration: none; transition: all .2s; background: rgba(0,0,0,.04); }
     .sp-social-btn:hover { background: rgba(26,143,193,.1); color: #1a8fc1; }
-    @media(max-width:640px) { #sp-header-nav { display: none; } body { padding-top: 60px; } #sp-header-inner { padding: 0 16px; height: 60px; } }
-    .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    #sp-hamburger { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; transition: background .2s; flex-shrink: 0; }
+    #sp-hamburger span { display: block; width: 22px; height: 2px; background: #1a2e3b; border-radius: 2px; transition: all .3s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+    #sp-hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    #sp-hamburger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    #sp-hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    #sp-mobile-menu { display: none; background: white; border-top: 1px solid #f0f7fb; overflow: hidden; max-height: 0; transition: max-height .35s cubic-bezier(.4,0,.2,1); }
+    #sp-mobile-menu.is-open { max-height: 500px; }
+    #sp-mobile-nav { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 2px; }
+    .sp-mobile-link { padding: 12px 16px; border-radius: 10px; font-size: .95rem; font-weight: 600; color: #1a2e3b; text-decoration: none; transition: all .2s; display: flex; align-items: center; gap: 10px; cursor: pointer; background: none; border: none; font-family: inherit; width: 100%; text-align: left; }
+    .sp-mobile-link:hover { background: #f0f7fb; color: #1a8fc1; }
+    #sp-mobile-socials { display: flex; gap: 10px; padding: 12px 16px 0; margin-top: 8px; border-top: 1px solid #f0f7fb; }
+    /* ── AUTH WRAP: shrink-safe desktop + mobile ── */
+    .sportingo-auth-wrap { display: flex; align-items: center; min-width: 0; }
+    .sportingo-auth-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; border: 1.5px solid #d4e8f0; background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; font-weight: 700; color: #1a2e3b; cursor: pointer; transition: all .2s; white-space: nowrap; min-width: 0; max-width: 100%; }
     .sportingo-auth-btn:hover { border-color: #1a8fc1; color: #1a8fc1; background: rgba(26,143,193,.04); }
+    .sportingo-auth-icon { flex-shrink: 0; }
+    .sportingo-auth-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @media(max-width:640px) {
+      #sp-header-nav { display: none; }
+      #sp-socials { display: none; }
+      body { padding-top: 60px; }
+      #sp-header-inner { padding: 0 16px; height: 60px; gap: 8px; }
+      #sp-hamburger { display: flex; }
+      #sp-mobile-menu { display: block; }
+      #sp-header-right { flex-shrink: 1; min-width: 0; gap: 6px; }
+      .sportingo-auth-wrap { min-width: 0; flex: 1 1 auto; max-width: 160px; }
+      .sportingo-auth-btn { min-width: 0; max-width: 100%; padding: 7px 12px; }
+      .sportingo-auth-label { max-width: 100px; }
+    }
     .sp-empty { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: white; border: 1.5px solid #d4e8f0; border-radius: 18px; color: #6b8a9a; }
 
 
@@ -344,19 +370,40 @@
       <a href="https://sportingo.hu/kapcsolat/" class="sp-hnav-link">Kapcsolat</a>
     </nav>
     <div id="sp-header-right">
-      <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-      </a>
-      <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-      </a>
+      <div id="sp-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
       <div class="sportingo-auth-wrap">
         <button type="button" class="sportingo-auth-btn">
           <span class="sportingo-auth-icon">👤</span>
           <span class="sportingo-auth-label">…</span>
         </button>
       </div>
+      <button id="sp-hamburger" aria-label="Menü" aria-expanded="false" onclick="spToggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
     </div>
+  </div>
+  <div id="sp-mobile-menu" aria-hidden="true">
+    <nav id="sp-mobile-nav">
+      <a href="https://sportingo.hu" class="sp-mobile-link">⚽ Pályák</a>
+      <a href="https://sportingo.hu/hogyan-mukodik/" class="sp-mobile-link">❓ Hogyan működik?</a>
+      <a href="https://sportingo.hu/palyat-uzemeltetsz/" class="sp-mobile-link">🏟 Pályát üzemeltetsz?</a>
+      <a href="https://sportingo.hu/kapcsolat/" class="sp-mobile-link">📬 Kapcsolat</a>
+      <div id="sp-mobile-socials">
+        <a href="https://facebook.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Facebook">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://instagram.com/sportingo.hu" target="_blank" rel="noopener" class="sp-social-btn" aria-label="Instagram">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+      </div>
+    </nav>
   </div>
 </header>
 
@@ -368,6 +415,39 @@
 </div>
 
 <script>
+// ── HAMBURGER TOGGLE ──────────────────────────────────────────
+window.spToggleMenu = function() {
+  var btn  = document.getElementById('sp-hamburger');
+  var menu = document.getElementById('sp-mobile-menu');
+  if (!btn || !menu) return;
+  var isOpen = btn.classList.toggle('is-open');
+  menu.classList.toggle('is-open', isOpen);
+  btn.setAttribute('aria-expanded', isOpen);
+  menu.setAttribute('aria-hidden', !isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+};
+
+// ── MOBIL MENÜ: link-click zárás + resize reset ───────────────
+(function() {
+  function spCloseMenu() {
+    var btn  = document.getElementById('sp-hamburger');
+    var menu = document.getElementById('sp-mobile-menu');
+    if (!btn || !menu) return;
+    btn.classList.remove('is-open');
+    menu.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+    menu.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('.sp-mobile-link');
+    if (link) { spCloseMenu(); }
+  });
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 640) { spCloseMenu(); }
+  });
+})();
+
 const SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
 
