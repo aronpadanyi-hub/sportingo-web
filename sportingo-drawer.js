@@ -294,6 +294,24 @@
 
       sfdCloseConfirm();
       showSfdToast('🚫 Foglalás lemondva');
+
+      // Tulajdonos értesítése a lemondásról
+      try {
+        const foglalasEmail = updated[0]?.ugyfel_email || userEmail;
+        const foglalasNev   = updated[0]?.ugyfel_nev || '';
+        if (fogl) {
+          await sb.functions.invoke('send-email', {
+            body: {
+              to: 'info@sportingo.hu',  // Sportingo értesítő
+              subject: `↩️ Foglalás lemondva – játékos által`,
+              html: `<p>Egy jóváhagyott foglalást lemondott a játékos.</p>
+                     <p><b>Játékos:</b> ${foglalasNev} (${foglalasEmail})</p>
+                     <p><b>Foglalás ID:</b> ${id}</p>`
+            }
+          });
+        }
+      } catch(emailErr) { /* email hiba nem állítja le a flow-t */ }
+
       await loadBookings();
       if (typeof loadAttekintes === 'function') await loadAttekintes();
     } catch(e) {
@@ -489,6 +507,9 @@
       return new Date(f.idopontok.datum + 'T' + f.idopont_veg + ':00') > new Date();
     } else if (f.idopontok?.datum) {
       return new Date(f.idopontok.datum + 'T23:59:00') > new Date();
+    } else if (f.idopont_kezdes) {
+      // Fallback: idopont_id nélküli foglalásoknál (emailes, teszt)
+      return new Date(f.idopont_kezdes) > new Date();
     }
     return false; // ha nincs időpontadat, múltbelinek tekintjük
   }
