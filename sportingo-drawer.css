@@ -856,26 +856,27 @@
 .sp-auth-hint {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  max-width: 420px;
+  gap: 10px;
   width: 100%;
-  background: rgba(0,0,0,.04);
-  border-radius: 11px;
-  padding: 10px 12px;
-  margin-top: 6px;
-  margin-bottom: 4px;
-  opacity: 1;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  box-sizing: border-box;
 }
 .sp-auth-hint-icon {
-  font-size: .85rem;
-  opacity: .55;
+  font-size: .8rem;
   flex-shrink: 0;
   margin-top: 1px;
-  line-height: 1.4;
+  line-height: 1.5;
+  opacity: .5;
 }
 .sp-auth-hint-text {
-  font-size: .8rem;
-  line-height: 1.45;
-  color: #666;
+  font-size: .78rem;
+  line-height: 1.5;
+  color: #64748b;
   font-family: 'Plus Jakarta Sans', sans-serif;
+  word-break: break-word;
 }
