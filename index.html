@@ -323,17 +323,23 @@
         <button class="sp-sportag-btn active" data-sport="">🏟 Összes</button>
         <button class="sp-sportag-btn" data-sport="Futball">⚽ Futball</button>
         <button class="sp-sportag-btn" data-sport="Tenisz">🎾 Tenisz</button>
-        <button class="sp-sportag-btn" data-sport="Padel">🏸 Padel</button>
-        <button class="sp-sportag-btn" data-sport="Squash">🟡 Squash</button>
+        <button class="sp-sportag-btn" data-sport="Padel">🟦 Padel</button>
+        <button class="sp-sportag-btn" data-sport="Squash">🟨 Squash</button>
         <button class="sp-sportag-btn" data-sport="Röplabda">🏐 Röplabda</button>
         <button class="sp-sportag-btn" data-sport="Kézilabda">🤾 Kézilabda</button>
         <button class="sp-sportag-btn" data-sport="Kosárlabda">🏀 Kosárlabda</button>
         <button class="sp-sportag-btn" data-sport="Tollaslabda">🏸 Tollaslabda</button>
         <button class="sp-sportag-btn" data-sport="Biliárd">🎱 Biliárd</button>
         <button class="sp-sportag-btn" data-sport="Bowling">🎳 Bowling</button>
-        <button class="sp-sportag-btn" data-sport="Gokart">🏎 Gokart</button>
-        <button class="sp-sportag-btn" data-sport="Lőtér">🎯 Lőtér</button>
+        <button class="sp-sportag-btn" data-sport="Pingpong">🏓 Pingpong</button>
         <button class="sp-sportag-btn" data-sport="Teqball">🟢 Teqball</button>
+        <button class="sp-sportag-btn" data-sport="Gokart">🏎️ Gokart</button>
+        <button class="sp-sportag-btn" data-sport="Lőtér">🔫 Lőtér</button>
+        <button class="sp-sportag-btn" data-sport="Falmászás">🧗 Falmászás</button>
+        <button class="sp-sportag-btn" data-sport="Airsoft">🔫 Airsoft</button>
+        <button class="sp-sportag-btn" data-sport="Paintball">🎯 Paintball</button>
+        <button class="sp-sportag-btn" data-sport="Golf">⛳ Golf</button>
+        <button class="sp-sportag-btn" data-sport="Minigolf">🏌️ Minigolf</button>
       </div>
       <div class="sp-letszam-wrap" id="sp-letszam-wrap">
         <span class="sp-letszam-label">👥</span>
@@ -688,6 +694,13 @@
     tenisz_szonyeg:      'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tenisz-szonyeg.PNG',
     teqball:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/teqball.PNG',
     tollaslabda:         'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/tollas.PNG',
+    // ── Új sportok default képei ──
+    pingpong:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/ping-pong.PNG',
+    falmaszas:           'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/falmaszas.PNG',
+    airsoft:             'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/airsoft.PNG',
+    paintball:           'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/paintball.PNG',
+    golf:                'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/golf.PNG',
+    minigolf:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/minigolf.PNG',
     fallback:            'https://amowwfjxeursokkznmxl.supabase.co/storage/v1/object/public/palya%20default%20pics/foci-kispalya.PNG'
   };
   function _normVal(v) { return String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
@@ -702,6 +715,12 @@
     if(sg==='squash') return PALYA_DEFAULT_IMAGES.squash;
     if(sg==='teqball') return PALYA_DEFAULT_IMAGES.teqball;
     if(sg==='tollaslabda'||sg==='tollas'||sg==='badminton') return PALYA_DEFAULT_IMAGES.tollaslabda;
+    if(sg==='pingpong'||sg==='asztalitenisz') return PALYA_DEFAULT_IMAGES.pingpong;
+    if(sg==='falmaszas'||sg.includes('falm')) return PALYA_DEFAULT_IMAGES.falmaszas;
+    if(sg==='airsoft') return PALYA_DEFAULT_IMAGES.airsoft;
+    if(sg==='paintball') return PALYA_DEFAULT_IMAGES.paintball;
+    if(sg==='golf') return PALYA_DEFAULT_IMAGES.golf;
+    if(sg==='minigolf') return PALYA_DEFAULT_IMAGES.minigolf;
     if(sg==='tenisz') {
       if(bor.includes('salak')) return PALYA_DEFAULT_IMAGES.tenisz_salak;
       if(bor.includes('mufu')) return PALYA_DEFAULT_IMAGES.tenisz_mufu;
@@ -789,6 +808,22 @@
     'Teqball': [
       { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
     ],
+    'Pingpong': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Falmászás': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Airsoft': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Paintball': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
+    'Golf': [],
+    'Minigolf': [
+      { id:'fedett', label:'🏠 Elhelyezés', options:[{value:'',label:'Fedett & Kültéri'},{value:'Fedett',label:'Fedett'},{value:'Kültéri',label:'Kültéri'}] },
+    ],
   };
 
   // ── Sportáganként releváns létszám bucketek ──────────────────────
@@ -808,6 +843,12 @@
     'Gokart':      ['', '2-4', '4-8', '8-14', '14+'],
     'Lőtér':       ['', '2-4', '4-8'],
     'Teqball':     ['', '2-4'],
+    'Pingpong':    ['', '2-4'],
+    'Falmászás':   ['', '2-4'],
+    'Airsoft':     ['', '4-8', '8-14', '14+'],
+    'Paintball':   ['', '4-8', '8-14', '14+'],
+    'Golf':        ['', '2-4'],
+    'Minigolf':    ['', '2-4', '4-8'],
   };
 
   let allHelyszinek=[], filtered=[], activeFilters={}, activeSport='', debounceTimer=null;
@@ -841,7 +882,7 @@
       const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer '+SUPABASE_KEY } });
       if(!res.ok) throw new Error();
       const data = await res.json();
-      const PRIO = ['Futball','Tenisz','Padel','Squash','Röplabda','Kézilabda','Kosárlabda','Tollaslabda','Biliárd','Bowling','Gokart','Lőtér','Teqball'];
+      const PRIO = ['Futball','Tenisz','Padel','Squash','Röplabda','Kézilabda','Kosárlabda','Tollaslabda','Pingpong','Biliárd','Bowling','Teqball','Gokart','Lőtér','Falmászás','Airsoft','Paintball','Golf','Minigolf'];
       allHelyszinek = data.map(h => {
         const jov = (h.palyas||[]).filter(p => p.statusz==='jovahagyva');
         const sportok = [...new Set(jov.map(p=>p.sportag).filter(Boolean))];
@@ -953,6 +994,12 @@
     'Gokart':      ['4-8', '8-14'],
     'Lőtér':       ['2-4'],
     'Teqball':     ['2-4'],
+    'Pingpong':    ['2-4'],
+    'Falmászás':   ['2-4'],
+    'Airsoft':     ['4-8', '8-14', '14+'],
+    'Paintball':   ['4-8', '8-14', '14+'],
+    'Golf':        ['2-4'],
+    'Minigolf':    ['2-4', '4-8'],
   };
 
   // ── Aktív bucket key kiszámítása az activeLetszam-ból ────────────
