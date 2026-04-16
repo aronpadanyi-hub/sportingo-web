@@ -295,6 +295,11 @@
       sfdCloseConfirm();
       showSfdToast('🚫 Foglalás lemondva');
 
+      // Ideiglenes jelzés tárolása a Foglalások nézethez
+      try {
+        sessionStorage.setItem('sfd_cancel_notice', JSON.stringify({ ts: Date.now() }));
+      } catch(e) {}
+
       // Tulajdonos értesítése a lemondásról
       try {
         const foglalasEmail = updated[0]?.ugyfel_email || userEmail;
@@ -349,6 +354,24 @@
   }
 
   // Globális elérhetőség az inline onclick-hez (IIFE miatt szükséges)
+  // ── Lemondás visszajelzés CSS (additív) ──
+  (function() {
+    var st = document.createElement('style');
+    st.textContent = [
+      '.sfd-cancel-notice{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;',
+      'background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;',
+      'padding:12px 14px;margin-bottom:14px;',
+      'animation:sfdNoticeIn .25s ease;opacity:1;}',
+      '@keyframes sfdNoticeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}',
+      '.sfd-cancel-notice-text{font-size:.83rem;color:#15803d;font-weight:600;line-height:1.4;}',
+      '.sfd-cancel-notice-sub{font-size:.76rem;color:#16a34a;font-weight:400;margin-top:2px;}',
+      '.sfd-cancel-notice-close{background:none;border:none;cursor:pointer;color:#86efac;font-size:1rem;',
+      'padding:0 2px;line-height:1;flex-shrink:0;transition:color .15s;}',
+      '.sfd-cancel-notice-close:hover{color:#15803d;}'
+    ].join('');
+    document.head.appendChild(st);
+  })();
+
   window.sfdConfirmCancel = sfdConfirmCancel;
   window.sfdCloseConfirm  = sfdCloseConfirm;
 
@@ -471,6 +494,27 @@
     const list = document.getElementById('sfd-bookings-list');
     if (!currentUser || !list) return;
     list.innerHTML = '<div class="sfd-empty"><div class="sfd-empty-icon">⏳</div><div class="sfd-empty-sub">Betöltés...</div></div>';
+
+    // Lemondás visszajelzés ellenőrzése (max 60 mp-ig él)
+    try {
+      var cancelNotice = sessionStorage.getItem('sfd_cancel_notice');
+      if (cancelNotice) {
+        var cn = JSON.parse(cancelNotice);
+        if (cn && Date.now() - cn.ts < 60000) {
+          sessionStorage.removeItem('sfd_cancel_notice');
+          var notice = document.createElement('div');
+          notice.className = 'sfd-cancel-notice';
+          notice.innerHTML = '<div><div class="sfd-cancel-notice-text">✓ Foglalás sikeresen lemondva</div>'
+            + '<div class="sfd-cancel-notice-sub">A lemondott foglalás a listában megjelenik.</div></div>'
+            + '<button class="sfd-cancel-notice-close" onclick="this.closest('.sfd-cancel-notice').remove()" aria-label="Bezárás">✕</button>';
+          var panel = document.getElementById('sfd-panel-foglalasok');
+          if (panel) panel.insertBefore(notice, panel.firstChild);
+          setTimeout(function() { if (notice.parentNode) { notice.style.transition='opacity .4s'; notice.style.opacity='0'; setTimeout(function(){ notice.remove(); }, 400); } }, 6000);
+        } else {
+          sessionStorage.removeItem('sfd_cancel_notice');
+        }
+      }
+    } catch(e) {}
     const { data, error } = await sb.from('foglalasok')
       .select('*,palyas(nev,helyszin_nev,sportag,slug,helyszin_id),idopontok(datum)')
       .eq('ugyfel_email', currentUser.email)
