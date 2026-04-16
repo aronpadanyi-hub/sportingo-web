@@ -252,9 +252,12 @@
   border: 1.5px solid #e8f2f8;
   transition: border-color .2s;
 }
-.sfd-booking-card.jovahagyva { border-left: 3px solid #2dbf7e; }
-.sfd-booking-card.varakozik  { border-left: 3px solid #f59e0b; }
-.sfd-booking-card.elutasitva { border-left: 3px solid #ef4444; background: #fff9f9; }
+.sfd-booking-card.jovahagyva     { border-left: 3px solid #2dbf7e; }
+.sfd-booking-card.varakozik      { border-left: 3px solid #f59e0b; }
+.sfd-booking-card.varakozik-keso { border-left: 3px solid #fb923c; }
+.sfd-booking-card.varakozik-lejar{ border-left: 3px solid #dc2626; }
+.sfd-booking-card.elutasitva     { border-left: 3px solid #ef4444; background: #fff9f9; }
+.sfd-booking-card.lejart         { border-left: 3px solid #cbd5e1; opacity: .5; filter: grayscale(.4); }
 .sfd-booking-top {
   display: flex; align-items: flex-start;
   justify-content: space-between; gap: 8px; margin-bottom: 6px;
@@ -265,10 +268,13 @@
   font-size: .68rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;
 }
 .sfd-status-pill.jovahagyva { background: rgba(45,191,126,.12); color: #1a9960; }
-.sfd-status-pill.varakozik  { background: rgba(245,158,11,.12); color: #b45309; }
+.sfd-status-pill.varakozik,.sfd-status-pill.varakozik-keso,.sfd-status-pill.varakozik-lejar { background: rgba(245,158,11,.12); color: #b45309; }
 .sfd-status-pill.elutasitva { background: rgba(239,68,68,.1);   color: #ef4444; }
 .sfd-status-pill.lemondva   { background: #f1f5f9; color: #64748b; }
-.sfd-booking-card.lemondva  { border-left: 3px solid #94a3b8; opacity: .75; }
+.sfd-status-pill.lejart     { background: #f1f5f9; color: #94a3b8; }
+.sfd-booking-card.lemondva  { border-left: 3px solid #94a3b8; opacity: .5; filter: grayscale(.4); }
+/* Varakozik info szöveg */
+.sfd-varakozik-info { font-size: .72rem; color: #92400e; margin-top: 4px; border-left: 2px solid rgba(245,158,11,.4); padding: 2px 0 2px 8px; line-height: 1.5; }
 .sfd-booking-meta { font-size: .75rem; color: #6b8a9a; }
 /* ── Lemondás gomb ── */
 .sfd-cancel-btn {
