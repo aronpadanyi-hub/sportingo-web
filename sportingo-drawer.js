@@ -255,8 +255,14 @@
         .eq('id', id)
         .single();
 
-      // 2. Státusz: lemondva
-      const { error } = await sb.from('foglalasok').update({ statusz: 'lemondva' }).eq('id', id);
+      // 2. Státusz: lemondva (saját email + varakozik guard a RLS policy-hoz)
+      const { data: { session } } = await sb.auth.getSession();
+      const userEmail = session?.user?.email || currentUser?.email;
+      const { error } = await sb.from('foglalasok')
+        .update({ statusz: 'lemondva' })
+        .eq('id', id)
+        .eq('statusz', 'varakozik')
+        .eq('ugyfel_email', userEmail);
       if (error) throw error;
 
       // 3. Slot felszabadítás – kizárólag az eltárolt időablak alapján (biztonságos)
