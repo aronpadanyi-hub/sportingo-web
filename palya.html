@@ -370,33 +370,75 @@
     .sp-star.empty { color: #dde8f0; }
     .sp-review-count { font-size: .78rem; color: #94a3b8; font-weight: 600; letter-spacing: .01em; }
 
-    /* Review item */
+    /* ── Review kártyák – premium upgrade ── */
     .sp-review-item {
-      padding: 20px 0;
-      border-bottom: 1px solid #f0f4f8;
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      border: 1.5px solid #d4e8f0;
+      padding: 18px 20px 18px 24px;
+      margin-top: 12px;
+      box-shadow: 0 2px 10px rgba(10,22,40,.05);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .18s;
+      overflow: hidden;
     }
-    .sp-review-item:first-of-type { padding-top: 18px; }
-    .sp-review-item:last-child { border-bottom: none; padding-bottom: 6px; }
+    .sp-review-item:first-of-type { margin-top: 18px; }
+    .sp-review-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(10,22,40,.10);
+      border-color: rgba(26,143,193,.28);
+    }
 
-    /* Item fejléc: bal=meta, jobb=csillagok */
+    /* Bal oldali accent csík – rating alapján */
+    .sp-review-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 12px; bottom: 12px;
+      width: 4px;
+      border-radius: 4px;
+      background: #d4e8f0;
+    }
+    .sp-review-item[data-rating="5"]::before { background: linear-gradient(180deg,#2dbf7e,#1a9960); }
+    .sp-review-item[data-rating="4"]::before { background: linear-gradient(180deg,#1a8fc1,#0f6a94); }
+    .sp-review-item[data-rating="3"]::before { background: linear-gradient(180deg,#1a8fc1,#2dbf7e); }
+    .sp-review-item[data-rating="2"]::before { background: linear-gradient(180deg,#f59e0b,#e67e22); }
+    .sp-review-item[data-rating="1"]::before { background: linear-gradient(180deg,#ef4444,#c0392b); }
+
+    /* Kiemelt első review */
+    .sp-review-item--featured {
+      background: linear-gradient(135deg,rgba(26,143,193,.05),rgba(45,191,126,.05));
+      border-color: rgba(26,143,193,.32);
+    }
+    .sp-review-featured-label {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .62rem; font-weight: 700; color: #1a8fc1;
+      background: rgba(26,143,193,.1); border: 1px solid rgba(26,143,193,.2);
+      border-radius: 999px; padding: 2px 9px;
+      margin-bottom: 9px; letter-spacing: .03em;
+    }
+
+    /* Item fejléc */
     .sp-review-item-top {
       display: flex; align-items: flex-start;
       justify-content: space-between; gap: 12px;
       margin-bottom: 10px;
     }
-    .sp-review-meta { display: flex; flex-direction: column; gap: 2px; }
+    .sp-review-meta { display: flex; flex-direction: column; gap: 3px; }
     .sp-review-user {
-      font-size: .88rem; font-weight: 800;
+      font-size: .9rem; font-weight: 700;
       color: #0a1628; letter-spacing: -.01em;
     }
     .sp-review-date {
-      font-size: .72rem; color: #b0bec5; font-weight: 500;
+      font-size: .73rem; color: #94a3b8; font-weight: 500;
     }
 
-    /* Csillagok az item jobb oldalán */
+    /* Csillagok – nagyobb, arany */
     .sp-review-stars-sm { display: flex; gap: 3px; padding-top: 2px; flex-shrink: 0; }
-    .sp-review-star-sm { font-size: .9rem; color: #f59e0b; line-height: 1; }
-    .sp-review-star-sm.empty { color: #dde8f0; }
+    .sp-review-star-sm {
+      font-size: 1.05rem; color: #f59e0b; line-height: 1;
+      text-shadow: 0 1px 3px rgba(245,158,11,.25);
+    }
+    .sp-review-star-sm.empty { color: #dde8f0; text-shadow: none; }
 
     /* Szöveg */
     .sp-review-szoveg {
@@ -405,25 +447,28 @@
       -webkit-box-orient: vertical; overflow: hidden;
     }
 
-    /* Cimkék */
+    /* Cimkék – pill badge */
     .sp-review-cimkek { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .sp-review-cimke {
-      font-size: .7rem; font-weight: 700; color: #4a7c8e;
-      background: #f0f7fb; border: 1px solid #d0e8f2;
-      padding: 3px 10px; border-radius: 20px;
+      font-size: .72rem; font-weight: 700; color: #1a8fc1;
+      background: rgba(26,143,193,.08);
+      border: 1px solid rgba(26,143,193,.2);
+      padding: 4px 11px; border-radius: 999px;
       letter-spacing: .02em;
+      transition: background .18s;
     }
+    .sp-review-cimke:hover { background: rgba(26,143,193,.16); }
 
-    /* Tulajdonos válasz */
+    /* Tulajdonos válasz – zöld akcentus */
     .sp-review-tulaj {
       margin-top: 12px; padding: 11px 14px;
-      background: #f7fbfe;
-      border-left: 2.5px solid #93c5d6;
-      border-radius: 0 10px 10px 0;
+      background: rgba(45,191,126,.07);
+      border: 1px solid rgba(45,191,126,.22);
+      border-radius: 10px;
     }
     .sp-review-tulaj-label {
-      font-size: .68rem; font-weight: 800; color: #1a8fc1;
-      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 4px;
+      font-size: .68rem; font-weight: 800; color: #1a9960;
+      text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px;
     }
     .sp-review-tulaj-text { font-size: .82rem; color: #3a5060; line-height: 1.6; }
 
@@ -431,6 +476,13 @@
     .sp-review-empty { text-align: center; padding: 2.5rem 0; }
     .sp-review-empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: .5; }
     .sp-review-empty-text { font-size: .85rem; font-weight: 600; color: #94a3b8; }
+
+    /* Mobil */
+    @media(max-width:600px) {
+      .sp-review-item { padding: 14px 16px 14px 20px; margin-top: 10px; }
+      .sp-review-star-sm { font-size: .95rem; }
+      .sp-review-featured-label { font-size: .6rem; }
+    }
     /* ── Akciós promo sáv ── */
     #spf-promo-sav {
       display: none;
@@ -2730,7 +2782,7 @@ function renderReviewItem(r) {
         '<div class="sp-review-tulaj-text">' + esc(r.tulaj_valasz) + '</div>' +
       '</div>'
     : '';
-  return '<div class="sp-review-item">' +
+  return '<div class="sp-review-item" data-rating="' + (r.rating || 0) + '">' +
     '<div class="sp-review-item-top">' +
       '<div class="sp-review-meta">' +
         '<span class="sp-review-user">' + esc(nev) + '</span>' +
@@ -2875,7 +2927,7 @@ function renderReviewItem(r, isFeatured) {
   var itemClass = 'sp-review-item' + (isFeatured ? ' sp-review-item--featured' : '');
   var featuredLabel = isFeatured ? '<span class="sp-review-featured-label">⭐ Kiemelt értékelés</span>' : '';
 
-  return '<div class="' + itemClass + '">' +
+  return '<div class="' + itemClass + '" data-rating="' + (r.rating || 0) + '">' +
     featuredLabel +
     '<div class="sp-review-item-top">' +
       '<div class="sp-review-meta">' +
