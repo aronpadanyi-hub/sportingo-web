@@ -304,7 +304,11 @@
   font-size: .72rem; font-weight: 700; cursor: pointer;
   transition: all .2s;
 }
-.sfd-btn-ertekeles:hover { background: rgba(26,143,193,.07); border-color: #1a8fc1; }
+.sfd-btn-ertekeles:hover {
+  background: rgba(26,143,193,.09);
+  border-color: #1a8fc1;
+  box-shadow: 0 0 0 3px rgba(26,143,193,.1);
+}
 .sfd-review-info {
   display: inline-block; margin-top: 6px;
   font-size: .72rem; color: #6b8a9a; font-style: italic;
@@ -321,35 +325,71 @@
   font-size: .78rem; color: #94a3b8; margin-bottom: 12px; line-height: 1.5;
 }
 .sfd-ert-card {
-  background: white; border-radius: 14px;
-  padding: 14px 16px; margin-bottom: 8px;
+  background: white;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
   border: 1.5px solid #e8f2f8;
-  transition: border-color .18s;
+  box-shadow: 0 4px 16px rgba(10,22,40,.06);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .18s;
+  position: relative;
+  overflow: hidden;
 }
 .sfd-ert-card:last-child { margin-bottom: 0; }
+.sfd-ert-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(10,22,40,.11);
+  border-color: rgba(26,143,193,.25);
+}
+/* Bal oldali accent csík rating szerint */
+.sfd-ert-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 16px 0 0 16px;
+  background: #d4e8f0; /* default: semleges */
+}
+.sfd-ert-card[data-rating="5"]::before { background: linear-gradient(180deg, #2dbf7e, #1a9960); }
+.sfd-ert-card[data-rating="4"]::before { background: linear-gradient(180deg, #1a8fc1, #0f6a94); }
+.sfd-ert-card[data-rating="3"]::before { background: linear-gradient(180deg, #1a8fc1, #2dbf7e); }
+.sfd-ert-card[data-rating="2"]::before { background: linear-gradient(180deg, #f59e0b, #e67e22); }
+.sfd-ert-card[data-rating="1"]::before { background: linear-gradient(180deg, #ef4444, #c0392b); }
+/* Kiemelt (első) review */
+.sfd-ert-card:first-child {
+  background: linear-gradient(135deg, rgba(26,143,193,.05), rgba(45,191,126,.05));
+  border-color: rgba(26,143,193,.22);
+}
 .sfd-ert-card-top {
   display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 8px; margin-bottom: 5px;
+  justify-content: space-between; gap: 10px; margin-bottom: 6px;
 }
-.sfd-ert-card-nev { font-weight: 700; font-size: .88rem; color: #0a1628; flex: 1; min-width: 0; }
-.sfd-ert-card-meta { font-size: .72rem; color: #94a3b8; margin-top: 3px; }
+.sfd-ert-card-nev { font-weight: 700; font-size: .9rem; color: #0a1628; flex: 1; min-width: 0; }
+.sfd-ert-card-meta { font-size: .73rem; color: #94a3b8; margin-top: 4px; font-weight: 500; }
 .sfd-ert-card-preview {
-  font-size: .78rem; color: #3a5060; margin-top: 6px;
-  line-height: 1.55; display: -webkit-box;
+  font-size: .8rem; color: #3a5060; margin-top: 8px;
+  line-height: 1.6; display: -webkit-box;
   -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.sfd-ert-stars { font-size: .9rem; color: #f59e0b; letter-spacing: 2px; flex-shrink: 0; }
-.sfd-ert-cimke {
-  display: inline-block; font-size: .65rem; font-weight: 700;
-  padding: 2px 8px; border-radius: 10px;
-  background: rgba(26,143,193,.1); color: #1a8fc1;
-  margin-right: 4px; margin-top: 6px;
+.sfd-ert-stars {
+  font-size: 1rem; color: #f59e0b;
+  letter-spacing: 2px; flex-shrink: 0;
+  text-shadow: 0 1px 3px rgba(245,158,11,.25);
 }
+.sfd-ert-cimke {
+  display: inline-block; font-size: .68rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(26,143,193,.1); color: #1a8fc1;
+  margin-right: 5px; margin-top: 7px;
+  border: 1px solid rgba(26,143,193,.15);
+  transition: background .18s;
+}
+.sfd-ert-cimke:hover { background: rgba(26,143,193,.2); }
 .sfd-ert-cooldown {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .72rem; color: #94a3b8; margin-top: 6px;
 }
-.sfd-ert-cta-wrap { margin-top: 10px; }
+.sfd-ert-cta-wrap { margin-top: 12px; }
 .sfd-ert-elvalaszto {
   border: none; border-top: 1.5px solid #f0f7fb;
   margin: 20px 0;
@@ -661,35 +701,71 @@
   font-size: .78rem; color: #94a3b8; margin-bottom: 12px; line-height: 1.5;
 }
 .sfd-ert-card {
-  background: white; border-radius: 14px;
-  padding: 14px 16px; margin-bottom: 8px;
+  background: white;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
   border: 1.5px solid #e8f2f8;
-  transition: border-color .18s;
+  box-shadow: 0 4px 16px rgba(10,22,40,.06);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .18s;
+  position: relative;
+  overflow: hidden;
 }
 .sfd-ert-card:last-child { margin-bottom: 0; }
+.sfd-ert-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(10,22,40,.11);
+  border-color: rgba(26,143,193,.25);
+}
+/* Bal oldali accent csík rating szerint */
+.sfd-ert-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 16px 0 0 16px;
+  background: #d4e8f0; /* default: semleges */
+}
+.sfd-ert-card[data-rating="5"]::before { background: linear-gradient(180deg, #2dbf7e, #1a9960); }
+.sfd-ert-card[data-rating="4"]::before { background: linear-gradient(180deg, #1a8fc1, #0f6a94); }
+.sfd-ert-card[data-rating="3"]::before { background: linear-gradient(180deg, #1a8fc1, #2dbf7e); }
+.sfd-ert-card[data-rating="2"]::before { background: linear-gradient(180deg, #f59e0b, #e67e22); }
+.sfd-ert-card[data-rating="1"]::before { background: linear-gradient(180deg, #ef4444, #c0392b); }
+/* Kiemelt (első) review */
+.sfd-ert-card:first-child {
+  background: linear-gradient(135deg, rgba(26,143,193,.05), rgba(45,191,126,.05));
+  border-color: rgba(26,143,193,.22);
+}
 .sfd-ert-card-top {
   display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 8px; margin-bottom: 5px;
+  justify-content: space-between; gap: 10px; margin-bottom: 6px;
 }
-.sfd-ert-card-nev { font-weight: 700; font-size: .88rem; color: #0a1628; flex: 1; min-width: 0; }
-.sfd-ert-card-meta { font-size: .72rem; color: #94a3b8; margin-top: 3px; }
+.sfd-ert-card-nev { font-weight: 700; font-size: .9rem; color: #0a1628; flex: 1; min-width: 0; }
+.sfd-ert-card-meta { font-size: .73rem; color: #94a3b8; margin-top: 4px; font-weight: 500; }
 .sfd-ert-card-preview {
-  font-size: .78rem; color: #3a5060; margin-top: 6px;
-  line-height: 1.55; display: -webkit-box;
+  font-size: .8rem; color: #3a5060; margin-top: 8px;
+  line-height: 1.6; display: -webkit-box;
   -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.sfd-ert-stars { font-size: .9rem; color: #f59e0b; letter-spacing: 2px; flex-shrink: 0; }
-.sfd-ert-cimke {
-  display: inline-block; font-size: .65rem; font-weight: 700;
-  padding: 2px 8px; border-radius: 10px;
-  background: rgba(26,143,193,.1); color: #1a8fc1;
-  margin-right: 4px; margin-top: 6px;
+.sfd-ert-stars {
+  font-size: 1rem; color: #f59e0b;
+  letter-spacing: 2px; flex-shrink: 0;
+  text-shadow: 0 1px 3px rgba(245,158,11,.25);
 }
+.sfd-ert-cimke {
+  display: inline-block; font-size: .68rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(26,143,193,.1); color: #1a8fc1;
+  margin-right: 5px; margin-top: 7px;
+  border: 1px solid rgba(26,143,193,.15);
+  transition: background .18s;
+}
+.sfd-ert-cimke:hover { background: rgba(26,143,193,.2); }
 .sfd-ert-cooldown {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .72rem; color: #94a3b8; margin-top: 6px;
 }
-.sfd-ert-cta-wrap { margin-top: 10px; }
+.sfd-ert-cta-wrap { margin-top: 12px; }
 .sfd-ert-elvalaszto {
   border: none; border-top: 1.5px solid #f0f7fb;
   margin: 20px 0;
@@ -761,3 +837,51 @@
   .sfd-review-cancel-btn, .sfd-review-submit-btn { width: 100%; text-align: center; }
 }
 
+
+/* ── Kiemelt értékelés badge – első meglévő kártya ::after ── */
+#sfd-ert-meglevo-list .sfd-ert-card:first-child::after {
+  content: '⭐ Legfrissebb';
+  position: absolute;
+  top: 10px; right: 14px;
+  font-size: .6rem; font-weight: 700;
+  color: #1a8fc1;
+  background: rgba(26,143,193,.1);
+  border: 1px solid rgba(26,143,193,.2);
+  border-radius: 999px;
+  padding: 2px 8px;
+  pointer-events: none;
+}
+
+/* ── Google auth hint – privát mód tipp ── */
+.sp-auth-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 420px;
+  width: 100%;
+  background: rgba(0,0,0,.04);
+  border-radius: 11px;
+  padding: 10px 12px;
+  margin-top: 2px;
+  margin-bottom: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.sp-auth-hint.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sp-auth-hint-icon {
+  font-size: .85rem;
+  opacity: .55;
+  flex-shrink: 0;
+  margin-top: 1px;
+  line-height: 1.4;
+}
+.sp-auth-hint-text {
+  font-size: .8rem;
+  line-height: 1.45;
+  color: #666;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
