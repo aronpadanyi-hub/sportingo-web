@@ -862,15 +862,9 @@
   background: rgba(0,0,0,.04);
   border-radius: 11px;
   padding: 10px 12px;
-  margin-top: 2px;
-  margin-bottom: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s ease;
-}
-.sp-auth-hint.is-visible {
+  margin-top: 6px;
+  margin-bottom: 4px;
   opacity: 1;
-  pointer-events: auto;
 }
 .sp-auth-hint-icon {
   font-size: .85rem;
