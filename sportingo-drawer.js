@@ -1033,6 +1033,50 @@
 
   window.spSetLoginView = setLoginView;
 
+  // ── sp-auth-hint: mount + timer trigger ──────────────────────
+  // Vizuális tipp-réteg Google login mellé. Auth logikát NEM érinti.
+  (function spMountAuthHints() {
+    try {
+      var hintHTML = '<div class="sp-auth-hint" aria-live="polite" role="note">'
+        + '<span class="sp-auth-hint-icon">ℹ️</span>'
+        + '<span class="sp-auth-hint-text">'
+        + 'Privát módban a Google-bejelentkezés nem mindig működik.<br>'
+        + 'Próbáld meg emailes belépéssel, vagy kapcsold ki a privát böngészést.'
+        + '</span></div>';
+      document.querySelectorAll('.sp-google-btn').forEach(function(btn) {
+        if (btn.nextElementSibling && btn.nextElementSibling.classList.contains('sp-auth-hint')) return;
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = hintHTML;
+        btn.parentNode.insertBefore(wrapper.firstChild, btn.nextSibling);
+      });
+    } catch(e) { /* fail silent */ }
+  })();
+
+  function spShowAuthHint() {
+    try { document.querySelectorAll('.sp-auth-hint').forEach(function(el) { el.classList.add('is-visible'); }); } catch(e) {}
+  }
+  function spHideAuthHint() {
+    try { document.querySelectorAll('.sp-auth-hint').forEach(function(el) { el.classList.remove('is-visible'); }); } catch(e) {}
+  }
+  window.spShowAuthHint = spShowAuthHint;
+  window.spHideAuthHint = spHideAuthHint;
+
+  // Timer wrapper: 3.5 mp után megjelenik a hint ha nincs session
+  var _spGoogleHintTimer = null;
+  var _origSpGoogleLogin = window.spGoogleLogin;
+  if (typeof _origSpGoogleLogin === 'function') {
+    window.spGoogleLogin = async function() {
+      try {
+        clearTimeout(_spGoogleHintTimer);
+        spHideAuthHint();
+        _spGoogleHintTimer = setTimeout(function() {
+          try { spShowAuthHint(); } catch(e) {}
+        }, 3500);
+      } catch(e) {}
+      return _origSpGoogleLogin.apply(this, arguments);
+    };
+  }
+
   window.spHandleLogin = async function() {
     const email = (document.getElementById('sp-login-email')?.value || '').trim();
     const pw    = (document.getElementById('sp-login-password')?.value || '');
@@ -1067,7 +1111,10 @@
       provider: 'google',
       options: { redirectTo: 'https://sportingo.hu/auth-callback' }
     });
-    if (error) showLoginAlert('Google belépés sikertelen!', true);
+    if (error) {
+      showLoginAlert('Google belépés sikertelen!', true);
+      try { spShowAuthHint(); } catch(e) {}
+    }
   };
 
   window.spHandleForgot = async function() {
