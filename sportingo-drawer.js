@@ -506,7 +506,7 @@
           notice.className = 'sfd-cancel-notice';
           notice.innerHTML = '<div><div class="sfd-cancel-notice-text">✓ Foglalás sikeresen lemondva</div>'
             + '<div class="sfd-cancel-notice-sub">A lemondott foglalás a listában megjelenik.</div></div>'
-            + '<button class="sfd-cancel-notice-close" onclick="this.closest('.sfd-cancel-notice').remove()" aria-label="Bezárás">✕</button>';
+            + '<button class="sfd-cancel-notice-close" onclick="this.parentNode.parentNode.remove()" aria-label="Bezárás">✕</button>';
           var panel = document.getElementById('sfd-panel-foglalasok');
           if (panel) panel.insertBefore(notice, panel.firstChild);
           setTimeout(function() { if (notice.parentNode) { notice.style.transition='opacity .4s'; notice.style.opacity='0'; setTimeout(function(){ notice.remove(); }, 400); } }, 6000);
