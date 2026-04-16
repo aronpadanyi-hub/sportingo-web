@@ -443,6 +443,7 @@
           .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at')
           .eq('user_id', currentUser.id)
           .in('palya_id', palyaIds)
+          .order('updated_at', { ascending: false, nullsFirst: false })
           .order('letrehozas_datum', { ascending: false });
         if (meglevoErt) {
           // Pályánként csak a legfrissebb review-t tároljuk
@@ -755,6 +756,7 @@
       const { data: osszesSajat, error: ertErr } = await sb.from('ertekelesek')
         .select('id, palya_id, rating, szoveg, cimkek, letrehozas_datum, updated_at, review_tipus, palyas(nev, slug, sportag, helyszin_id)')
         .eq('user_id', currentUser.id)
+        .order('updated_at', { ascending: false, nullsFirst: false })
         .order('letrehozas_datum', { ascending: false });
       if (osszesSajat) {
         osszesSajat.forEach(e => {
