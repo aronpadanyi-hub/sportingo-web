@@ -888,26 +888,33 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   [CARD CLICK] Kártya-kattintható UX — csak ha van data-palya-slug
-   attribútum (ha slug nincs, a kártya NEM kattintható → nem mutat
-   hamis visszajelzést). Az sfd-ert-card már rendelkezik hover-rel
-   a meglévő CSS-ben → nem írjuk felül, csak cursor-t adunk hozzá.
+   [CARD CLICK] Kártya-kattintható UX — ha van data-palya-slug VAGY
+   data-palya-id attribútum (web-pálya.html fallback route támogatja
+   az id-alapú navigációt is). Az sfd-ert-card már rendelkezik hover-
+   rel a meglévő CSS-ben → nem írjuk felül, csak cursor-t adunk hozzá.
    Átmeneti tulajdonságok: nem override-olják a meglévő border-color/
    state-szín szabályokat, csak kiegészítik.
    ══════════════════════════════════════════════════════════════════ */
 .sfd-booking-card[data-palya-slug],
+.sfd-booking-card[data-palya-id],
 .sfd-kedvenc-card[data-palya-slug],
-.sfd-ert-card[data-palya-slug] {
+.sfd-kedvenc-card[data-palya-id],
+.sfd-ert-card[data-palya-slug],
+.sfd-ert-card[data-palya-id] {
   cursor: pointer;
 }
-.sfd-booking-card[data-palya-slug] {
+.sfd-booking-card[data-palya-slug],
+.sfd-booking-card[data-palya-id] {
   transition: transform .15s ease, box-shadow .15s ease, border-color .2s;
 }
-.sfd-kedvenc-card[data-palya-slug] {
+.sfd-kedvenc-card[data-palya-slug],
+.sfd-kedvenc-card[data-palya-id] {
   transition: transform .15s ease, box-shadow .15s ease, border-color .2s;
 }
 .sfd-booking-card[data-palya-slug]:hover,
-.sfd-kedvenc-card[data-palya-slug]:hover {
+.sfd-booking-card[data-palya-id]:hover,
+.sfd-kedvenc-card[data-palya-slug]:hover,
+.sfd-kedvenc-card[data-palya-id]:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(10,22,40,.08);
   border-color: rgba(26,143,193,.25);
@@ -915,18 +922,27 @@
 /* Lejárt / lemondva kártyák halványított állapotban NE emelkedjenek ki
    → a meglévő opacity:.5 filter:grayscale(.4) "lezárult" üzenet marad. */
 .sfd-booking-card.lejart[data-palya-slug]:hover,
-.sfd-booking-card.lemondva[data-palya-slug]:hover {
+.sfd-booking-card.lejart[data-palya-id]:hover,
+.sfd-booking-card.lemondva[data-palya-slug]:hover,
+.sfd-booking-card.lemondva[data-palya-id]:hover {
   transform: none;
   box-shadow: none;
 }
 /* Lemondás / Értékelem / 🗑 / link-ek fölött: default cursor maradjon
    (ne "pointer pointer" kettős jelzés — a gombon maga a :hover kezeli). */
 .sfd-booking-card[data-palya-slug] .sfd-cancel-btn,
+.sfd-booking-card[data-palya-id] .sfd-cancel-btn,
 .sfd-booking-card[data-palya-slug] .sfd-btn-ertekeles,
+.sfd-booking-card[data-palya-id] .sfd-btn-ertekeles,
 .sfd-booking-card[data-palya-slug] .sfd-booking-link,
+.sfd-booking-card[data-palya-id] .sfd-booking-link,
 .sfd-booking-card[data-palya-slug] .sfd-booking-name-link,
+.sfd-booking-card[data-palya-id] .sfd-booking-name-link,
 .sfd-kedvenc-card[data-palya-slug] .sfd-kedvenc-remove,
+.sfd-kedvenc-card[data-palya-id] .sfd-kedvenc-remove,
 .sfd-kedvenc-card[data-palya-slug] .sfd-kedvenc-link,
-.sfd-ert-card[data-palya-slug] .sfd-btn-ertekeles {
+.sfd-kedvenc-card[data-palya-id] .sfd-kedvenc-link,
+.sfd-ert-card[data-palya-slug] .sfd-btn-ertekeles,
+.sfd-ert-card[data-palya-id] .sfd-btn-ertekeles {
   cursor: pointer;
 }
