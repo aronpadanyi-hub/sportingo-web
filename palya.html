@@ -1421,7 +1421,38 @@ async function init() {
       SPF.palyaFreeCounts = freeCounts;
       SPF.anySlotUploaded = anySlotUploaded;
       const origIdx = csoportPalyak.findIndex(p => p.id === palya.id);
-      SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
+      // ══════════════════════════════════════════════════════════════════
+      // [UX FIX – SMART DEFAULT] Pályaválasztó alapértelmezett javítása.
+      // Korábbi viselkedés: az URL-beli pálya (origIdx) mindig default,
+      // akkor is ha 0 szabad slot van rajta → user "zsákutcában" landol.
+      // Új logika:
+      //   (a) ha az URL-beli pályán VAN szabad slot → maradjon a default
+      //       (tiszteletben tartjuk a user/megosztó intencióját)
+      //   (b) ha az URL-beli pályán NINCS szabad slot, DE másik pályán
+      //       van → a csoportSorted[0] (legtöbb szabadas) lesz a default
+      //   (c) ha egyik pályán sincs szabad slot → meglévő fallback (origIdx / 0)
+      // FIGYELEM: ez csak init logika — csak itt fut le egyszer. A user
+      // manuális pályaváltását (switchPalya) SOHA nem írja felül, mert
+      // az külön handler, külön kontextusban.
+      // csoportSorted már rendezve van freeCounts csökkenő sorrendben
+      // (1402. sor), így csoportPalyak[0] a "legtöbb szabad slotos" pálya.
+      // ══════════════════════════════════════════════════════════════════
+      const origFree = origIdx >= 0 ? (freeCounts[csoportPalyak[origIdx].id] || 0) : 0;
+      const bestFree = (freeCounts[csoportPalyak[0].id] || 0);
+      if (origIdx >= 0 && origFree > 0) {
+        // (a) URL-beli pálya szabad → marad az
+        SPF.aktivIdx = origIdx;
+      } else if (bestFree > 0) {
+        // (b) URL-beli pálya 0 szabad (vagy nincs a listában), de van szabad pálya
+        SPF.aktivIdx = 0;
+        console.log('[SPF AUTO-SELECT] URL palya 0 szabad → átkapcs:',
+          csoportPalyak[0].nev || csoportPalyak[0].id,
+          '(' + bestFree + ' szabad slot)',
+          '| origPalya:', origIdx >= 0 ? (csoportPalyak[origIdx].nev || '?') : 'nincs a csoportban');
+      } else {
+        // (c) egyik pályán sincs szabad → eredeti fallback (origIdx vagy 0)
+        SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
+      }
       if (SPF.aktivIdx >= SPF.csoportPalyak.length) SPF.aktivIdx = 0;
       console.log('[SPF REAL] final selector ids:', SPF.csoportPalyak.map(p => (p.nev || '?') + '/' + p.id),
         '| length:', SPF.csoportPalyak.length, '| aktivIdx:', SPF.aktivIdx);
