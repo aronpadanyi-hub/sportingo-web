@@ -1218,6 +1218,25 @@ function spfGetWeekMonday(d) { const dt=new Date(d),day=dt.getDay(),diff=day===0
 function spfFmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function spfGetEndTime(t) { const [h,m]=t.split(':').map(Number),tot=h*60+m+30; return `${String(Math.floor(tot/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`; }
 function spfGenSlots() { const s=[]; for(let h=6;h<23;h++){s.push(`${String(h).padStart(2,'0')}:00`);s.push(`${String(h).padStart(2,'0')}:30`);} s.push('23:00'); return s; }
+
+// ══════════════════════════════════════════════════════════════════
+// [EMAIL TEMPLATE] Konzisztens email-sablon — 1:1 portolt a
+// jatekos-index.html (admin portál) emailBase/emailRow helpereiből,
+// hogy a játékos visszaigazoló / tulajdonos értesítő / fallback form
+// / régi email-only foglalás mindig UGYANAZT a prémium Sportingo
+// dizájnt kapja. Brand fejléc, gradient, táblázatos adatsor, színes
+// status box, footer. Zero új dependency, pure inline HTML/CSS
+// (email-kliens safe: gmail / apple mail / outlook mind kezeli).
+// ══════════════════════════════════════════════════════════════════
+function spEmailRow(icon, label, value, color, last) {
+  const brd = last ? 'none' : '1px solid #d4e8f0';
+  return `<tr><td style="padding:10px 14px;border-bottom:${brd};color:#6b8a9a;font-size:13px;width:45%;vertical-align:top;">${icon} ${label}</td><td style="padding:10px 14px;border-bottom:${brd};color:${color||'#0a1628'};font-weight:700;font-size:13px;text-align:right;vertical-align:top;">${value}</td></tr>`;
+}
+function spEmailBase(icon, title, sub, rows, box, boxColor) {
+  const borderColor = boxColor === '#fff8e1' ? '#f59e0b' : (boxColor === '#e8f5ee' ? '#2dbf7e' : '#ef4444');
+  const textColor   = boxColor === '#fff8e1' ? '#92400e' : (boxColor === '#e8f5ee' ? '#1a5c33' : '#7f1d1d');
+  return `<!DOCTYPE html><html lang="hu"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f0f7fb;font-family:'Segoe UI',Arial,sans-serif;"><div style="max-width:540px;margin:32px auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);"><div style="background:linear-gradient(135deg,#1a8fc1 0%,#2dbf7e 100%);padding:26px 32px;text-align:center;"><div style="font-size:26px;margin-bottom:5px;">⚽</div><div style="font-weight:900;font-size:19px;color:white;">Sportingo</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;text-transform:uppercase;letter-spacing:1.5px;">Foglalási rendszer</div></div><div style="padding:26px 32px;"><div style="text-align:center;margin-bottom:12px;font-size:26px;">${icon}</div><h1 style="font-size:19px;font-weight:900;color:#0a1628;text-align:center;margin:0 0 6px;">${title}</h1><p style="color:#6b8a9a;text-align:center;font-size:13px;margin:0 0 22px;">${sub}</p><table style="width:100%;border-collapse:collapse;background:#f0f7fb;border-radius:12px;overflow:hidden;margin-bottom:18px;">${rows}</table><div style="background:${boxColor};border:1.5px solid ${borderColor};border-radius:10px;padding:11px 14px;"><p style="margin:0;font-size:13px;color:${textColor};">${box}</p></div><p style="color:#6b8a9a;font-size:12px;text-align:center;margin-top:18px;">Kérdés: <a href="mailto:info@sportingo.hu" style="color:#1a8fc1;">info@sportingo.hu</a></p></div><div style="background:#f0f7fb;padding:13px 32px;text-align:center;border-top:1px solid #d4e8f0;"><p style="margin:0;font-size:11px;color:#6b8a9a;">© 2026 Sportingo · <a href="https://sportingo.hu" style="color:#1a8fc1;text-decoration:none;">sportingo.hu</a></p></div></div></body></html>`;
+}
 const SPF_SLOTS = spfGenSlots();
 
 // ── MAIN INIT ──────────────────────────────────────────
@@ -1421,38 +1440,7 @@ async function init() {
       SPF.palyaFreeCounts = freeCounts;
       SPF.anySlotUploaded = anySlotUploaded;
       const origIdx = csoportPalyak.findIndex(p => p.id === palya.id);
-      // ══════════════════════════════════════════════════════════════════
-      // [UX FIX – SMART DEFAULT] Pályaválasztó alapértelmezett javítása.
-      // Korábbi viselkedés: az URL-beli pálya (origIdx) mindig default,
-      // akkor is ha 0 szabad slot van rajta → user "zsákutcában" landol.
-      // Új logika:
-      //   (a) ha az URL-beli pályán VAN szabad slot → maradjon a default
-      //       (tiszteletben tartjuk a user/megosztó intencióját)
-      //   (b) ha az URL-beli pályán NINCS szabad slot, DE másik pályán
-      //       van → a csoportSorted[0] (legtöbb szabadas) lesz a default
-      //   (c) ha egyik pályán sincs szabad slot → meglévő fallback (origIdx / 0)
-      // FIGYELEM: ez csak init logika — csak itt fut le egyszer. A user
-      // manuális pályaváltását (switchPalya) SOHA nem írja felül, mert
-      // az külön handler, külön kontextusban.
-      // csoportSorted már rendezve van freeCounts csökkenő sorrendben
-      // (1402. sor), így csoportPalyak[0] a "legtöbb szabad slotos" pálya.
-      // ══════════════════════════════════════════════════════════════════
-      const origFree = origIdx >= 0 ? (freeCounts[csoportPalyak[origIdx].id] || 0) : 0;
-      const bestFree = (freeCounts[csoportPalyak[0].id] || 0);
-      if (origIdx >= 0 && origFree > 0) {
-        // (a) URL-beli pálya szabad → marad az
-        SPF.aktivIdx = origIdx;
-      } else if (bestFree > 0) {
-        // (b) URL-beli pálya 0 szabad (vagy nincs a listában), de van szabad pálya
-        SPF.aktivIdx = 0;
-        console.log('[SPF AUTO-SELECT] URL palya 0 szabad → átkapcs:',
-          csoportPalyak[0].nev || csoportPalyak[0].id,
-          '(' + bestFree + ' szabad slot)',
-          '| origPalya:', origIdx >= 0 ? (csoportPalyak[origIdx].nev || '?') : 'nincs a csoportban');
-      } else {
-        // (c) egyik pályán sincs szabad → eredeti fallback (origIdx vagy 0)
-        SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
-      }
+      SPF.aktivIdx = origIdx >= 0 ? origIdx : 0;
       if (SPF.aktivIdx >= SPF.csoportPalyak.length) SPF.aktivIdx = 0;
       console.log('[SPF REAL] final selector ids:', SPF.csoportPalyak.map(p => (p.nev || '?') + '/' + p.id),
         '| length:', SPF.csoportPalyak.length, '| aktivIdx:', SPF.aktivIdx);
@@ -2258,26 +2246,67 @@ async function spfMount(origPalya) {
     const firstDate = Object.keys(byDate)[0];
     const times = byDate[firstDate]; times.sort();
     const datumStr = new Date(firstDate+'T00:00:00').toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+    // ── [EMAIL TEMPLATE] Közös helyszín név — a window._spPalya-ból (init során töltve) ──
+    // A palya objektum (csoportPalyak eleme) csak id/nev/slug/palya_szam/ar/fedett-et tartalmaz,
+    // helyszin_nev-et NEM. A window._spPalya.helyszinNev globálisan elérhető és init() után
+    // mindig be van állítva (1606. sor). Fallback: üres string → akkor a sor kimarad.
+    const emHelyszin = (window._spPalya && window._spPalya.helyszinNev) || '';
+    const emIdopont  = `${times[0]} – ${spfGetEndTime(times[times.length-1])}`;
+    const emTobbnap  = Object.keys(byDate).length > 1; // Több napra szóló foglalás-e
     try {
+      // ── #1 JÁTÉKOS VISSZAIGAZOLÁS ──
+      const rowsJatekos = (emHelyszin ? spEmailRow('🏟','Sportkomplexum',esc(emHelyszin)) : '')
+        + ((palya.nev && palya.nev !== emHelyszin) ? spEmailRow('⚽','Pálya',esc(palya.nev)) : '')
+        + spEmailRow('📅','Dátum',esc(datumStr))
+        + spEmailRow('🕐','Időpont',esc(emIdopont))
+        + spEmailRow('👤','Foglaló',esc(SPF.guestInfo.nev||''),'#0a1628',true);
+      const htmlJatekos = spEmailBase(
+        '📋',
+        'Foglalási kérés beérkezett!',
+        'A pálya üzemeltetője hamarosan visszaigazolja a foglalásod.',
+        rowsJatekos,
+        '⏳ <strong>Jóváhagyásos foglalás:</strong> A tulajdonos 1-2 órán belül visszaigazolja.'
+          + (emTobbnap ? '<br><br>📌 Több napos foglalást küldtél — minden időpontra külön visszaigazolás érkezik.' : ''),
+        '#fff8e1'
+      );
       await fetch(SUPABASE_URL+'/functions/v1/send-email', {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY},
-        body: JSON.stringify({ to: SPF.guestInfo.email, subject:`✅ Foglalási kérés – ${palya.nev}`,
-          html:`<div style="font-family:Arial;padding:20px;"><h2>Foglalási kérés beérkezett!</h2><p><b>Pálya:</b> ${palya.nev}</p><p><b>Dátum:</b> ${datumStr}</p><p><b>Időpont:</b> ${times[0]} – ${spfGetEndTime(times[times.length-1])}</p><p>A pálya üzemeltetője hamarosan visszaigazolja a foglalást.</p></div>`
-        })
+        body: JSON.stringify({ to: SPF.guestInfo.email, subject:`✅ Foglalási kérés – ${palya.nev||''}`, html: htmlJatekos })
       });
-    } catch(e) {}
+    } catch(e) { console.warn('[EMAIL] #1 jatekos email hiba:', e); }
     // Tulajdonos értesítő
     try {
       const { data: tulaj } = await sb2.from('tulajdonosok').select('ertesito_aktiv,ertesito_emailek').eq('palya_id',palya.id).single();
       if (tulaj?.ertesito_aktiv && tulaj?.ertesito_emailek?.length) {
+        // ── #2 TULAJDONOS ÉRTESÍTŐ ──
+        // Sor-építés úgy, hogy az utolsó (aktuálisan utolsóként kerülő) mezőnél last=true legyen.
+        // Strategy: sorrendet előre megterveznem, és az utolsó beillesztett sort explicit last=true-val állítom be.
+        const tulajSorok = [];
+        if (emHelyszin) tulajSorok.push(['🏟','Sportkomplexum', esc(emHelyszin)]);
+        if (palya.nev && palya.nev !== emHelyszin) tulajSorok.push(['⚽','Pálya', esc(palya.nev)]);
+        tulajSorok.push(['📅','Dátum', esc(datumStr)]);
+        tulajSorok.push(['🕐','Időpont', esc(emIdopont)]);
+        tulajSorok.push(['👤','Foglaló', esc(SPF.guestInfo.nev||'')]);
+        tulajSorok.push(['📧','Email', esc(SPF.guestInfo.email||'')]);
+        if (SPF.guestInfo.tel) tulajSorok.push(['📞','Telefon', esc(SPF.guestInfo.tel)]);
+        if (SPF.guestInfo.megjegyzes) tulajSorok.push(['💬','Megjegyzés', esc(SPF.guestInfo.megjegyzes)]);
+        const rowsTulaj = tulajSorok.map((s, i) =>
+          spEmailRow(s[0], s[1], s[2], null, i === tulajSorok.length - 1)
+        ).join('');
+        const htmlTulaj = spEmailBase(
+          '🆕',
+          'Új foglalási igény érkezett!',
+          'Egy játékos foglalási kérést küldött az egyik pályádra.',
+          rowsTulaj,
+          '👉 <strong>Kérjük, hagyd jóvá vagy utasítsd el</strong> a foglalást az <a href="https://portal.sportingo.hu" style="color:#065f46;font-weight:700;">üzemeltetői portálon</a>.',
+          '#e8f5ee'
+        );
         await fetch(SUPABASE_URL+'/functions/v1/send-email', {
           method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY},
-          body: JSON.stringify({ to: tulaj.ertesito_emailek[0], subject:`📋 Új foglalás – ${palya.nev}`,
-            html:`<div style="font-family:Arial;padding:20px;"><h2>Új foglalási kérés!</h2><p><b>Pálya:</b> ${palya.nev}</p><p><b>Dátum:</b> ${datumStr}</p><p><b>Időpont:</b> ${times[0]} – ${spfGetEndTime(times[times.length-1])}</p><p><b>Foglaló:</b> ${SPF.guestInfo.nev} (${SPF.guestInfo.email})</p></div>`
-          })
+          body: JSON.stringify({ to: tulaj.ertesito_emailek[0], subject:`🆕 Új foglalási igény – ${palya.nev||''}`, html: htmlTulaj })
         });
       }
-    } catch(e) {}
+    } catch(e) { console.warn('[EMAIL] #2 tulajdonos email hiba:', e); }
     // Success képernyő
     spfGoStep(4);
     const dayStr = new Date(firstDate+'T00:00:00').toLocaleDateString('hu-HU',{weekday:'long',month:'long',day:'numeric'});
@@ -2476,8 +2505,27 @@ async function spfFbSend() {
 
   console.log('[SPF FALLBACK MAIL] submit start');
 
-  // Ugyanaz az email sablon mint a normál spSendFoglalas()
-  const html = `<!DOCTYPE html><html><body style="font-family:Arial;background:#f0f7fb;padding:20px;"><div style="max-width:500px;margin:0 auto;background:white;border-radius:16px;padding:24px;"><h2 style="color:#0a1628;">📋 Új foglalási igény</h2><p><b>Pálya:</b> ${helyszinNev || ''} – ${nev || ''}</p><p><b>Foglaló:</b> ${nevVal.trim()}</p><p><b>Email:</b> ${emailVal.trim()}</p>${tel?`<p><b>Telefon:</b> ${tel}</p>`:''}${ido?`<p><b>Kívánt időpont:</b> ${ido}</p>`:''}${meg?`<p><b>Megjegyzés:</b> ${meg}</p>`:''}</div></body></html>`;
+  // ── #3 FALLBACK FORM TULAJDONOS ÉRTESÍTŐ ──
+  // (ez akkor fut, ha a pályán nincs feltöltött slot → nincs naptár → CTA form)
+  const fbSorok = [];
+  if (helyszinNev) fbSorok.push(['🏟','Sportkomplexum', esc(helyszinNev)]);
+  if (nev && nev !== helyszinNev) fbSorok.push(['⚽','Pálya', esc(nev)]);
+  fbSorok.push(['👤','Foglaló', esc(nevVal.trim())]);
+  fbSorok.push(['📧','Email', esc(emailVal.trim())]);
+  if (tel) fbSorok.push(['📞','Telefon', esc(tel)]);
+  if (ido) fbSorok.push(['🕐','Kívánt időpont', esc(ido)]);
+  if (meg) fbSorok.push(['💬','Megjegyzés', esc(meg)]);
+  const fbRows = fbSorok.map((s, i) =>
+    spEmailRow(s[0], s[1], s[2], null, i === fbSorok.length - 1)
+  ).join('');
+  const html = spEmailBase(
+    '📋',
+    'Új foglalási igény érkezett!',
+    'Egy játékos szeretne foglalni a pályádon. Vedd fel a kapcsolatot!',
+    fbRows,
+    '👉 <strong>Javasoljuk</strong>, hogy mielőbb válaszolj a foglalónak, és erősítsd meg vagy ajánlj más időpontot.',
+    '#e8f5ee'
+  );
 
   try {
     console.log('[SPF FALLBACK MAIL] send-email called | to:', foglalasiEmail);
@@ -2629,7 +2677,27 @@ async function spSendFoglalas() {
   const btn        = document.getElementById('sp-submit-btn');
   if (!nevVal || !emailVal) { errEl.textContent='Kérjük töltsd ki a kötelező mezőket!'; errEl.style.display='block'; return; }
   errEl.style.display = 'none'; btn.disabled = true; btn.textContent = '⏳ Küldés...';
-  const html = `<!DOCTYPE html><html><body style="font-family:Arial;background:#f0f7fb;padding:20px;"><div style="max-width:500px;margin:0 auto;background:white;border-radius:16px;padding:24px;"><h2 style="color:#0a1628;">📋 Új foglalási igény</h2><p><b>Pálya:</b> ${helyszinNev} – ${nev}</p><p><b>Foglaló:</b> ${nevVal}</p><p><b>Email:</b> ${emailVal}</p>${telefon?`<p><b>Telefon:</b> ${telefon}</p>`:''}${idopont?`<p><b>Kívánt időpont:</b> ${idopont}</p>`:''}${megjegyzes?`<p><b>Megjegyzés:</b> ${megjegyzes}</p>`:''}</div></body></html>`;
+  // ── #4 RÉGI EMAIL-ONLY TULAJDONOS ÉRTESÍTŐ ──
+  // (ez a "pure email" foglalási útvonal, ha a pálya nem naptáras, csak mailes)
+  const spSorok = [];
+  if (helyszinNev) spSorok.push(['🏟','Sportkomplexum', esc(helyszinNev)]);
+  if (nev && nev !== helyszinNev) spSorok.push(['⚽','Pálya', esc(nev)]);
+  spSorok.push(['👤','Foglaló', esc(nevVal)]);
+  spSorok.push(['📧','Email', esc(emailVal)]);
+  if (telefon) spSorok.push(['📞','Telefon', esc(telefon)]);
+  if (idopont) spSorok.push(['🕐','Kívánt időpont', esc(idopont)]);
+  if (megjegyzes) spSorok.push(['💬','Megjegyzés', esc(megjegyzes)]);
+  const spRows = spSorok.map((s, i) =>
+    spEmailRow(s[0], s[1], s[2], null, i === spSorok.length - 1)
+  ).join('');
+  const html = spEmailBase(
+    '📋',
+    'Új foglalási igény érkezett!',
+    'Egy játékos szeretne foglalni a pályádon. Vedd fel a kapcsolatot!',
+    spRows,
+    '👉 <strong>Javasoljuk</strong>, hogy mielőbb válaszolj a foglalónak, és erősítsd meg vagy ajánlj más időpontot.',
+    '#e8f5ee'
+  );
   try {
     await fetch(SUPABASE_URL+'/functions/v1/send-email', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY}, body:JSON.stringify({to:foglalasiEmail,subject:`📋 Új foglalási igény – ${nev}`,html}) });
     document.getElementById('sp-form-wrap').innerHTML = `<div style="text-align:center;padding:24px;"><div style="font-size:2.5rem;margin-bottom:12px;">✅</div><div style="font-weight:800;font-size:1.1rem;color:#0a1628;margin-bottom:6px;">Elküldve!</div><div style="font-size:.85rem;color:#6b8a9a;">A pálya üzemeltetője hamarosan felveszi veled a kapcsolatot.</div></div>`;
