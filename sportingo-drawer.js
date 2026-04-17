@@ -707,7 +707,7 @@
         }
       }
 
-      return `<div class="sfd-booking-card ${safe}">
+      return `<div class="sfd-booking-card ${safe}"${slug ? ` data-palya-slug="${spEsc(slug)}"` : ''}>
         <div class="sfd-booking-top">
           <div class="sfd-booking-name">${emoji} ${palyaUrl ? `<a href="${palyaUrl}" class="sfd-booking-name-link">${spEsc(nev)}</a>` : spEsc(nev)}</div>
           <span class="sfd-status-pill ${safe}">${statuszLabel[safe] || statuszLabel[f.statusz] || f.statusz}</span>
@@ -757,7 +757,7 @@
       const slug = p.slug || '';
       const varos = p.varos || '';
       const emoji = sportEmoji[p.sportag] || '🏟';
-      return `<div class="sfd-kedvenc-card" data-kedvenc-id="${k.id}">
+      return `<div class="sfd-kedvenc-card" data-kedvenc-id="${k.id}"${slug ? ` data-palya-slug="${spEsc(slug)}"` : ''}>
         <div class="sfd-kedvenc-icon">${emoji}</div>
         <div class="sfd-kedvenc-info">
           <div class="sfd-kedvenc-name">${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" class="sfd-booking-name-link">${spEsc(nev)}</a>` : spEsc(nev)}</div>
@@ -1010,7 +1010,7 @@
           const foglMeta = item.foglDatum ? `📅 ${item.foglDatum}` : '';
           const nevEscaped = spEsc(item.palyaNev).replace(/"/g, '&quot;');
           const ctaGomb = `<button class="sfd-btn-ertekeles" data-fid="${spEsc(item.foglalasId)}" data-pid="${spEsc(item.palyaId)}" data-hid="${spEsc(item.helyszinId||'')}" data-nev="${nevEscaped}" onclick="sfdNyitReviewModal(this)">⭐ Értékelem</button>`;
-          return `<div class="sfd-ert-card">
+          return `<div class="sfd-ert-card"${item.slug ? ` data-palya-slug="${spEsc(item.slug)}"` : ''}>
             <div class="sfd-ert-card-top">
               <div class="sfd-ert-card-nev">${emojiSport} ${linkNev}</div>
             </div>
@@ -1057,7 +1057,7 @@
           const nevEscaped = spEsc(item.palyaNev).replace(/"/g, '&quot;');
           const rvJson = encodeURIComponent(JSON.stringify({ id: rv.id, rating: rv.rating, szoveg: rv.szoveg || '', cimkek: rv.cimkek || [] }));
           const editGomb = `<button class="sfd-btn-ertekeles" data-fid="${spEsc(item.foglalasId)}" data-pid="${spEsc(item.palyaId)}" data-hid="${spEsc(item.helyszinId||'')}" data-nev="${nevEscaped}" data-rv="${rvJson}" onclick="sfdNyitReviewModal(this)">✏️ Módosítás</button>`;
-          return `<div class="sfd-ert-card" data-rating="${rv.rating || 0}">
+          return `<div class="sfd-ert-card" data-rating="${rv.rating || 0}"${item.slug ? ` data-palya-slug="${spEsc(item.slug)}"` : ''}>
             <div class="sfd-ert-card-top">
               <div class="sfd-ert-card-nev">${emojiSport} ${linkNev}</div>
               <div class="sfd-ert-stars">${csillagok}</div>
@@ -1726,5 +1726,71 @@
       _checkPublicReviewPending();
     }
   });
+
+  // ══════════════════════════════════════════════════════════════════
+  // [CARD CLICK] Kártya-szintű navigáció: foglalás / kedvenc / értékelés
+  // kártyára kattintva → pálya oldal. Event delegation, egyetlen listener
+  // a document-en. A drawer dinamikusan renderelt kártyáival működik.
+  //
+  // Működés:
+  //   1. Csak akkor navigál, ha a click a drawer-en belül, egy .sfd-booking-card
+  //      / .sfd-kedvenc-card / .sfd-ert-card elemre (vagy annak leszármazottjára)
+  //      történik ÉS van data-palya-slug attribútum.
+  //   2. Ha a click interaktív elemen van (link, gomb, ezek leszármazottja),
+  //      NEM navigál → a meglévő funkciók (Lemondás, Értékelem, név-link,
+  //      "Pálya megtekintése ↗", 🗑 kedvenc-törlés) sértetlenek.
+  //   3. Új tabot NEM nyit — ugyanaz a tab (konzisztens a meglévő linkekkel).
+  //   4. Nincs extra query / API hívás — a slug már a render-ben rendelkezésre
+  //      áll (palyas.slug), csak kiexponáljuk data-attribute-ként.
+  //
+  // FIGYELEM: a document-szintű listener scopolva van a .sfd-*-card selector-ra
+  // és a drawer belsejére (#sp-drawer). Drawer-en kívüli kattintás soha nem
+  // triggeri a handlert.
+  // ══════════════════════════════════════════════════════════════════
+  (function() {
+    // Selector-ok amik "interaktívak" és a kattintás náluk NEM navigál:
+    // - <a>, <button>, <input>, <select>, <textarea>: natív interakciós elemek
+    // - [onclick]: inline handler van rajta (pl. sfdNyitReviewModal)
+    // - .sfd-cancel-btn, .sfd-btn-ertekeles, .sfd-kedvenc-remove,
+    //   .sfd-booking-link, .sfd-booking-name-link, .sfd-kedvenc-link:
+    //   meglévő named gombok/linkek a kártyán belül
+    var INTERACTIVE_SELECTOR = [
+      'a', 'button', 'input', 'select', 'textarea', '[onclick]',
+      '.sfd-cancel-btn', '.sfd-btn-ertekeles', '.sfd-kedvenc-remove',
+      '.sfd-booking-link', '.sfd-booking-name-link', '.sfd-kedvenc-link'
+    ].join(',');
+
+    var CARD_SELECTOR = '.sfd-booking-card[data-palya-slug], .sfd-kedvenc-card[data-palya-slug], .sfd-ert-card[data-palya-slug]';
+
+    document.addEventListener('click', function(e) {
+      try {
+        // 1. Drawer-en belüli kattintás? (ne triggereljünk drawer-en kívül)
+        var drawerEl = document.getElementById('sp-drawer');
+        if (!drawerEl || !drawerEl.contains(e.target)) return;
+
+        // 2. Interaktív elemre (vagy azon belülre) kattintott? Ha igen, skip.
+        if (e.target.closest(INTERACTIVE_SELECTOR)) return;
+
+        // 3. Van-e matching kártya az event target-jétől felfelé?
+        var card = e.target.closest(CARD_SELECTOR);
+        if (!card) return;
+
+        // 4. Slug ellenőrzés (edge case: attribútum üres lenne)
+        var slug = card.getAttribute('data-palya-slug');
+        if (!slug) return;
+
+        // 5. Drawer-en belül tényleg? (double-check a card scope-ra)
+        if (!drawerEl.contains(card)) return;
+
+        // 6. Navigáció — ugyanaz a mintázat mint a meglévő inline linkek
+        //    (pl. sfd-booking-link, sfd-kedvenc-link): same-tab, palya/{slug}.
+        console.log('[CARD CLICK] navigate to palya', slug);
+        window.location.href = 'https://sportingo.hu/palya/' + encodeURIComponent(slug);
+      } catch(err) {
+        // Silent fail — ne törjön semmit, ha a handler hibázik
+        console.warn('[CARD CLICK] handler exception:', err);
+      }
+    });
+  })();
 
 })();
