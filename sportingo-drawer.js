@@ -707,7 +707,7 @@
         }
       }
 
-      return `<div class="sfd-booking-card ${safe}"${slug ? ` data-palya-slug="${spEsc(slug)}"` : ''}>
+      return `<div class="sfd-booking-card ${safe}"${slug ? ` data-palya-slug="${spEsc(slug)}"` : ''}${f.palya_id ? ` data-palya-id="${spEsc(f.palya_id)}"` : ''}>
         <div class="sfd-booking-top">
           <div class="sfd-booking-name">${emoji} ${palyaUrl ? `<a href="${palyaUrl}" class="sfd-booking-name-link">${spEsc(nev)}</a>` : spEsc(nev)}</div>
           <span class="sfd-status-pill ${safe}">${statuszLabel[safe] || statuszLabel[f.statusz] || f.statusz}</span>
@@ -757,7 +757,7 @@
       const slug = p.slug || '';
       const varos = p.varos || '';
       const emoji = sportEmoji[p.sportag] || '🏟';
-      return `<div class="sfd-kedvenc-card" data-kedvenc-id="${k.id}"${slug ? ` data-palya-slug="${spEsc(slug)}"` : ''}>
+      return `<div class="sfd-kedvenc-card" data-kedvenc-id="${k.id}"${slug ? ` data-palya-slug="${spEsc(slug)}"` : ''}${k.palya_id ? ` data-palya-id="${spEsc(k.palya_id)}"` : ''}>
         <div class="sfd-kedvenc-icon">${emoji}</div>
         <div class="sfd-kedvenc-info">
           <div class="sfd-kedvenc-name">${slug ? `<a href="https://sportingo.hu/palya/${spEsc(slug)}" class="sfd-booking-name-link">${spEsc(nev)}</a>` : spEsc(nev)}</div>
@@ -1010,7 +1010,7 @@
           const foglMeta = item.foglDatum ? `📅 ${item.foglDatum}` : '';
           const nevEscaped = spEsc(item.palyaNev).replace(/"/g, '&quot;');
           const ctaGomb = `<button class="sfd-btn-ertekeles" data-fid="${spEsc(item.foglalasId)}" data-pid="${spEsc(item.palyaId)}" data-hid="${spEsc(item.helyszinId||'')}" data-nev="${nevEscaped}" onclick="sfdNyitReviewModal(this)">⭐ Értékelem</button>`;
-          return `<div class="sfd-ert-card"${item.slug ? ` data-palya-slug="${spEsc(item.slug)}"` : ''}>
+          return `<div class="sfd-ert-card"${item.slug ? ` data-palya-slug="${spEsc(item.slug)}"` : ''}${item.palyaId ? ` data-palya-id="${spEsc(item.palyaId)}"` : ''}>
             <div class="sfd-ert-card-top">
               <div class="sfd-ert-card-nev">${emojiSport} ${linkNev}</div>
             </div>
@@ -1057,7 +1057,7 @@
           const nevEscaped = spEsc(item.palyaNev).replace(/"/g, '&quot;');
           const rvJson = encodeURIComponent(JSON.stringify({ id: rv.id, rating: rv.rating, szoveg: rv.szoveg || '', cimkek: rv.cimkek || [] }));
           const editGomb = `<button class="sfd-btn-ertekeles" data-fid="${spEsc(item.foglalasId)}" data-pid="${spEsc(item.palyaId)}" data-hid="${spEsc(item.helyszinId||'')}" data-nev="${nevEscaped}" data-rv="${rvJson}" onclick="sfdNyitReviewModal(this)">✏️ Módosítás</button>`;
-          return `<div class="sfd-ert-card" data-rating="${rv.rating || 0}"${item.slug ? ` data-palya-slug="${spEsc(item.slug)}"` : ''}>
+          return `<div class="sfd-ert-card" data-rating="${rv.rating || 0}"${item.slug ? ` data-palya-slug="${spEsc(item.slug)}"` : ''}${item.palyaId ? ` data-palya-id="${spEsc(item.palyaId)}"` : ''}>
             <div class="sfd-ert-card-top">
               <div class="sfd-ert-card-nev">${emojiSport} ${linkNev}</div>
               <div class="sfd-ert-stars">${csillagok}</div>
@@ -1760,7 +1760,7 @@
       '.sfd-booking-link', '.sfd-booking-name-link', '.sfd-kedvenc-link'
     ].join(',');
 
-    var CARD_SELECTOR = '.sfd-booking-card[data-palya-slug], .sfd-kedvenc-card[data-palya-slug], .sfd-ert-card[data-palya-slug]';
+    var CARD_SELECTOR = '.sfd-booking-card[data-palya-slug], .sfd-kedvenc-card[data-palya-slug], .sfd-ert-card[data-palya-slug], .sfd-booking-card[data-palya-id], .sfd-kedvenc-card[data-palya-id], .sfd-ert-card[data-palya-id]';
 
     document.addEventListener('click', function(e) {
       try {
@@ -1775,17 +1775,30 @@
         var card = e.target.closest(CARD_SELECTOR);
         if (!card) return;
 
-        // 4. Slug ellenőrzés (edge case: attribútum üres lenne)
+        // 4. Slug-first, palya_id fallback: a web-pálya.html mindkettőt
+        //    támogatja (slug alapú elsődleges, ?id= alapú fallback — lásd
+        //    web-pálya.html init() 1225-1247. sor: "ha nincs slug de van id
+        //    (pl. squash pályáknál hiányzó slug esetén)"). A drawer ugyanezt a
+        //    logikát tükrözi: ha van slug → /palya/<slug> (SEO-barát URL),
+        //    ha nincs slug de van palya_id → /palya/?id=<uuid> (fallback).
         var slug = card.getAttribute('data-palya-slug');
-        if (!slug) return;
+        var palyaId = card.getAttribute('data-palya-id');
+        if (!slug && !palyaId) return;
 
         // 5. Drawer-en belül tényleg? (double-check a card scope-ra)
         if (!drawerEl.contains(card)) return;
 
-        // 6. Navigáció — ugyanaz a mintázat mint a meglévő inline linkek
-        //    (pl. sfd-booking-link, sfd-kedvenc-link): same-tab, palya/{slug}.
-        console.log('[CARD CLICK] navigate to palya', slug);
-        window.location.href = 'https://sportingo.hu/palya/' + encodeURIComponent(slug);
+        // 6. Navigáció — ugyanaz a mintázat mint a meglévő inline linkek,
+        //    kiegészítve az id-fallback-kel. Same-tab, konzisztens az app többi
+        //    részével.
+        var url;
+        if (slug) {
+          url = 'https://sportingo.hu/palya/' + encodeURIComponent(slug);
+        } else {
+          url = 'https://sportingo.hu/palya/?id=' + encodeURIComponent(palyaId);
+        }
+        console.log('[CARD CLICK] navigate to palya', { slug: slug, palyaId: palyaId, url: url });
+        window.location.href = url;
       } catch(err) {
         // Silent fail — ne törjön semmit, ha a handler hibázik
         console.warn('[CARD CLICK] handler exception:', err);
