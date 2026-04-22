@@ -573,6 +573,70 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/sportingo-drawer.js"></script>
 <script>
+// Supabase URL + anon key (ugyanaz mint a többi oldalon, az edge function híváshoz kell)
+const SP_CONTACT_SUPABASE_URL = 'https://amowwfjxeursokkznmxl.supabase.co';
+const SP_CONTACT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtb3d3Zmp4ZXVyc29ra3pubXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDE4NzQsImV4cCI6MjA4OTkxNzg3NH0.eajpxK96IAF-4XVIv4JALYZ-LqCqXaxU7GIaAE0T5L0';
+const SP_CONTACT_SUPPORT_EMAIL = 'support@sportingo.hu';
+
+// ── Escape HTML az email sablonhoz (XSS védelem) ─────────────────
+function spContactEscHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── Téma érték → emberbarát label ────────────────────────────────
+function spContactTemaLabel(v) {
+  var map = {
+    foglalas: 'Foglalással kapcsolatos kérdés',
+    helyszin: 'Helyszínnel kapcsolatos kérdés',
+    tulajdonos: 'Pályatulajdonosként szeretnék csatlakozni',
+    hiba: 'Hibát találtam',
+    egyeb: 'Egyéb'
+  };
+  return map[v] || '';
+}
+
+// ── Email HTML sablon a support@-nak (a többi Sportingo mail stílusával egyezik) ──
+function spContactBuildEmailHtml(nev, email, tema, uzenet) {
+  var temaLabel = spContactTemaLabel(tema);
+  var temaRow = temaLabel
+    ? '<tr><td style="padding:6px 0;font-size:12px;font-weight:700;color:#6b8a9a;text-transform:uppercase;letter-spacing:0.8px;border-top:1px solid #e4eef5;">📂 Téma</td></tr>'
+      + '<tr><td style="padding:0 0 14px;font-size:15px;font-weight:700;color:#0a1628;">' + spContactEscHtml(temaLabel) + '</td></tr>'
+    : '';
+  // Üzenet: többsoros, white-space:pre-wrap megőrzi a sortöréseket
+  var uzenetHtml = spContactEscHtml(uzenet);
+
+  return '<!DOCTYPE html><html lang="hu"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Új kapcsolatfelvétel</title></head>'
+    + '<body style="margin:0;padding:0;background:#f5f9fc;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;color:#0a1628;">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f9fc;padding:24px 16px;"><tr><td align="center">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(10,22,40,0.06);">'
+    + '<tr><td style="background:linear-gradient(135deg,#1a8fc1,#2dbf7e);padding:32px 28px;text-align:left;">'
+    + '<div style="font-size:24px;font-weight:800;color:#ffffff;line-height:1.25;letter-spacing:-0.01em;">📩 Új kapcsolatfelvétel</div>'
+    + '<div style="font-size:14px;color:rgba(255,255,255,0.9);margin-top:8px;line-height:1.5;">Üzenet érkezett a Sportingo kapcsolati űrlapról</div>'
+    + '</td></tr>'
+    + '<tr><td style="padding:28px;">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f9fc;border:1px solid #e4eef5;border-radius:16px;"><tr><td style="padding:20px 22px;">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+    + '<tr><td style="padding:6px 0;font-size:12px;font-weight:700;color:#6b8a9a;text-transform:uppercase;letter-spacing:0.8px;">👤 Név</td></tr>'
+    + '<tr><td style="padding:0 0 14px;font-size:16px;font-weight:800;color:#0a1628;">' + spContactEscHtml(nev) + '</td></tr>'
+    + '<tr><td style="padding:6px 0;font-size:12px;font-weight:700;color:#6b8a9a;text-transform:uppercase;letter-spacing:0.8px;border-top:1px solid #e4eef5;">📧 Email</td></tr>'
+    + '<tr><td style="padding:0 0 14px;font-size:16px;font-weight:700;color:#0a1628;"><a href="mailto:' + spContactEscHtml(email) + '" style="color:#1a8fc1;text-decoration:none;">' + spContactEscHtml(email) + '</a></td></tr>'
+    + temaRow
+    + '</table></td></tr></table>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;background:#ffffff;border:1px solid #e4eef5;border-radius:12px;"><tr><td style="padding:18px 20px;">'
+    + '<div style="font-size:12px;font-weight:700;color:#6b8a9a;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">💬 Üzenet</div>'
+    + '<div style="font-size:14px;color:#3a5060;line-height:1.7;white-space:pre-wrap;">' + uzenetHtml + '</div>'
+    + '</td></tr></table>'
+    + '<div style="margin-top:22px;padding:16px 20px;background:#eaf4fb;border-left:4px solid #1a8fc1;border-radius:8px;font-size:14px;color:#0a1628;line-height:1.6;">Válaszolj közvetlenül a küldő email címére a kapcsolattartás folytatásához.</div>'
+    + '</td></tr>'
+    + '<tr><td style="padding:20px 28px 28px;border-top:1px solid #e4eef5;text-align:center;"><div style="font-size:12px;color:#6b8a9a;line-height:1.6;">Sportingo kapcsolati űrlap · Ez az email automatikusan készült</div></td></tr>'
+    + '</table></td></tr></table></body></html>';
+}
+
 // ── Kapcsolat form ──────────────────────────────────────────────
 async function spSendContact() {
   var nev    = (document.getElementById('sp-nev')?.value    || '').trim();
@@ -604,6 +668,38 @@ async function spSendContact() {
       });
       if (result.error) throw result.error;
     }
+
+    // ── Email küldés a support@-nak (send-email edge function) ────
+    // Fail-safe: ha a mail hibázik, a user akkor is sikert lát (az üzenet
+    // már a DB-ben van). A hiba logolva, manuálisan visszakereshető.
+    try {
+      var temaLbl = spContactTemaLabel(tema);
+      var subject = '📩 Új kapcsolatfelvétel – ' + nev + (temaLbl ? ' (' + temaLbl + ')' : '');
+      var html = spContactBuildEmailHtml(nev, email, tema, uzenet);
+      console.log('[CONTACT MAIL] send-email called | to:', SP_CONTACT_SUPPORT_EMAIL);
+      var mailRes = await fetch(SP_CONTACT_SUPABASE_URL + '/functions/v1/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SP_CONTACT_SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          to: SP_CONTACT_SUPPORT_EMAIL,
+          subject: subject,
+          html: html,
+          reply_to: email
+        })
+      });
+      if (!mailRes.ok) {
+        var bodyText = await mailRes.text().catch(function(){ return ''; });
+        console.error('[CONTACT MAIL] send-email HTTP hiba | status:', mailRes.status, '| body:', bodyText);
+      } else {
+        console.log('[CONTACT MAIL] send ok | status:', mailRes.status);
+      }
+    } catch (mailErr) {
+      console.error('[CONTACT MAIL] send-email exception:', mailErr && mailErr.message);
+    }
+
     var formEl = document.getElementById('sp-contact-form');
     if (formEl) formEl.style.display = 'none';
     if (sucEl)  sucEl.style.display = 'block';
