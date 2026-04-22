@@ -664,7 +664,15 @@ function getDefaultPalyaImage(p) {
   }
   if(sg==='futball'||sg==='labdarugas') {
     if(jf==='nagypalya') return PALYA_DEFAULT_IMAGES.foci_nagypalya;
-    if(fed==='fedett'||fed==='true') return PALYA_DEFAULT_IMAGES.foci_kispalya_terem;
+    // Fedett futball kispálya: a borítás dönt
+    //  - Parketta/PVC (valódi terem) → terem kép
+    //  - Műfű vagy bármi más (pl. sátor alatt műfű) → kültéri kispálya kép
+    //  - Ha a borítás ismeretlen, a kültéri kispálya kép a biztonságos alap
+    //    (sátras pályák a gyakoribbak mint a valódi termek)
+    if(fed==='fedett'||fed==='true') {
+      if(bor.includes('parketta')||bor.includes('pvc')) return PALYA_DEFAULT_IMAGES.foci_kispalya_terem;
+      return PALYA_DEFAULT_IMAGES.foci_kispalya;
+    }
     return PALYA_DEFAULT_IMAGES.foci_kispalya;
   }
   return PALYA_DEFAULT_IMAGES.fallback;
