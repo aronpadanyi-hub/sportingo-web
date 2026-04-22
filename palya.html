@@ -3337,5 +3337,124 @@ function spPublicReviewCtaHTML(palyaId) {
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════
+     [DESKTOP DOM REORDER] — Csak vizuális sorrend, nulla logika.
+     Desktop (>900px) cél: sp-body után → [Foglalás] → [Értékelések] → [Térkép]
+     Mobilon NEM fut (a CSS media query intézi: @media(max-width:900px)).
+     Szabályok:
+       - Csak DOM appendChild/insertBefore (event listener-ek, state érintetlen)
+       - Null-safe minden lépés
+       - Idempotens (többszöri futtatás is OK)
+       - MutationObserver figyeli az utólag injektált #spf-fallback-form-ot
+         (a meglévő logika a sp-hero után illeszti — mi átpakoljuk a helyére)
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+  var MQ = '(min-width: 901px)';
+  var mql = window.matchMedia ? window.matchMedia(MQ) : null;
+
+  function ensureBookingRoot() {
+    if (!mql || !mql.matches) return null;
+    var existing = document.getElementById('sp-booking-root');
+    if (existing) return existing;
+
+    var wrap = document.querySelector('.sp-wrap');
+    var body = document.querySelector('.sp-body');
+    if (!wrap || !body || !body.parentNode) return null;
+
+    var root = document.createElement('div');
+    root.id = 'sp-booking-root';
+    // A sp-body után illesszük be — ezzel a görgetési sorrend:
+    // hero → sp-body(alapadatok+sidebar) → #sp-booking-root → review → térkép
+    body.parentNode.insertBefore(root, body.nextSibling);
+    return root;
+  }
+
+  function moveIntoBookingRoot(root) {
+    if (!root) return;
+    // A 3 booking elem — amelyik létezik, bekerül a wrapperbe (sorrend megmarad)
+    var ids = ['spf-card', 'foglalas-form', 'spf-fallback-form'];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (el && el.parentNode !== root) {
+        root.appendChild(el);
+      }
+    }
+  }
+
+  function moveReviewAndMap(root) {
+    if (!root || !root.parentNode) return;
+    // Értékelések a booking-root után
+    var review = document.getElementById('sp-review-blokk');
+    if (review && review.parentNode && review !== root.nextSibling) {
+      root.parentNode.insertBefore(review, root.nextSibling);
+    }
+    // Térkép az értékelések után — .sp-card.sp-map a terképHTML-ből
+    // (a sp-main-en belül van eredetileg; csak ha még nem mozgattuk el)
+    var map = document.querySelector('.sp-card.sp-map');
+    if (map && map.parentNode) {
+      var anchor = review && review.parentNode === root.parentNode ? review : root;
+      if (map !== anchor.nextSibling) {
+        anchor.parentNode.insertBefore(map, anchor.nextSibling);
+      }
+    }
+  }
+
+  function reorderDesktop() {
+    if (!mql || !mql.matches) return;
+    try {
+      var root = ensureBookingRoot();
+      if (!root) return;
+      moveIntoBookingRoot(root);
+      moveReviewAndMap(root);
+    } catch (e) {
+      // Bármi hiba → csendes fallback, az eredeti layout marad
+      console.warn('[DESKTOP REORDER] skip:', e);
+    }
+  }
+
+  // 1) Első futás: amint a DOM kész
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', reorderDesktop, { once: true });
+  } else {
+    reorderDesktop();
+  }
+  // 2) Window load után is (a sp-root render aszinkron Supabase után fut)
+  window.addEventListener('load', function() { setTimeout(reorderDesktop, 0); });
+
+  // 3) MutationObserver a body childList-en — a #spf-fallback-form utólag
+  //    injektálódik a sp-hero mellé (loadAndRenderCal után). Átpakoljuk, ha kell.
+  //    Csak desktopon figyelünk; mobilon a CSS order intézi.
+  if (mql && mql.matches && typeof MutationObserver !== 'undefined') {
+    var mo = new MutationObserver(function(mutations) {
+      // Olcsó check: csak akkor futtatunk, ha megjelent valami amit mozgatni kell
+      for (var i = 0; i < mutations.length; i++) {
+        var added = mutations[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var n = added[j];
+          if (n && n.nodeType === 1 && (
+              n.id === 'spf-fallback-form' ||
+              n.id === 'spf-card' ||
+              n.id === 'foglalas-form' ||
+              (n.querySelector && (
+                n.querySelector('#spf-fallback-form') ||
+                n.querySelector('#spf-card') ||
+                n.querySelector('#foglalas-form')
+              ))
+          )) {
+            reorderDesktop();
+            return;
+          }
+        }
+      }
+    });
+    // Body childList figyelése subtree-vel — közvetlen insertálásokat kap el
+    try { mo.observe(document.body, { childList: true, subtree: true }); }
+    catch (e) { console.warn('[DESKTOP REORDER] observer skip:', e); }
+  }
+})();
+</script>
+
 </body>
 </html>
