@@ -1126,10 +1126,35 @@
       if (activeSport && p2.length === 0) return false;
 
       // 3. DINAMIKUS SZŰRŐK (jatekforma, fedett, stb.) – szűrés a 2. lépés eredményén
+      //
+      // NOTE (fedett szűrő kompatibilitás):
+      //  - DB-ben a `palyas.fedett` TEXT: 'true' vagy 'false'
+      //  - A szűrő values szemantikusak: 'Fedett' / 'Kültéri' (user-facing label-ekhez igazítva)
+      //  - Régebbi rekordokban előfordulhat még 'fedett'/'kulteri'/'igen'/'nem' is
+      //  - Ezt egy dedikált normalizáló kezeli, szemantikus összehasonlítással.
+      //  - A többi szűrő (boritas, jatekforma) marad substring-illesztésen, mert azok
+      //    szabad szöveges címkék (pl. 'Parketta / PVC' matchel 'Parketta'-ra).
+      //  - A SET értékei már eleve normalizált (lowercase, diakritika nélkül) – így
+      //    nem kell minden lehetséges ékezetes formát felsorolni.
+      function fedettMatches(palyaVal, filterVal){
+        var FEDETT_NORMALIZED  = ['true','fedett','igen','zart'];
+        var KULTERI_NORMALIZED = ['false','kulteri','nyitott','nem'];
+        var p = _normVal(palyaVal);   // _normVal: lowercase + diakritika eltávolítás
+        var f = _normVal(filterVal);
+        if (FEDETT_NORMALIZED.indexOf(f)  !== -1) return FEDETT_NORMALIZED.indexOf(p)  !== -1;
+        if (KULTERI_NORMALIZED.indexOf(f) !== -1) return KULTERI_NORMALIZED.indexOf(p) !== -1;
+        // Ismeretlen szűrő-érték → fallback a régi substring viselkedésre (védelmi háló)
+        return p.indexOf(f) !== -1;
+      }
+
       var p3 = p2;
       for(const [id,val] of Object.entries(activeFilters)){
         if(!val) continue;
-        p3 = p3.filter(function(p){ return (p[id]||'').toLowerCase().includes(val.toLowerCase()); });
+        if (id === 'fedett') {
+          p3 = p3.filter(function(p){ return fedettMatches(p.fedett, val); });
+        } else {
+          p3 = p3.filter(function(p){ return (p[id]||'').toLowerCase().includes(val.toLowerCase()); });
+        }
       }
       if (p3.length === 0) return false;
 
